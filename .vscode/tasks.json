@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Nova: status do J4 físico",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/skills/physical-j4/scripts/test-j4.ps1", "-Mode", "Status"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Nova: instalar debug no J4 físico",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/skills/physical-j4/scripts/test-j4.ps1", "-Mode", "Install"],
+      "problemMatcher": "$gradle",
+      "group": "build"
+    },
+    {
+      "label": "Nova: validar no J4 físico",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/skills/physical-j4/scripts/test-j4.ps1", "-Mode", "Validate"],
+      "problemMatcher": "$gradle",
+      "group": "test"
+    },
+    {
+      "label": "Nova: testes instrumentados no J4 físico",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/skills/physical-j4/scripts/test-j4.ps1", "-Mode", "Instrumented"],
+      "problemMatcher": "$gradle",
+      "group": "test"
+    },
+    {
+      "label": "Nova: logs do J4 físico",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/skills/physical-j4/scripts/test-j4.ps1", "-Mode", "Logs"],
+      "problemMatcher": []
+    }
+  ]
+}
