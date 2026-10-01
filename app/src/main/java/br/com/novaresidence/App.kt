@@ -15,6 +15,7 @@ import br.com.novaresidence.core.ui.*
 import br.com.novaresidence.feature.auth.*
 import br.com.novaresidence.feature.residence.*
 import br.com.novaresidence.feature.exhaust.*
+import br.com.novaresidence.feature.fire.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -31,6 +32,7 @@ class AppViewModel(context: Context) : ViewModel() {
     val auth = AuthRepository(api)
     val residence = ResidenceRepository(api)
     val exhaust = ExhaustRepository(api)
+    val fire = FireRepository(api)
     val residencePreferences = ResidencePreferences(context)
     val ready = MutableStateFlow(false)
     var restoreError: String? = null
@@ -50,6 +52,7 @@ fun App(app: AppViewModel) {
     val auth: AuthViewModel = viewModel { AuthViewModel(app.auth) }
     val residence: ResidenceViewModel = viewModel { ResidenceViewModel(app.residence, app.auth, app.residencePreferences) }
     val exhaust: ExhaustViewModel = viewModel { ExhaustViewModel(app.exhaust, residence::refresh) }
+    val fire: FireViewModel = viewModel { FireViewModel(app.fire) }
     val ready by app.ready.collectAsStateWithLifecycle()
     val user by app.session.user.collectAsStateWithLifecycle()
     val authState by auth.state.collectAsStateWithLifecycle()
@@ -85,16 +88,32 @@ fun App(app: AppViewModel) {
             val access = residenceState.residence
             val unit = access?.units?.firstOrNull { it.sequencia == residenceState.selectedUnit }
             val allowed = access?.status == "ativo" && !access.blocked && unit?.blocked == false
-            // A home também mostra o estado do exaustor (Figma 08b): a consulta vale para toda a área
-            // logada visível, e não só para a tela do exaustor. Continua parando em onStop.
+            val services = access?.canSeeServices(user?.role) == true
+            // A home mostra o estado do exaustor e da central (Figma 08a–08c): as consultas valem para toda a
+            // área logada visível, e não só para a tela de cada serviço. Param em onStop.
             LifecycleStartEffect(user?.id, unit?.sequencia, allowed) {
                 exhaust.start(unit?.quadra, unit?.lote, allowed)
                 onStopOrDispose { exhaust.stop() }
             }
+            LifecycleStartEffect(user?.id, services) {
+                fire.start(services)
+                onStopOrDispose { fire.stop() }
+            }
             val exhaustState by exhaust.state.collectAsStateWithLifecycle()
-            val exhaustStatus = if (allowed) ExhaustHomeStatus(exhaustState.homeSummary(), exhaustState.phase == ExhaustPhase.Running)
-                else ExhaustHomeStatus(unit?.blockedMessage() ?: "Indisponível para esta unidade.", false)
-            ResidenceScreen(residenceState, user!!, residence::select, residence::refresh, auth::logout, authState.busy, residence::saveLanguage, exhaustStatus) { current, back, selectUnit ->
+            val fireState by fire.state.collectAsStateWithLifecycle()
+            val exhaustStatus = when {
+                !allowed -> ServiceStatus(unit?.blockedMessage() ?: "Indisponível para esta unidade.")
+                exhaustState.phase == ExhaustPhase.Running -> ServiceStatus(exhaustState.homeSummary(), "Em funcionamento", ServiceTone.Running)
+                else -> ServiceStatus(exhaustState.homeSummary())
+            }
+            val fireStatus = if (fireState.status == FireStatus.Alarm) ServiceStatus(fireState.homeSummary(), fireState.homeAlarmTitle(), ServiceTone.Alarm)
+                else ServiceStatus(fireState.homeSummary())
+            ResidenceScreen(residenceState, user!!, residence::select, residence::refresh, auth::logout, authState.busy, residence::saveLanguage,
+                exhaustStatus = exhaustStatus, fireStatus = fireStatus,
+                fireContent = { current, back, selectUnit, fullScreen ->
+                    FireFeature(fireState, current?.homeLabel(), back, selectUnit, fire::refresh, fire::loadHistory, fullScreen)
+                },
+            ) { current, back, selectUnit, _ ->
                 ExhaustScreen(exhaustState, current?.homeLabel(), current?.blockedMessage() ?: access?.notice(),
                     exhaust::activate, exhaust::restart, exhaust::refresh, back, selectUnit)
             }
