@@ -28,6 +28,7 @@ Android app ──HTTPS──► nova-api v3 (/v3/api/*)
 - The app talks **only** to `nova-api` v3. Never call Supabase Auth, Google APIs (beyond Sign-In), databases or devices directly.
 - `nova-api` v2 exists for the legacy web panel. **The app never uses v2.**
 - The live OpenAPI spec is the source of truth for request/response shapes: `GET <V3_BASE_URL>/v3/apispec_1.json` (Swagger UI at `/v3/swagger`, available while `SWAGGER_V3_ENABLED=true` on the server). When this file and the spec disagree, the spec wins — then update this file.
+- Local copies on the development machine: `D:\Git\Nova Residence\API\src\v3\openapi.json` (hand-written spec) and `APP-GUIDE.md` (backend guide for this app, including WebSocket `/v3/ws`, CIE commands and `/me/settings`). Backend changes needed by the app go only in `src/v3` of that repository — never `src/v2`.
 
 ---
 
@@ -61,6 +62,12 @@ feature/exhaust/
 ```
 
 Do not distribute a feature across global `ui/`, `data/`, `domain/` directories.
+
+---
+
+## UI e design
+
+Leia `DESIGN_GUIDE.md` antes de alterar interface. Ele define a hierarquia tipográfica, espaçamento, componentes e adaptação a janelas. Consulte os nós correspondentes pelo MCP do Figma e compare com o aplicativo renderizado; o Figma é uma referência visual revisável. Quando houver divergência, aplique o guia, valide no aparelho e registre a correção necessária no Figma. Mantenha textos funcionais em fonte Android/Material 3 e tokens compartilhados em `core/ui`.
 
 ---
 
@@ -168,6 +175,10 @@ Comments explain **why**, not **what**.
 ---
 
 ## Testing and Validation
+
+### Commits
+
+Follow `skills/commit/SKILL.md` for commit preparation, changelog updates and approval. Commit subjects and bodies must always be written in Brazilian Portuguese.
 
 Validate at the smallest useful scope first: unit tests for the changed logic, then feature tests, then the full suite.
 
@@ -359,7 +370,7 @@ Right after login (and on app resume), call `GET /residence/me` (Bearer). It dec
 
 ## Roles and Permissions
 
-`user.role` is `null` for regular accounts, or a staff role: `porteiro`, `sindico`, `admin`. A resident is an account with `role: null` whose residence is `ativo` with at least one unblocked unit. Staff may also be residents.
+`user.role` is `null` or `morador` for regular accounts, or a staff role: `porteiro`, `sindico`, `admin` (confirmed in the v3 OpenAPI). A resident is an account with `role: null` or `morador` whose residence is `ativo` with at least one unblocked unit. Staff may also be residents.
 
 | Feature | Endpoints | Who |
 |---|---|---|
@@ -373,14 +384,26 @@ Hide features the user cannot use, but always handle 403/404 anyway — the serv
 
 ## Exhaust Fans
 
+### Implementação Android das telas 14 a 20 (Figma de 30/09/2026)
+
+- O app envia `POST /exhausts/{id}/on` com `{ "minutes": 180 }`; a API agenda e executa o desligamento. O app nunca chama `/off` automaticamente.
+- **Reiniciar tempo** (tela 16): reenviar o mesmo `/on` com o exaustor ligado recalcula o `expiresAt` a partir de agora, sem mexer no relé. Só habilitado com `processStatus: executado`; o botão fica desabilitado durante o envio e nunca repete sozinho.
+- `command` (`ligar` | `desligar` | `null`) distingue "Ligando" (15) de "Desligando" (17): durante o desligamento a API já devolve `on: false` com `processStatus: iniciando`.
+- `maintenance: true` → tela 20 (selo "Manutenção", sem ação). `/on` responde 409 nesse caso; o app mostra o `detail` e não repete. O painel web v2 ignora a manutenção.
+- O contador usa somente `expiresAt` retornado pela API. Ao chegar a zero, apresenta finalização e continua consultando; somente a resposta do servidor confirma que desligou.
+- As consultas ocorrem enquanto a área logada está visível (home e tela do exaustor, pois a home mostra o estado — Figma 08b): a cada 5 segundos, ou 2 segundos durante transições. Respeitar `Retry-After`; nenhuma falha causa repetição automática do acionamento. O evento WebSocket `exhaust.changed` pode substituir essa consulta numa etapa futura.
+- A seleção do equipamento intersecta torre/final da unidade ativa com a lista autorizada de `/exhausts`. Não fabricar equipamentos ou permissões ausentes dessa lista.
+- Quando a resposta for inconclusiva, usar os textos aprovados “Não foi possível confirmar a ativação” e “Atualize o estado antes de tentar novamente”, sem afirmar proteção ou encerramento físico não confirmados.
+
 | Method | Path | Body | Returns |
 |---|---|---|---|
 | GET | `/exhausts` | — | 200 `Exhaust[]` (only the ones this user may see) |
-| POST | `/exhausts/{id}/on` | `{ minutes? }` (1–1440; omit = stays on until turned off) | 200 `Exhaust` |
+| POST | `/exhausts/{id}/on` | `{ minutes? }` (1–1440; omit = stays on until turned off; resend while on = restart timer) | 200 `Exhaust`; 409 in maintenance |
 | POST | `/exhausts/{id}/off` | — | 200 `Exhaust` |
+| PUT | `/exhausts/{id}/maintenance` | `{ maintenance }` | 200 `Exhaust` — `sindico`/`admin` only, not used by the app yet |
 
 ```json
-{ "id": "A4", "tower": "A", "final": 4, "on": true, "expiresAt": 1790636017000, "processStatus": "executado", "moduleOnline": true }
+{ "id": "A4", "tower": "A", "final": 4, "on": true, "expiresAt": 1790636017000, "processStatus": "executado", "moduleOnline": true, "command": "ligar", "maintenance": false }
 ```
 
 - `id` = tower + final digit of the apartment (A-124 → `A4`). The list already contains only what the user may operate — do not compute access in the app.
@@ -389,6 +412,14 @@ Hide features the user cannot use, but always handle 403/404 anyway — the serv
 - `moduleOnline: false` → disable the controls and say the device is offline.
 - Commands act on **physical hardware**: disable the button while a command is in flight; 10 commands per minute per account (429 + `Retry-After`); 503 = module offline.
 - 404 on a command means "not yours or does not exist" — refresh the list.
+
+## Preferências locais e telas 21 a 23
+
+- A unidade padrão foi removida do Figma e do app (30/09/2026). A unidade ativa é escolhida na tela 22 ("Selecionar unidade") com um toque; a seleção vale durante a sessão enquanto vinculada. No acesso seguinte vale a regra inicial (`selectResidenceUnit`). O seletor continua mostrando unidades bloqueadas com os motivos do contrato.
+- Configurações (21) exibe "Código Freedom" = `person.sequencia`. É o código do morador no cadastro do condomínio e ajuda no atendimento; exceção consciente à regra de não exibir identificadores internos.
+- Idioma é local; inglês e espanhol ficam desabilitados até existir tradução completa. `/me/settings` existe na API e pode sincronizar a preferência no futuro.
+- As preferências residenciais não contêm tokens; ficam em `feature/residence`. O armazenamento de sessão continua exclusivo de `core/session`.
+- Manter os dados demonstrativos fora das integrações reais. Mockups eventualmente necessários por ausência de contrato devem ser identificados como simulação e documentados na entrega.
 
 ## Fire Panel (CIE) — read-only
 
