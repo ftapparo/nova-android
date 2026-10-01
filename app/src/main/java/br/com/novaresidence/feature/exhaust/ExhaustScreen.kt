@@ -26,7 +26,6 @@ private val ExhaustOffline = Color(0xFF667085)
 private val ExhaustOfflineContainer = Color(0xFFEEF0F3)
 private val ExhaustSuccessContainer = Color(0x1A189D1F)
 private val ExhaustWarningContainer = Color(0xFFFFF4E5)
-private val ExhaustUnitContext = Color(0xFFF1F0F8)
 private val ExhaustIconContainer = Color(0xFFEEE4FA)
 private val ExhaustRunning = Color(0xFF2E7D32)
 
@@ -41,30 +40,23 @@ fun ExhaustScreen(
     val phase = state.phase
     val autoOff = "O exaustor será desligado automaticamente ao final do tempo programado."
     val copy = when (phase) {
-        ExhaustPhase.Off -> StateCopy("Desligado", "O exaustor está disponível para utilização.", NovaPrimary, autoOff)
-        ExhaustPhase.Starting -> StateCopy("Ligando", "Aguarde enquanto o exaustor é acionado.", NovaPrimary, "O acionamento pode levar alguns segundos.")
+        ExhaustPhase.Off -> StateCopy("Desligado", "O exaustor está disponível\npara utilização.", NovaPrimary, autoOff)
+        ExhaustPhase.Starting -> StateCopy("Ligando", "Aguarde enquanto o exaustor\né acionado.", NovaPrimary, "O acionamento pode levar alguns segundos.")
         ExhaustPhase.Running -> StateCopy("Ligado", "O exaustor está em funcionamento.", NovaSuccess, autoOff)
-        ExhaustPhase.Finishing -> StateCopy("Desligando", "O ciclo está sendo encerrado. Aguarde alguns instantes.", NovaPrimary, "O exaustor ficará disponível novamente após a finalização.")
-        ExhaustPhase.Offline -> StateCopy("Indisponível", "Sem comunicação com o exaustor. Tente novamente mais tarde.", ExhaustOffline, "O equipamento não pode ser utilizado enquanto estiver offline.")
-        ExhaustPhase.Maintenance -> StateCopy("Indisponível", "O exaustor está temporariamente indisponível para utilização.", NovaWarning, "O uso será liberado após a conclusão da manutenção.")
+        ExhaustPhase.Finishing -> StateCopy("Desligando", "O ciclo está sendo encerrado.\nAguarde alguns instantes.", NovaPrimary, "O exaustor ficará disponível novamente após a finalização.")
+        ExhaustPhase.Offline -> StateCopy("Indisponível", "Sem comunicação com o exaustor.\nTente novamente mais tarde.", ExhaustOffline, "O equipamento não pode ser utilizado enquanto estiver offline.")
+        ExhaustPhase.Maintenance -> StateCopy("Indisponível", "O exaustor está temporariamente\nindisponível para utilização.", NovaWarning, "O uso será liberado após a conclusão da manutenção.")
         // Resultado inconclusivo (falha de rede ou resposta de erro) mantém os textos aprovados: não afirmamos que falhou.
         ExhaustPhase.Error -> if (state.error != null) StateCopy("Não foi possível confirmar a ativação", "Atualize o estado antes de tentar novamente.", NovaDanger, "Se o problema continuar, informe a administração do condomínio.")
-            else StateCopy("Falha na ativação", "Não foi possível ligar o exaustor. Tente novamente.", NovaDanger, "Se o problema continuar, informe a administração do condomínio.")
+            else StateCopy("Falha na ativação", "Não foi possível ligar o exaustor.\nTente novamente.", NovaDanger, "Se o problema continuar, informe a administração do condomínio.")
         ExhaustPhase.Loading -> StateCopy("Consultando", "Aguarde enquanto consultamos o estado do equipamento.", NovaPrimary, autoOff)
         ExhaustPhase.Unavailable -> StateCopy("Indisponível", blockedMessage ?: if (unitLabel == null) "Selecione uma unidade vinculada para consultar seu exaustor." else "Nenhum exaustor disponível para esta unidade.", ExhaustOffline, "O estado exibido é exclusivo do equipamento da sua unidade.")
     }
     Column(Modifier.fillMaxSize().background(NovaBackground)) {
         NovaTopBar("Exaustor", back)
-        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).background(ExhaustUnitContext).clickable(onClick = selectUnit).padding(horizontal = 20.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("▦", Modifier.width(18.dp), style = MaterialTheme.typography.bodySmall, color = NovaPrimary, textAlign = TextAlign.Center)
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Unidade ativa", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(unitLabel ?: "Nenhuma unidade ativa", style = MaterialTheme.typography.labelMedium, color = NovaHeader)
-            }
-        }
+        NovaUnitContext(unitLabel, NovaContextSubtle, selectUnit)
         BoxWithConstraints(Modifier.weight(1f)) {
-            val horizontal = if (maxWidth < 400.dp) 16.dp else 24.dp
+            val horizontal = 24.dp
             val available = maxHeight
             Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = available),
                 verticalArrangement = Arrangement.SpaceBetween) {
@@ -72,17 +64,17 @@ fun ExhaustScreen(
                     state.exhaust?.let { EquipmentIdentity(it, horizontal) }
                     Column(Modifier.fillMaxWidth().padding(start = horizontal, end = horizontal, top = 36.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("Estado de operação", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(copy.title, Modifier.semantics { heading() }, fontSize = 26.sp, lineHeight = 30.sp, fontWeight = FontWeight.SemiBold, color = copy.color)
+                        Text(copy.title, Modifier.semantics { heading() }, fontSize = 26.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold, color = copy.color)
                         if (phase in setOf(ExhaustPhase.Starting, ExhaustPhase.Finishing, ExhaustPhase.Loading)) {
                             LinearProgressIndicator(Modifier.fillMaxWidth().height(8.dp), color = NovaPrimary, trackColor = MaterialTheme.colorScheme.primaryContainer)
                         } else Box(Modifier.size(41.dp, 4.dp).background(copy.color, RoundedCornerShape(2.dp)))
-                        Text(copy.description, style = MaterialTheme.typography.bodyMedium)
+                        Text(copy.description, style = MaterialTheme.typography.bodyMedium.copy(letterSpacing = 0.5.sp), color = NovaOnSurface)
                         if (phase == ExhaustPhase.Running) state.remainingHoursMinutes()?.let { RemainingTime(it) }
                         if (phase == ExhaustPhase.Error) state.error?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         state.requestId?.let { Text("Referência para suporte: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                 }
-                Column(Modifier.fillMaxWidth().padding(start = horizontal, end = horizontal, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.fillMaxWidth().padding(start = horizontal, end = horizontal, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     if (state.retrySeconds > 0) Text("Tente novamente em ${state.retrySeconds}s", style = MaterialTheme.typography.bodyMedium)
                     when (phase) {
                         ExhaustPhase.Off -> NovaButton("Ligar exaustor", activate, enabled = state.canActivate && blockedMessage == null)
@@ -93,10 +85,7 @@ fun ExhaustScreen(
                         else -> Unit
                     }
                     HorizontalDivider(color = NovaOutline)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("✓", Modifier.width(18.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                        Text(copy.note, style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    NovaFootnote(copy.note)
                 }
             }
         }

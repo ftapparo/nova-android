@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Logo do splash (Figma 01: 210 × 70 dp em 412 dp de largura). Telas mais estreitas usam a
+         mesma proporção do Figma, igual à densidade proporcional aplicada no Compose. -->
+    <dimen name="nova_splash_logo_width">184dp</dimen>
+    <dimen name="nova_splash_logo_height">61dp</dimen>
+</resources>

@@ -1,10 +1,13 @@
 package br.com.novaresidence.feature.residence
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -13,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -21,9 +25,11 @@ import br.com.novaresidence.BuildConfig
 import br.com.novaresidence.core.session.AuthUser
 import br.com.novaresidence.core.ui.*
 
-internal enum class ResidencePage { Home, Exhaust, Profile, SelectUnit, SelectLanguage }
+internal enum class ResidencePage { Home, Fire, Exhaust, Profile, SelectUnit, SelectLanguage }
 
-private val SettingsNote = Color(0xFFECEBF3)
+// Margem lateral das telas 21–23 no Figma.
+private val Margin = 24.dp
+private val RadioOutline = Color(0xFF49454F)
 
 @Composable
 internal fun ResidenceSettings(
@@ -43,63 +49,62 @@ internal fun ResidenceSettings(
     Column(Modifier.fillMaxSize().background(NovaBackground)) {
         NovaTopBar(title, back)
         BoxWithConstraints(Modifier.weight(1f)) {
-            val available = maxHeight
-            val horizontal = if (maxWidth < 400.dp) 16.dp else 24.dp
             Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxWidth()
-                .verticalScroll(rememberScrollState()).heightIn(min = available), verticalArrangement = Arrangement.SpaceBetween) {
-                Column(Modifier.fillMaxWidth().padding(top = if (page == ResidencePage.Profile) 16.dp else 0.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                .verticalScroll(rememberScrollState()).heightIn(min = maxHeight), verticalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (page == ResidencePage.Profile) 4.dp else 5.dp)) {
                     when (page) {
                         ResidencePage.Profile -> {
-                            SettingsHeading("Conta", horizontal)
+                            Spacer(Modifier.height(12.dp))
+                            SectionLabel("Conta")
                             val person = state.residence?.person
-                            SettingsRow(person?.nome?.takeIf { it.isNotBlank() } ?: "Conta Nova Residence", horizontal, listOfNotNull(
+                            SettingsRow(person?.nome?.takeIf { it.isNotBlank() }?.personName() ?: "Conta Nova Residence", listOfNotNull(
                                 user.email?.let { "E-mail: $it" },
                                 person?.let { "Código Freedom: ${it.sequencia}" },
                             ))
-                            SettingsHeading("Unidade", horizontal)
-                            SettingsRow("Minhas unidades", horizontal, listOf(if (units.size == 1) "1 unidade vinculada" else "${units.size} unidades vinculadas"),
+                            SectionLabel("Unidade")
+                            SettingsRow("Minhas unidades", listOf(if (units.size == 1) "1 unidade vinculada" else "${units.size} unidades vinculadas"),
                                 click = if (units.isEmpty()) null else ({ navigate(ResidencePage.SelectUnit) }))
-                            SettingsHeading("Preferências", horizontal)
-                            SettingsRow("Idioma", horizontal, listOf("Português (Brasil)")) { navigate(ResidencePage.SelectLanguage) }
-                            HorizontalDivider(Modifier.padding(horizontal = horizontal, vertical = 16.dp), color = NovaOutline)
-                            TextButton(logout, Modifier.fillMaxWidth().padding(horizontal = horizontal).heightIn(min = 48.dp), enabled = !busy,
-                                colors = ButtonDefaults.textButtonColors(contentColor = NovaDanger)) { Text("Desconectar", style = MaterialTheme.typography.labelLarge) }
+                            SectionLabel("Preferências")
+                            SettingsRow("Idioma", listOf("Português (Brasil)")) { navigate(ResidencePage.SelectLanguage) }
+                            // O link ocupa 48 dp de toque; 2 dp + 14 dp internos reproduzem os 16 dp do Figma abaixo do divisor.
+                            HorizontalDivider(Modifier.padding(start = Margin, end = Margin, top = 16.dp, bottom = 2.dp), color = NovaOutline)
+                            NovaTextLink("Desconectar", logout, Modifier.padding(horizontal = Margin), enabled = !busy, color = NovaDanger)
                             if (busy) NovaLoading()
                         }
                         ResidencePage.SelectUnit -> {
-                            Guidance("Selecione a unidade que deseja usar no aplicativo.", horizontal)
-                            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Guidance("Selecione a unidade que deseja usar no aplicativo.")
+                            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                                 units.forEach { entry ->
                                     val selected = entry.sequencia == state.selectedUnit
-                                    SettingsChoice(entry.selectorLabel(), entry.blockedMessage() ?: if (selected) "Unidade selecionada" else "Unidade vinculada", selected, horizontal, minHeight = 68.dp) {
+                                    SettingsChoice(entry.selectorLabel(), entry.blockedMessage() ?: if (selected) "Unidade selecionada" else "Unidade vinculada", selected, minHeight = 68.dp) {
                                         select(entry.sequencia)
                                     }
                                 }
                             }
-                            if (units.isEmpty()) Text(state.residence?.notice() ?: "Nenhuma unidade vinculada.", Modifier.padding(horizontal = horizontal), style = MaterialTheme.typography.bodyMedium)
-                            Row(Modifier.padding(start = horizontal, end = horizontal, top = 32.dp).fillMaxWidth().background(SettingsNote, RoundedCornerShape(12.dp)).padding(16.dp),
+                            if (units.isEmpty()) Text(state.residence?.notice() ?: "Nenhuma unidade vinculada.", Modifier.padding(horizontal = Margin), style = MaterialTheme.typography.bodyMedium)
+                            Row(Modifier.padding(start = Margin, end = Margin, top = 32.dp).fillMaxWidth().background(NovaSecondaryContainer, RoundedCornerShape(12.dp)).padding(16.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("i", Modifier.width(20.dp), style = MaterialTheme.typography.labelLarge, color = NovaPrimary, textAlign = TextAlign.Center)
-                                Text("Os vínculos são atualizados pelo cadastro do condomínio.", style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Os vínculos são atualizados pelo cadastro do condomínio.", fontSize = 13.sp, lineHeight = 16.sp, color = NovaOnSurfaceVariant)
                             }
                         }
                         ResidencePage.SelectLanguage -> {
-                            Guidance("O aplicativo será exibido no idioma escolhido.", horizontal)
+                            Guidance("O aplicativo será exibido no idioma escolhido.")
                             // Inglês e espanhol aparecem no Figma, mas ficam desabilitados até existir tradução completa.
-                            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                SettingsChoice("Português (Brasil)", null, true, horizontal) {}
-                                SettingsChoice("English", null, false, horizontal, enabled = false) {}
-                                SettingsChoice("Español", null, false, horizontal, enabled = false) {}
+                            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                SettingsChoice("Português (Brasil)", null, true) {}
+                                SettingsChoice("English", null, false, enabled = false) {}
+                                SettingsChoice("Español", null, false, enabled = false) {}
                             }
                         }
                         else -> Unit
                     }
-                    state.preferenceError?.let { Box(Modifier.padding(horizontal = horizontal, vertical = 8.dp)) { NovaNotice(it) } }
+                    state.preferenceError?.let { Box(Modifier.padding(horizontal = Margin, vertical = 8.dp)) { NovaNotice(it) } }
                     if (state.savingPreference) NovaLoading()
                 }
-                Column(Modifier.fillMaxWidth().padding(horizontal = horizontal, vertical = 24.dp)) {
+                Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp)) {
                     when (page) {
-                        ResidencePage.Profile -> Text("v${BuildConfig.VERSION_NAME}", Modifier.fillMaxWidth(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                        ResidencePage.Profile -> Text("v${BuildConfig.VERSION_NAME}", Modifier.fillMaxWidth(), fontSize = 12.sp, lineHeight = 16.sp, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
                         ResidencePage.SelectLanguage -> NovaButton("Salvar idioma", saveLanguage, enabled = !state.savingPreference)
                         else -> Unit
                     }
@@ -110,36 +115,39 @@ internal fun ResidenceSettings(
 }
 
 @Composable
-private fun Guidance(text: String, horizontal: Dp) {
-    Text(text, Modifier.fillMaxWidth().padding(horizontal = horizontal, vertical = 16.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun Guidance(text: String) {
+    Text(text, Modifier.fillMaxWidth().padding(horizontal = Margin, vertical = 16.dp), style = MaterialTheme.typography.bodyMedium.copy(letterSpacing = 0.sp), color = NovaOnSurfaceVariant)
 }
 
 @Composable
-private fun SettingsHeading(title: String, horizontal: Dp) {
-    Text(title, Modifier.fillMaxWidth().padding(start = horizontal, end = horizontal, top = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun SectionLabel(title: String) {
+    Text(title, Modifier.fillMaxWidth().padding(horizontal = Margin), fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, color = NovaOnSurfaceVariant)
 }
 
 @Composable
-private fun SettingsRow(title: String, horizontal: Dp, details: List<String>, click: (() -> Unit)? = null) {
-    Surface(onClick = { click?.invoke() }, enabled = click != null, color = Color.White) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = horizontal, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
-                details.forEach { Text(it, style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            }
-            if (click != null) Text("›", fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun SettingsRow(title: String, details: List<String>, click: (() -> Unit)? = null) {
+    Row(Modifier.fillMaxWidth().background(Color.White).then(if (click != null) Modifier.clickable(role = Role.Button, onClick = click) else Modifier)
+        .heightIn(min = 48.dp).padding(horizontal = Margin, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = NovaOnSurface)
+            details.forEach { Text(it, fontSize = 13.sp, lineHeight = 18.sp, color = NovaOnSurfaceVariant) }
         }
+        if (click != null) Text("›", fontSize = 22.sp, lineHeight = 24.sp, color = NovaOnSurfaceVariant)
     }
 }
 
+/** Linha de escolha do Figma (22/23): texto à esquerda e rádio de 20 dp à direita, com 24 dp de margem. */
 @Composable
-private fun SettingsChoice(title: String, subtitle: String?, selected: Boolean, horizontal: Dp, enabled: Boolean = true, minHeight: Dp = 64.dp, click: () -> Unit) {
+private fun SettingsChoice(title: String, subtitle: String?, selected: Boolean, enabled: Boolean = true, minHeight: Dp = 64.dp, click: () -> Unit) {
     Row(Modifier.fillMaxWidth().background(Color.White).selectable(selected, enabled = enabled, role = Role.RadioButton, onClick = click)
-        .heightIn(min = minHeight).padding(start = horizontal, end = 12.dp, top = 8.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        .heightIn(min = minHeight).padding(horizontal = Margin, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = MaterialTheme.typography.labelLarge, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
-            subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            Text(title, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = if (enabled) NovaOnSurface else NovaDisabledContent)
+            subtitle?.let { Text(it, fontSize = 13.sp, lineHeight = 18.sp, color = NovaOnSurfaceVariant) }
         }
-        RadioButton(selected, onClick = null, enabled = enabled, modifier = Modifier.size(48.dp), colors = RadioButtonDefaults.colors(selectedColor = NovaPrimary))
+        val ring = when { !enabled -> NovaDisabledContent; selected -> NovaPrimary; else -> RadioOutline }
+        Box(Modifier.size(20.dp).border(2.dp, ring, CircleShape), contentAlignment = Alignment.Center) {
+            if (selected) Box(Modifier.size(8.dp).background(ring, CircleShape))
+        }
     }
 }

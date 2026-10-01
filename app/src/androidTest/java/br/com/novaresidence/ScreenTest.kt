@@ -14,6 +14,7 @@ import br.com.novaresidence.core.ui.NovaSplash
 import br.com.novaresidence.feature.auth.*
 import br.com.novaresidence.feature.residence.*
 import br.com.novaresidence.feature.exhaust.*
+import br.com.novaresidence.feature.fire.*
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -75,11 +76,11 @@ class ScreenTest {
         capture("recovery")
         compose.runOnIdle { model.navigate(AuthPage.RecoveryConfirm) }
         compose.onNodeWithText("Se houver uma conta com este e-mail, você receberá um código de 6 dígitos. Ele expira em 15 minutos.").assertIsDisplayed()
+        compose.onNodeWithText("Validar conta").assertIsDisplayed()
         capture("recovery_confirm")
         compose.runOnIdle { model.navigate(AuthPage.ChangePassword) }
         compose.onNodeWithText("Senha atual").assertIsDisplayed()
         capture("password_change")
-        compose.onNodeWithText("Validar conta").assertIsDisplayed()
         compose.runOnIdle { model.navigate(AuthPage.Error); model.showMessage("E-mail ou senha incorretos.") }
         compose.onNodeWithText("Confira seus dados de acesso e sua senha ou recupere seu acesso.").assertIsDisplayed()
         capture("auth_error")
@@ -109,11 +110,11 @@ class ScreenTest {
         val second = first.copy(sequencia = 2, quadra = "A", label = "A-84", blocked = true, blockedReason = "nao-morador")
         var state by mutableStateOf(ResidenceState(Residence("ativo", false, ResidencePerson(91, "Morador de teste"), listOf(first, second)), 1))
         compose.setContent { NovaResidenceTheme { ResidenceScreen(state, user, { state = state.copy(selectedUnit = it) }, {}, {}, false,
-            exhaustStatus = ExhaustHomeStatus("Disponível para utilização.", false)) } }
+            exhaustStatus = ServiceStatus("Disponível para utilização.")) } }
         compose.onNodeWithText("Olá, Morador").assertIsDisplayed()
         compose.onNodeWithText("Apto. 84 - Torre B").assertIsDisplayed()
         compose.onNodeWithText("Disponível para utilização.").assertIsDisplayed()
-        compose.onNodeWithText("Nenhuma mensagem nova").assertDoesNotExist()
+        compose.onNodeWithText("Nenhuma mensagem nova").assertIsDisplayed()
         compose.onNodeWithText("Manutenção programada").assertDoesNotExist()
         capture("home")
         compose.onNodeWithText("Apto. 84 - Torre B").performClick()
@@ -125,7 +126,7 @@ class ScreenTest {
         compose.onNodeWithContentDescription("Voltar").performClick()
         compose.onNodeWithText("Você não consta como morador desta unidade.").assertIsDisplayed()
         capture("home_unit_blocked")
-        compose.onNodeWithText("Configurações").performClick()
+        compose.onNodeWithText("Perfil").performClick()
         capture("settings")
         compose.onNodeWithText("Início").performClick()
         compose.runOnIdle { state = ResidenceState(Residence("pendente", true, null, emptyList())) }
@@ -169,12 +170,12 @@ class ScreenTest {
         compose.setContent {
             NovaResidenceTheme {
                 ResidenceScreen(residence, AuthUser("test", null, "morador", false), {}, {}, {}, false,
-                    exhaustStatus = ExhaustHomeStatus(state.homeSummary(), state.phase == ExhaustPhase.Running)) { current, back, selectUnit ->
+                    exhaustStatus = ServiceStatus(state.homeSummary())) { current, back, selectUnit, _ ->
                     ExhaustScreen(state, current?.homeLabel(), null, { commands++ }, { restarts++ }, {}, back, selectUnit)
                 }
             }
         }
-        compose.onAllNodesWithText("Exaustor").onLast().performClick()
+        compose.onNodeWithText("Exaustores").performClick()
         compose.onNodeWithText("Torre B · Prumada 4").assertIsDisplayed()
         compose.onNodeWithText("Ligar exaustor").performScrollTo().assertIsEnabled()
         capture("exhaust_off")
@@ -216,7 +217,7 @@ class ScreenTest {
         compose.setContent { NovaResidenceTheme {
             ResidenceScreen(state, AuthUser("test", "resident@example.com", "morador", false), { state = state.copy(selectedUnit = it) }, {}, {}, false)
         } }
-        compose.onNodeWithText("Configurações").performClick()
+        compose.onNodeWithText("Perfil").performClick()
         compose.onNodeWithText("E-mail: resident@example.com").assertIsDisplayed()
         compose.onNodeWithText("Código Freedom: 91").assertIsDisplayed()
         compose.onNodeWithText("Desconectar").performScrollTo().assertIsEnabled()
@@ -232,5 +233,47 @@ class ScreenTest {
         compose.onNodeWithText("English").assertIsNotEnabled()
         compose.onNodeWithText("Salvar idioma").performScrollTo().assertIsEnabled()
         capture("language_selection")
+    }
+
+    @Test fun fireScreensShowStatusAlarmHistoryAndDetail() {
+        // Dados fictícios: este teste não consulta a API nem a central real.
+        val alarmLog = CieLog("alarme:1", "alarme", 1, zone = 2, deviceName = "8 ANDAR B T-B", zoneName = "TORRE B", deviceTypeLabel = "Detector de fumaça", occurredAt = "2026-09-21T18:48:10.000Z")
+        val failure = CieLog("falha:2", "falha", 2, deviceName = "3 ANDAR T-A", zoneName = "TORRE A", deviceTypeLabel = "Acionador Manual", occurredAt = "2026-09-20T12:00:00.000Z")
+        val normal = FireState(CiePanel(online = true, connected = true, lastUpdated = 0), CieAlarms(false), loading = false, history = listOf(alarmLog, failure))
+        var state by mutableStateOf(normal)
+        val unit = ResidenceUnit(1, "A", "124", "A-124", true, false, true, false, null)
+        compose.setContent {
+            NovaResidenceTheme {
+                ResidenceScreen(ResidenceState(Residence("ativo", false, ResidencePerson(91, "MORADOR DE TESTE"), listOf(unit)), 1),
+                    AuthUser("test", null, "morador", false), {}, {}, {}, false,
+                    fireStatus = ServiceStatus(state.homeSummary(), state.homeAlarmTitle(), if (state.status == FireStatus.Alarm) ServiceTone.Alarm else ServiceTone.Neutral),
+                    fireContent = { current, back, selectUnit, fullScreen -> FireFeature(state, current?.homeLabel(), back, selectUnit, {}, {}, fullScreen) })
+            }
+        }
+        compose.onNodeWithText("Nenhum alarme de incêndio ativo.").assertIsDisplayed()
+        compose.onNodeWithText("Alarme").performClick()
+        compose.onNodeWithText("Sistema normal").assertIsDisplayed()
+        capture("fire_normal")
+        compose.runOnIdle { state = normal.copy(alarms = CieAlarms(false, CieCounters(falha = 1))) }
+        compose.onNodeWithText("Verificação necessária").assertIsDisplayed()
+        capture("fire_attention")
+        compose.onNodeWithText("Ver histórico de eventos").performClick()
+        compose.onNodeWithText("2 eventos").assertIsDisplayed()
+        compose.onNodeWithText("Torre B · 8º andar · Detector de fumaça").assertIsDisplayed()
+        compose.onNodeWithText("Perfil").assertDoesNotExist()
+        capture("fire_history")
+        compose.onNodeWithText("Alarme de incêndio").performClick()
+        compose.onNodeWithText("Detalhe do evento").assertIsDisplayed()
+        capture("fire_event")
+        compose.onNodeWithText("Fechar").performClick()
+        compose.onNodeWithContentDescription("Voltar").performClick()
+        compose.runOnIdle { state = normal.copy(alarms = CieAlarms(true, CieCounters(alarme = 1), listOf(alarmLog))) }
+        compose.onNodeWithText("ALARME DE INCÊNDIO").assertIsDisplayed()
+        compose.onNodeWithText("Torre B").assertIsDisplayed()
+        compose.onNodeWithText("8º andar").assertIsDisplayed()
+        capture("fire_alarm")
+        compose.onNodeWithContentDescription("Voltar").performClick()
+        compose.onNodeWithText("Alarme disparado - Torre B - Andar 8").assertIsDisplayed()
+        capture("home_fire_alarm")
     }
 }

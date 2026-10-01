@@ -1,12 +1,5 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-  <path
-      android:pathData="M20,12L4,12M4,12L11,5M4,12L11,19"
-      android:strokeColor="#1F2933"
-      android:strokeWidth="2"
-      android:strokeLineCap="round"
-      android:strokeLineJoin="round"/>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exportado do Figma (kixzSbydhXP4k7qTSKWJbK). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:pathData="M15 18L9 12L15 6" android:strokeColor="#FF1F2933" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
 </vector>

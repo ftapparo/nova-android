@@ -7,7 +7,7 @@ Guia de produto para o app Android. Objetivo: interface profissional, minimalist
 1. Uma ação primária por região. Ações secundárias não devem parecer igualmente importantes.
 2. Hierarquia por papel: barra, título da página, seção, corpo e legenda têm estilos distintos.
 3. Reduzir espaços, superfícies e ornamentos desnecessários antes de diminuir texto essencial ou alvo de toque.
-4. Usar dp para layout e sp para texto. Nunca escalar a interface inteira por densidade, modelo ou tamanho do frame.
+4. Usar dp para layout e sp para texto, com os valores do Figma. Em telas mais estreitas que o frame de 412 dp, a interface recebe densidade proporcional (decisão de 01/10/2026, ver seção 6); a escala de fonte do sistema continua valendo.
 5. Respeitar fontScale, texto longo, teclado, insets, rotação e janelas redimensionáveis.
 6. Cores, tipografia e formas são tokens compartilhados; telas não inventam estilos locais sem justificativa.
 
@@ -19,7 +19,7 @@ Estes são **tokens de produto propostos**, uma personalização permitida pelo 
 
 | Papel | Tamanho / linha | Peso | Uso |
 |---|---:|---|---|
-| Barra superior | 18/24 sp | Medium | Nome curto da tela |
+| Barra superior | 18/24 sp | Regular | Nome curto da tela, com chevron de voltar |
 | Título principal | 20/26 sp | Medium | Uma vez por tela |
 | Seção, serviço, linha principal | 16/22 sp | Medium | Agrupamentos e listas |
 | Corpo e apoio | 14/20 sp | Normal | Instruções e descrições |
@@ -47,8 +47,9 @@ Escala base: **4, 8, 12, 16, 24 e 32 dp**. Usar 20 dp como possível margem late
 | Campos relacionados | 12–16 dp |
 | Blocos da mesma seção | 16 dp |
 | Seções distintas | 24 dp |
-| Margem em telefone 360–399 dp | 16 dp |
-| Margem em telefone 400–599 dp | 20–24 dp |
+| Margem de autenticação, home e central | 28 dp (20 + 8 do Figma) |
+| Margem de exaustor e configurações | 24 dp |
+| Margem da tela de boas-vindas | 20 dp (ações com 28 dp) |
 
 Alinhar título, campos, divisores e ações à mesma grade. Evitar texto longo centralizado. Usar espaço ou divisor simples em vez de vários cartões aninhados. Espaço vazio deve ter finalidade; eliminar cadeias de Spacer(20.dp) em formulários.
 
@@ -67,7 +68,15 @@ Paleta existente como ponto de partida: roxo primário #45207A; roxo escuro #2E0
 
 ### Barra
 
-Altura visual alvo 56–64 dp; título 18/24 sp Medium. Aplicar o inset de status apenas uma vez. O ícone de voltar atual de 5 × 10 dp deve ser revisto visualmente, preservando o alvo de 48 dp.
+Altura 56 dp, fundo da tela, título 18/24 sp Regular e chevron (Lucide `chevron-left`, 24 dp) em alvo de 48 dp. Aplicar o inset de status apenas uma vez.
+
+### Navegação inferior (revisada em 01/10/2026)
+
+Segue o componente **Navigation bar** do Figma (157:1183) e os conjuntos "… Menu Button": 72 dp de altura, fundo branco, borda superior de 1 dp #E3E6ED e sombra para cima (0 −2 8 rgba(64,52,80,.1)); padding 0/8/12/8, botões de 60 dp. Item normal: ícone 24 dp #6B7280 em área 64 × 32 e rótulo 11/16 sp Medium (**Início · Alarme · Exaustores · Perfil**). Item selecionado: quadrado #45207A de 40 dp com raio 15, ícone branco e sem rótulo visível (o rótulo vira descrição de acessibilidade). Oculta nas telas 12, 13, 22 e 23, como no Figma.
+
+### Barra de navegação do sistema
+
+Em aparelhos com botões fixos (ex.: Galaxy J4), a barra dos botões do Android fica **preta com ícones claros** em todo o app, do splash nativo (tema) às telas (`enableEdgeToEdge(navigationBarStyle = SystemBarStyle.dark(BLACK))`), para integrar-se à moldura do aparelho. O menu inferior do app fica acima dela; os botões não são ocultados (modo imersivo atrapalharia o menu e o "voltar").
 
 ### Formulários
 
@@ -90,14 +99,14 @@ Usar o componente Material 3 sem adicionar um segundo espaço para a barra do si
 
 ## 6. Densidade e adaptação
 
-dp já compensa densidade física; sp também responde à escala de fonte. **Não usar LocalDensity para neutralizar fontScale nem reduzir tudo por fator global.** Adaptar composição conforme largura e altura úteis da janela, depois dos insets.
+**Decisão de produto (01/10/2026):** o app deve ficar proporcionalmente idêntico ao Figma. `NovaResidenceTheme` aplica densidade proporcional quando a janela é mais estreita que 412 dp (no Galaxy J4, 360 dp, um texto de 14 sp ocupa o mesmo espaço relativo do Figma). Janelas iguais ou maiores mantêm a densidade real e usam largura máxima nos conteúdos. A escala de fonte do sistema continua aplicada. O splash nativo usa `@dimen/nova_splash_logo_*` por largura (`values-w412dp`) para ter o mesmo tamanho do splash Compose. Adaptar composição conforme largura e altura úteis da janela, depois dos insets.
 
 Classes oficiais de largura: compacta < 600 dp, média 600–839 dp, expandida ≥ 840 dp. O corte de 400 dp abaixo é regra específica deste produto, não nova classe Material 3.
 
 | Espaço disponível | Regra de composição |
 |---|---|
-| 360–399 dp de largura | Margem 16 dp; ações empilhadas; quebra natural de texto |
-| 400–599 dp | Margem 20–24 dp; mesma escala tipográfica |
+| < 412 dp de largura | Densidade proporcional ao Figma; mesmas margens e quebras do frame |
+| 412–599 dp | Valores do Figma em dp/sp reais |
 | ≥ 600 dp | Formulário centralizado com largura máxima aproximada de 480 dp; conteúdo legível; avaliar NavigationRail |
 | Altura útil < 700 dp | Reduzir intervalos e imagens dispensáveis; rolar; não diminuir automaticamente fonte ou alvo |
 | Teclado visível | Campo, erro e ação alcançáveis; IME sem sobreposição |

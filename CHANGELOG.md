@@ -4,6 +4,8 @@
 
 ### Adicionado
 
+- Central de incêndio (telas 08c e 09–13) em `feature/fire`, somente leitura: estado normal, atenção, sem comunicação e alarme ativo, histórico de 30 dias com paginação por cursor e detalhe do evento. Consulta a cada 10 s enquanto a área logada está visível.
+- Ícones exportados do Figma e densidade proporcional ao frame de 412 dp em telas mais estreitas.
 - Figma concluído da 1ª etapa: tela 20 (exaustor em manutenção), botão "Reiniciar tempo" (tela 16, reenvio do `/on` com 180 minutos) e estado real do exaustor na home (08b).
 - Suporte aos campos `command` e `maintenance` do exaustor, criados na API v3 nesta entrega.
 - Fluxo de commits com revisão, mensagens completas em português brasileiro, changelog e aprovação explícita.
@@ -17,6 +19,9 @@
 
 ### Alterado
 
+- Menu inferior refeito a partir do novo componente do Figma: item selecionado em quadrado roxo com ícone branco, barra de 72 dp com borda e sombra superiores.
+- Barra dos botões do Android preta com ícones claros do splash até as telas, em vez do cinza-claro padrão que aparecia em aparelhos como o Galaxy J4.
+- Revisão completa contra o Figma no J410G: autenticação, home, exaustor, configurações, barra superior com chevron, navegação inferior ("Início · Alarme · Exaustores · Perfil", sem borda e com sombra) e splash com o mesmo tamanho de logo no nativo e no Compose.
 - Telas 02–08, 14–19 e 21–23 atualizadas para o Figma renumerado: Google e cadastro nas boas-vindas; login só com e-mail e senha; validação com reenvio em botão; home com "Apto. 124 - Torre A" e linhas de serviço com estado; exaustor com identidade do equipamento e estado de operação; configurações com e-mail e Código Freedom; seleção de unidade por rádio; navegação "Exaustor" e "Configurações".
 - "Desligando" passa a ser identificado pela direção do comando retornada pela API, e não mais exibido como "Ligando".
 - Hierarquia tipográfica, espaçamentos, margens adaptativas, formulários, navegação e estados do exaustor conforme `DESIGN_GUIDE.md` e o Figma revisado, com comparação no J410G.

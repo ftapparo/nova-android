@@ -31,6 +31,13 @@ fun ResidenceUnit.blockedMessage(): String? = if (!blocked) null else when (bloc
     else -> "O acesso a esta unidade está bloqueado. Fale com a administração."
 }
 
+private val NameParticles = setOf("da", "das", "de", "do", "dos", "e")
+
+/** "FLAVIO EDUARDO DE SOUZA" (cadastro do ERP) → "Flavio Eduardo de Souza". */
+fun String.personName(): String = trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }.mapIndexed { index, word ->
+    if (index > 0 && word in NameParticles) word else word.replaceFirstChar { it.titlecase() }
+}.joinToString(" ")
+
 /** Formato da home e do exaustor (Figma 08a/14): "Apto. 124 - Torre A". */
 fun ResidenceUnit.homeLabel(): String = "Apto. ${lote.trim()} - Torre ${quadra.trim()}"
 

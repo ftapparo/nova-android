@@ -119,3 +119,35 @@ O arquivo foi renumerado. Referências novas: 08a–08e (variações da home), 1
 
 - API: rota de mensagens/comunicados para 08d/08e; o painel v2 não respeita a manutenção.
 - App: nada foi executado nesta entrega (sem build, lint, testes nem capturas); validação a fazer em conjunto.
+
+## Revisão completa contra o Figma — 01/10/2026
+
+Após o teste no J410G, várias telas ainda reproduziam a estrutura anterior. Todas as telas foram refeitas com os valores do design context do MCP e conferidas lado a lado (PNG do nó × captura do aparelho, mesma escala).
+
+- **Densidade proporcional:** o J410G tem 360 dp; o Figma, 412 dp. Por decisão do produto, telas mais estreitas recebem densidade proporcional (`NovaResidenceTheme`), e margens, quebras e proporções ficam iguais às do Figma. A escala de fonte do sistema continua aplicada. `DESIGN_GUIDE.md` foi atualizado.
+- **Ícones:** exportados do Figma como SVG pela API de plugin (somente leitura) e convertidos em vetores: chevron de voltar, casa, chama, ventilador, usuário, prédio, histórico, sirene, círculo-x, rota, microfone desligado, rádio e chevrons.
+- **Barra superior:** chevron, título 18/24 Regular e fundo da tela.
+- **Autenticação (02–07):** margens de 28 dp; espaçamentos de 16 dp descontando os 8 dp internos do campo Material; Google e cadastro na tela de boas-vindas; "Esqueci minha senha" como link; placeholder e legenda #49454F; tela de erro sem referência técnica.
+- **Home (08a/08b/08c):** cabeçalho com margem de 28 dp e primeiro nome formatado, linhas de serviço de 12 sp com chevron Material, status real do exaustor e da central, faixa "Nenhuma mensagem nova" (estado vazio; não há rota de comunicados).
+- **Central de incêndio (09–13):** implementada em `feature/fire`, somente leitura, com dados reais da API.
+- **Exaustor (14–20):** componentes compartilhados, margem de 24 dp, quebras de linha do Figma e botão primário desabilitado em roxo translúcido.
+- **Configurações e seleção (21–23):** rótulos de seção, linhas, rádio de 20 dp e nome em caixa de título.
+- **Navegação inferior:** "Início · Alarme · Exaustores · Perfil", sem borda superior e com sombra projetada para cima, oculta em 12, 13, 22 e 23.
+- **Splash:** o splash nativo usava 244 × 98 dp e o Compose centralizava descontando as barras, o que fazia o logo "encolher". Os dois agora usam o mesmo `@dimen/nova_splash_logo_*` (210 × 70 dp no Figma, proporcional no J4) e o mesmo centro. Medido no aparelho: logo com 39% da largura em todas as capturas, como no Figma.
+
+### Divergências mantidas ou a corrigir no Figma
+
+1. A tela 09/10 diz "Você será avisado se o estado da central mudar"; sem push nativo, o app diz que o estado é atualizado enquanto o aplicativo estiver aberto.
+2. O menu do Figma alterna entre "Exaustor/Configurações" (14–21) e "Exaustores/Perfil" (08–11). O app segue 08a e a orientação do produto: "Exaustores" e "Perfil", sem borda.
+3. O nó do menu ainda tem `border-t`; por orientação do produto, o app usa somente sombra.
+4. Textos de contrato mantidos: código de 15 minutos com resposta genérica (05) e rótulo "E-mail" (06).
+
+### Observação do aparelho
+
+O relógio do J410G está 1 hora adiantado em relação ao horário do condomínio (eventos do painel às 15:51 aparecem como 16:51). A causa provável é uma regra antiga de horário de verão no sistema do aparelho; a API está correta.
+
+### Validação
+
+- `testDebugUnitTest` (incluindo 5 novos testes da central), `lint`, `assembleDebug` e `assembleDebugAndroidTest`: aprovados.
+- `ScreenTest` no J410G pelo AndroidJUnitRunner: 9 testes aprovados (inclui central normal, atenção, alarme, histórico, detalhe e home com alarme, usando dados fictícios).
+- No aparelho, com a API real: login, home, central (normal), histórico e detalhe reais, exaustor ligado e reiniciado (autorizado), configurações e seleção. Nenhum comando foi enviado à central de incêndio nem aos portões.

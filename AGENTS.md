@@ -67,7 +67,7 @@ Do not distribute a feature across global `ui/`, `data/`, `domain/` directories.
 
 ## UI e design
 
-Leia `DESIGN_GUIDE.md` antes de alterar interface. Ele define a hierarquia tipográfica, espaçamento, componentes e adaptação a janelas. Consulte os nós correspondentes pelo MCP do Figma e compare com o aplicativo renderizado; o Figma é uma referência visual revisável. Quando houver divergência, aplique o guia, valide no aparelho e registre a correção necessária no Figma. Mantenha textos funcionais em fonte Android/Material 3 e tokens compartilhados em `core/ui`.
+Leia `DESIGN_GUIDE.md` antes de alterar interface. Ele define a hierarquia tipográfica, espaçamento, componentes e adaptação a janelas. Consulte os nós correspondentes pelo MCP do Figma e compare com o aplicativo renderizado; o Figma é uma referência visual revisável. Quando houver divergência, aplique o guia, valide no aparelho e registre a correção necessária no Figma. Mantenha textos funcionais em fonte Android/Material 3 e tokens compartilhados em `core/ui`. O app usa densidade proporcional ao frame de 412 dp do Figma em telas mais estreitas (ver `DESIGN_GUIDE.md` §6); use os valores do Figma em dp/sp sem compensações manuais por largura. Para comparar com o Figma, capture o aparelho e o PNG do nó lado a lado na mesma escala.
 
 ---
 
@@ -423,7 +423,15 @@ Hide features the user cannot use, but always handle 403/404 anyway — the serv
 
 ## Fire Panel (CIE) — read-only
 
-`GET /cie/status`, `/cie/panel`, `/cie/alarms/active`, `/cie/counters/blocks`, `/cie/counters/outputs`, and `/cie/logs?type=&limit=&cursor=` (cursor-based: pass the cursor returned in the previous page's `data`, not `meta.pagination`). Shapes are in the OpenAPI spec. There are no command endpoints for the app.
+`GET /cie/status`, `/cie/panel`, `/cie/alarms/active`, `/cie/counters/blocks`, `/cie/counters/outputs`, and `/cie/logs?type=&limit=&cursor=` (cursor-based: pass the cursor returned in the previous page's `data`, not `meta.pagination`). Shapes are in the OpenAPI spec. Command endpoints (`/cie/commands/*`) exist for staff but **the app never calls them** — `feature/fire` only reads.
+
+### Implementação Android das telas 08c e 09–13 (01/10/2026)
+
+- `FireRepository` usa somente `GET /cie/panel`, `/cie/alarms/active` e `/cie/logs`. Nunca adicionar comandos sem pedido explícito: a central é equipamento de segurança real.
+- Estado: `alarms.isTriggered` → Alarme (11 e home 08c, prevalece sobre tudo); painel sem `online`/`connected` → sem comunicação; `falha`/`supervisao` > 0 → Atenção (10); senão Normal (09). Dispositivos apenas bloqueados não geram atenção para o morador.
+- Consulta a cada 10 s enquanto a área logada estiver visível (home mostra o estado); para em `onStop`; respeita `Retry-After`. Sem push nativo, o texto do Figma "Você será avisado se o estado da central mudar" foi substituído por "O estado é atualizado enquanto o aplicativo estiver aberto".
+- Histórico (12): últimos 30 dias, até 4 páginas de 50 eventos seguindo `nextCursor`. Detalhe (13) usa só campos retornados (zona, dispositivo, tipo, horário); nada é inventado.
+- Nomes vêm do painel em caixa alta e com `\u0000`: `cieName()`/`floorLabel()` normalizam ("TORRE B" → "Torre B", "8 ANDAR B T-B" → "8º andar").
 
 ## Gates (TAG) — staff only
 
