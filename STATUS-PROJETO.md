@@ -4,7 +4,7 @@ Atualizado em **13/10/2026**.
 
 Legenda: ✅ feito · 🟡 parcial · ⏳ depende de terceiros ou de outra etapa · ❌ não feito · ❓ aguarda decisão
 
-> **Atenção:** o último commit é de **01/10/2026**. O trabalho de 12 e 13/10 (58 arquivos) está **sem commit**, junto com o ajuste de resiliência da sessão que já estava no repositório antes de 12/10.
+> **Situação em 13/10/2026:** todo o trabalho do app está commitado (`3b61c5c` sessão, `6a24a74` revisão das telas e comunicados, `96ffafb` Termo, Política e exclusão de conta). A API com comunicados, Termo/Política, exclusão de conta e o ajuste visual das páginas legais (`f858bb1`) está em produção (migrações 003 e 004 aplicadas). Falta o deploy do `Cache-Control: no-cache` das páginas legais. O repositório do app não tem remoto configurado.
 
 Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.md](DESIGN_GUIDE.md), [CHECKLIST-PUBLICACAO.md](CHECKLIST-PUBLICACAO.md), [docs/revisao-figma-e-integracao.md](docs/revisao-figma-e-integracao.md).
 
@@ -35,7 +35,9 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Mensagens (17): filtro Todas/Não lidas, agrupadas por dia, ícone por categoria | 13/10 |
 | ✅ | Detalhe da mensagem (18), marcando como lida | 13/10 |
 | ✅ | API: rotas `/messages` em `src/v3` (listar, detalhe, marcar lida, publicar, arquivar) + migração 003, validadas no Postgres existente dentro de transação desfeita | 13/10 |
-| ⏳ | **Deploy da API e aplicação da migração `003_condo_messages.sql`** — até lá a home mostra "Não foi possível carregar os informativos." | — |
+| ✅ | Deploy da API e migração `003_condo_messages.sql` aplicada; a home carrega os informativos no J4 ("Nenhuma mensagem nova") | 13/10 |
+| ✅ | Seção "Informativos do condomínio" só para quem lê comunicados (equipe ou morador com unidade liberada); some na conta pendente, sem unidade ou bloqueada | 13/10 |
+| ❌ | Validar com um comunicado real publicado (carrossel, sino, detalhe e marcação de lido) | — |
 | ❌ | Tela de publicação no painel web (FRONT); a API já aceita `POST /messages` | — |
 
 ## 3. Configurações (09–16)
@@ -46,13 +48,21 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Seleção de unidade com motivos de bloqueio | 30/09 · visual 12/10 |
 | ✅ | Idioma: Português; inglês e espanhol desabilitados até haver tradução (tradução: seção 3.1) | 30/09 |
 | ✅ | Menu de privacidade (12) | 12/10 |
-| ✅ | Termo de Uso (13) e Política de Privacidade (14) v1.0: página vigente publicada pela API, em WebView restrito | 13/10 |
+| ✅ | Termo de Uso (13) e Política de Privacidade (14) v1.0: página vigente publicada pela API, em WebView restrito, com o texto na escala do corpo do app (14 sp) | 13/10 |
+| ✅ | Validado em produção: `GET /legal`, páginas `/termos-de-uso`, `/politica-de-privacidade` e `/excluir-conta` e PDF com o hash do catálogo; Termo aberto no J4 | 13/10 |
 | ✅ | Aviso "Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade" nas boas-vindas e no cadastro; cadastro envia a versão aceita | 13/10 |
 | ✅ | Tela de aceite do Termo para conta antiga ou versão nova (`mustAcceptTerms`) — sem tela no Figma | 13/10 |
+| ✅ | Aceite gravado em produção: login com Google após o deploy registrou o Termo 1.0 em `legal_acceptance` (canal `google`) | 13/10 |
+| ✅ | Tela de aceite validada em produção com conta de teste: aparece sem aceite registrado e "Aceitar e continuar" grava o aceite pelo canal `app` | 13/10 |
 | ✅ | Dados pessoais (15): nome, CPF mascarado, e-mail e unidade ativa; "dados complementares" omitidos (não estão na API) | 12/10 · CPF 13/10 |
 | ✅ | Excluir conta (16) funcional; equipe vê o botão desabilitado (removida pela administração) | 13/10 |
 | ✅ | API: `DELETE /auth/me`, página pública `/excluir-conta` e `person.cpfMasked` em `src/v3`, validados no Postgres em transação desfeita | 13/10 |
-| ⏳ | **Deploy da API** com Termo/Política (migração `004_legal_acceptance.sql`) e exclusão de conta — até lá, o cadastro falha (o app exige a versão do Termo) e as telas 13/14 mostram erro de carregamento | — |
+| ✅ | Deploy da API com Termo/Política (migração `004_legal_acceptance.sql` aplicada) e exclusão de conta | 13/10 |
+| ✅ | Validado em produção com conta de teste: cadastro (aceite pelo canal `signup`), estado pendente sem unidade (home, configurações e dados pessoais), exclusão com "Sua conta foi excluída." e login recusado depois; vínculo apagado e aceite mantido, como prevê a Política | 13/10 |
+| ✅ | Páginas legais sem linha dupla no início e sem quebras no meio da frase (`f858bb1`), em produção e conferidas no J4 | 13/10 |
+| ✅ | Leitor do Termo e da Política sem cache no app: o endereço não muda entre versões, e a tela de aceite poderia mostrar o texto anterior por até 1 h | 13/10 |
+| ⏳ | API: `Cache-Control: no-cache` nas páginas e no PDF sem versão (o PDF com versão fica imutável) — falta deploy | 13/10 |
+| ✅ | Tela de aceite com título neutro "Aceite do Termo de Uso" (antes "Termo de Uso atualizado", errado para quem nunca aceitou) | 13/10 |
 | ❓ | Telas novas sem Figma (aviso nas boas-vindas e no cadastro, aceite do Termo): desenhar ou aceitar como estão | — |
 
 ### 3.1 Tradução (inglês e espanhol) — a planejar
@@ -92,7 +102,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | | Item | Data |
 |---|---|---|
 | ✅ | Sessão criptografada (Keystore), renovação de token serializada | 30/09 |
-| 🟡 | Sessão resiliente a falta de rede ao acordar o aparelho: presente, sem commit | antes de 12/10 |
+| ✅ | Sessão resiliente a falta de rede ao acordar o aparelho (commit `3b61c5c`) | antes de 12/10 · commit 13/10 |
 | ✅ | Menu inferior novo (ícone preenchido roxo no item selecionado) | 12/10 · 13/10 |
 | ✅ | Margem de 28 dp em todas as telas | 12/10 |
 | ✅ | Desempenho: imagens e JSON processados fora da thread da interface, histórico montando só os itens visíveis | 12/10 |
@@ -108,10 +118,10 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | | Item |
 |---|---|
 | ✅ | Autenticação, residência, exaustor (com `command` e `maintenance`) e central interpretada, em produção |
-| ✅ | **`DELETE /auth/me`**, obrigatório para a Play — implementado em 13/10, aguardando deploy |
-| ✅ | Página web pública de exclusão de conta (`/excluir-conta`) — implementada em 13/10, aguardando deploy |
-| ✅ | Termo de Uso e Política de Privacidade v1.0, catálogo `GET /legal` e aceite (migração 004) — commit 0555c2a, aguardando deploy |
-| ✅ | Rota de mensagens/comunicados (08d, 17, 18) — implementada em 13/10, aguardando deploy e migração 003 |
+| ✅ | **`DELETE /auth/me`**, obrigatório para a Play — em produção desde 13/10 |
+| ✅ | Página web pública de exclusão de conta (`/excluir-conta`) — em produção desde 13/10 |
+| ✅ | Termo de Uso e Política de Privacidade v1.0, catálogo `GET /legal` e aceite (migração 004) — em produção desde 13/10 |
+| ✅ | Rota de mensagens/comunicados (08d, 17, 18) — em produção desde 13/10 (migração 003) |
 | ❌ | Push nativo (FCM) para alarme com o app fechado — ver seção 7.1 |
 | ✅ | CPF mascarado em `/residence/me` para a tela 15 (13/10); outros dados complementares não previstos |
 
@@ -157,16 +167,20 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 | ❌ | Clientes OAuth de release (SHA-1 da chave de upload e da Play App Signing); sem eles o login Google falha no app da loja |
 | ❌ | Ícone do app com a marca (hoje é o padrão do template) |
 | ❌ | R8 ativado e release testado no J4 |
-| ❌ | D-U-N-S, conta de organização, política de privacidade em URL pública, "Segurança dos dados", classificação, ficha da loja, conta de teste para a revisão, teste interno e produção |
+| ✅ | URLs públicas para a Play: `https://novaresidence.com.br/politica-de-privacidade` e `https://novaresidence.com.br/excluir-conta` |
+| ❌ | D-U-N-S, conta de organização, "Segurança dos dados", classificação, ficha da loja, conta de teste para a revisão, teste interno e produção |
 
 ## 9. Pendências imediatas (sem depender de terceiros)
 
-1. ❌ Fazer o commit do trabalho de 12–13/10 e atualizar o `CHANGELOG.md` (ainda descreve a numeração antiga das telas).
-2. ❌ Trocar a senha pessoal usada nos testes (também consta do checklist de publicação).
-3. ❓ Decidir o texto da faixa da tela 27.
-4. ❓ Decidir se o push de alertas da central (seção 7.1) é obrigatório na 1ª versão.
-5. ❓ Informar as coordenadas do condomínio e se a equipe fica isenta da verificação de localização (seção 7.2).
-6. ❓ Aceitar no Figma as cores ajustadas para contraste, ou voltar às cores exatas do Figma.
-7. 🟡 Validar um alarme da central com a equipe.
+1. 🟡 Commit do trabalho de 12–13/10 feito, com entradas novas no `CHANGELOG.md`; as entradas antigas ainda citam a numeração anterior das telas.
+2. ⏳ Deploy do `Cache-Control: no-cache` das páginas legais na API (`f858bb1` já está em produção).
+3. ✅ Cadastro, tela de aceite, estado sem unidade e exclusão validados em produção com conta de teste (13/10). A conta para a revisão da Play ainda precisa ser criada e vinculada a uma unidade.
+4. ❓ Desenhar no Figma o aviso do Termo (boas-vindas e cadastro) e a tela de aceite, ou aceitar como estão.
+5. ❌ Trocar a senha pessoal usada nos testes (também consta do checklist de publicação).
+6. ❓ Decidir o texto da faixa da tela 27.
+7. ❓ Decidir se o push de alertas da central (seção 7.1) é obrigatório na 1ª versão.
+8. ❓ Informar as coordenadas do condomínio e se a equipe fica isenta da verificação de localização (seção 7.2).
+9. ❓ Aceitar no Figma as cores ajustadas para contraste, ou voltar às cores exatas do Figma.
+10. 🟡 Validar um alarme da central com a equipe.
 
-**Próximo bloco sugerido:** deploy da API (migrações 003 e 004, Termo, exclusão de conta) e teste da exclusão com uma conta de teste → ícone, R8, chave e `.aab` assinado → OAuth de release → teste interno na Play. O push de alertas da central (seção 7.1) entra antes da publicação se for decidido que é obrigatório na 1ª versão.
+**Próximo bloco sugerido:** ícone, R8, chave e `.aab` assinado → OAuth de release → teste interno na Play. O push de alertas da central (seção 7.1) entra antes da publicação se for decidido que é obrigatório na 1ª versão.

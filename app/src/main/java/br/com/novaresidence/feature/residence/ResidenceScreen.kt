@@ -209,10 +209,11 @@ private fun Home(
                     ServiceCard("Exaustor", R.drawable.nova_exhaust_nav, exhaustStatus ?: ServiceStatus("Consultando equipamento…"), canOpenExhaust) { navigate(ResidencePage.Exhaust) }
                 }
             }
-            // Comunicados (Figma 08a/08d): o carrossel vem da feature de mensagens; sem acesso a ela, o cartão vazio.
-            Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            // Comunicados (Figma 08a/08d): o carrossel vem da feature de mensagens. Só equipe e morador com
+            // unidade liberada leem comunicados (a API responde 403 aos demais), então a seção some sem acesso.
+            if (services) Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("Informativos do condomínio", Modifier.semantics { heading() }, style = NovaType.SectionTitle, color = NovaOnSurface)
-                if (messages != null && services) messages()
+                if (messages != null) messages()
                 else Box(Modifier.fillMaxWidth().border(1.dp, NovaOutline, RoundedCornerShape(16.dp)).heightIn(min = 68.dp).padding(16.dp), contentAlignment = Alignment.CenterStart) {
                     Text("Nenhuma mensagem nova", style = NovaType.Body, color = NovaOnSurfaceVariant)
                 }

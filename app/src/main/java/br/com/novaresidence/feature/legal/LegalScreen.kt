@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
@@ -78,6 +79,9 @@ private fun LegalWebView(url: String, modifier: Modifier) {
                     settings.javaScriptEnabled = false
                     settings.allowFileAccess = false
                     settings.allowContentAccess = false
+                    // Sem cache: o endereço da página não muda entre versões, e a tela de aceite registra a versão
+                    // vigente do catálogo — uma cópia guardada mostraria o texto anterior para ser aceito.
+                    settings.cacheMode = WebSettings.LOAD_NO_CACHE
                     // A página usa o corpo padrão da web (16 px), que no WebView vira 16 dp e fica maior que o
                     // texto do app (NovaType.Body, 14 sp). A escala explícita também segue a fonte do sistema.
                     settings.textZoom = (NovaType.Body.fontSize.value / PageBodyPx * context.resources.configuration.fontScale * 100).roundToInt()
@@ -128,7 +132,8 @@ fun TermsAcceptanceScreen(state: LegalState, accept: () -> Unit, logout: () -> U
     Column(Modifier.fillMaxSize().background(NovaBackground).systemBarsPadding()) {
         NovaTopBar("Termo de Uso")
         Column(Modifier.padding(horizontal = 28.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(if (terms != null) "Termo de Uso atualizado" else "Aceite do Termo de Uso", style = NovaType.ScreenTitle, color = NovaOnSurface)
+            // O app não sabe se a conta já aceitou uma versão anterior: o título serve à conta antiga e à versão nova.
+            Text("Aceite do Termo de Uso", style = NovaType.ScreenTitle, color = NovaOnSurface)
             Text("Para continuar usando o aplicativo, leia e aceite o Termo de Uso" + (terms?.let { " (versão ${it.version})" } ?: "") + ".",
                 style = NovaType.Body, color = NovaOnSurfaceVariant)
         }

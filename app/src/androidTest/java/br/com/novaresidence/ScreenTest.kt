@@ -145,6 +145,7 @@ class ScreenTest {
         compose.runOnIdle { state = ResidenceState(Residence("pendente", true, null, emptyList())) }
         compose.onNodeWithText("Cadastro em análise pela administração").assertIsDisplayed()
         compose.onNodeWithText("Central de Incêndio").assertDoesNotExist()
+        compose.onNodeWithText("Informativos do condomínio").assertDoesNotExist()
         capture("home_pending")
         compose.runOnIdle { state = ResidenceState(Residence("sem-unidade", true, null, emptyList())) }
         capture("home_no_unit")
