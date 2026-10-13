@@ -33,6 +33,7 @@
 
 ### Corrigido
 
+- Sessão mantida quando a renovação do token falha por falta de rede (comum ao acordar o aparelho): só uma recusa definitiva (401 ou 400) encerra a sessão. A consulta da residência tenta de novo sozinha, com espera de 2 s a 30 s, e mantém a última informação na tela, para a central de incêndio não sumir enquanto a conexão volta.
 - A tarefa instrumentada do J4 agora instala os APKs com ADB e exige casos aprovados no AndroidJUnitRunner, evitando sucesso falso do executor Gradle.
 - Ajustado o convite de cadastro em fonte ampliada e removido o indicador de atualização que deslocava os serviços da home.
 - Requisição de logout sem corpo JSON vazio; a sessão local é encerrada mesmo quando a revogação falha.

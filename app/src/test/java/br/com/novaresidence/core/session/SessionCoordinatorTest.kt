@@ -55,9 +55,22 @@ class SessionCoordinatorTest {
         assertNull(store.value)
     }
 
-    @Test fun `refresh failure and logout failure both clear local tokens`() = runBlocking {
+    @Test fun `refresh without network keeps session for a later retry`() = runBlocking {
         val store = TestSessionStore(testSession())
-        val coordinator = SessionCoordinator(store) { throw ApiException(ApiErrorKind.Network) }
+        var fail = true
+        val coordinator = SessionCoordinator(store) { if (fail) throw ApiException(ApiErrorKind.Network); testSession("new", "new-refresh") }
+        coordinator.restore()
+        try { coordinator.authorize { throw ApiException(ApiErrorKind.Unauthorized) }; fail("Expected network error") }
+        catch (error: ApiException) { assertEquals(ApiErrorKind.Network, error.kind) }
+        assertEquals("refresh", store.value?.refreshToken)
+        assertNotNull(coordinator.user.value)
+        fail = false
+        assertEquals("new", coordinator.authorize { token -> if (token == "access") throw ApiException(ApiErrorKind.Unauthorized); token })
+    }
+
+    @Test fun `rejected refresh and logout failure both clear local tokens`() = runBlocking {
+        val store = TestSessionStore(testSession())
+        val coordinator = SessionCoordinator(store) { throw ApiException(ApiErrorKind.Unauthorized) }
         coordinator.restore()
         try { coordinator.authorize { throw ApiException(ApiErrorKind.Unauthorized) } } catch (_: ApiException) { }
         assertNull(store.value)

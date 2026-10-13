@@ -71,6 +71,13 @@ class SessionCoordinator(
             updated
         } catch (error: CancellationException) {
             throw error
+        } catch (error: ApiException) {
+            // Only a definitive rejection ends the session. A phone waking from sleep often has no network
+            // for a few seconds; logging out then would hide the fire panel exactly when it matters.
+            if (error.kind == ApiErrorKind.Unauthorized || error.kind == ApiErrorKind.Validation) {
+                synchronized(guard) { if (generation == expectedGeneration) clear() }
+            }
+            throw error
         } catch (error: Exception) {
             synchronized(guard) { if (generation == expectedGeneration) clear() }
             throw error
