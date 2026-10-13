@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import java.time.Duration
 import java.time.Instant
 
@@ -58,8 +60,10 @@ class FireViewModel(private val repository: FireRepository, private val now: () 
                 val alarms = async { repository.alarms() }
                 panel.await() to alarms.await()
             }
+            val attention = !alarms.isTriggered && (alarms.counters.falha > 0 || alarms.counters.supervisao > 0)
+            val active = if (attention) activeEvents() else emptyList()
             if (current == generation) mutableState.update {
-                it.copy(panel = panel, alarms = alarms, loading = false, error = null, requestId = null, retrySeconds = 0)
+                it.copy(panel = panel, alarms = alarms, activeEvents = active, loading = false, error = null, requestId = null, retrySeconds = 0)
             }
         } catch (error: ApiException) {
             if (error.retryAfterSeconds > 0) retryAt = System.nanoTime() + error.retryAfterSeconds * 1_000_000_000
@@ -69,6 +73,17 @@ class FireViewModel(private val repository: FireRepository, private val now: () 
         } catch (error: SessionStorageException) {
             if (current == generation) mutableState.update { it.copy(loading = false, error = error.userMessage) }
         } catch (error: CancellationException) { throw error }
+    }
+
+    /**
+     * Local das falhas e supervisões ativas (Figma 27). É um complemento: sem ele o estado de atenção
+     * continua correto, então uma falha nesta consulta só respeita o Retry-After e não derruba a tela.
+     */
+    private suspend fun activeEvents(): List<CieLog> = try {
+        repository.activeEvents().events.let { it["falha"].orEmpty() + it["supervisao"].orEmpty() }
+    } catch (error: ApiException) {
+        if (error.retryAfterSeconds > 0) retryAt = System.nanoTime() + error.retryAfterSeconds * 1_000_000_000
+        emptyList()
     }
 
     /** Histórico dos últimos 30 dias, paginado pelo cursor retornado em `data`. */
@@ -89,9 +104,8 @@ class FireViewModel(private val repository: FireRepository, private val now: () 
                     cursor = page.nextCursor
                     if (cursor == null || recent.size < page.items.size) break
                 }
-                if (current == generation) mutableState.update {
-                    it.copy(history = events.distinctBy { log -> log.key }.sortedByDescending { log -> log.instant() }, historyLoading = false)
-                }
+                val history = withContext(Dispatchers.Default) { events.distinctBy { log -> log.key }.sortedByDescending { log -> log.instant() } }
+                if (current == generation) mutableState.update { it.copy(history = history, historyLoading = false) }
             } catch (error: ApiException) {
                 if (current == generation) mutableState.update { it.copy(historyLoading = false, historyError = error.userMessage()) }
             } catch (error: SessionStorageException) {

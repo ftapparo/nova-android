@@ -76,7 +76,7 @@ class AuthRepositoryTest {
     @Test fun `validation accepts login passwords below signup minimum and preserves password whitespace`() {
         assertTrue(validateAuthForm("resident@example.com", "abc").isEmpty())
         assertEquals(setOf("newPassword"), validateAuthForm("resident@example.com", "abc", true).keys)
-        assertEquals(setOf("email", "confirmation", "code"), validateAuthForm("invalid", "password123", true, "different", "123").keys)
-        assertTrue(validateAuthForm(password = "        ", newPassword = true, confirmation = "        ", code = "012345").isEmpty())
+        assertEquals(setOf("email", "code"), validateAuthForm("invalid", "password123", true, "123").keys)
+        assertTrue(validateAuthForm(password = "        ", newPassword = true, code = "012345").isEmpty())
     }
 }

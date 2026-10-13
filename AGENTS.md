@@ -384,13 +384,26 @@ Hide features the user cannot use, but always handle 403/404 anyway — the serv
 
 ## Exhaust Fans
 
-### Implementação Android das telas 14 a 20 (Figma de 30/09/2026)
+### Implementação Android das telas 19 a 24 (Figma de 12/10/2026)
 
+- O exaustor é uma aba do menu inferior (sem botão voltar). O cartão "Unidade ativa · Equipamento" abre a seleção de unidade; as ilustrações por estado ficam em `res/drawable-<densidade>/nova_exhaust_*.webp` e `nova_fire_*.webp` (geradas dos originais do Figma, ver `docs/revisao-figma-e-integracao.md`) e encolhem em telas mais baixas que o frame.
 - O app envia `POST /exhausts/{id}/on` com `{ "minutes": 180 }`; a API agenda e executa o desligamento. O app nunca chama `/off` automaticamente.
-- **Reiniciar tempo** (tela 16): reenviar o mesmo `/on` com o exaustor ligado recalcula o `expiresAt` a partir de agora, sem mexer no relé. Só habilitado com `processStatus: executado`; o botão fica desabilitado durante o envio e nunca repete sozinho.
-- `command` (`ligar` | `desligar` | `null`) distingue "Ligando" (15) de "Desligando" (17): durante o desligamento a API já devolve `on: false` com `processStatus: iniciando`.
-- `maintenance: true` → tela 20 (selo "Manutenção", sem ação). `/on` responde 409 nesse caso; o app mostra o `detail` e não repete. O painel web v2 ignora a manutenção.
-- O contador usa somente `expiresAt` retornado pela API. Ao chegar a zero, apresenta finalização e continua consultando; somente a resposta do servidor confirma que desligou.
+- **Reiniciar tempo** (tela 21): reenviar o mesmo `/on` com o exaustor ligado recalcula o `expiresAt` a partir de agora, sem mexer no relé. Só habilitado com `processStatus: executado`; o botão fica desabilitado durante o envio e nunca repete sozinho.
+- `command` (`ligar` | `desligar` | `null`) distingue "Ligando" (20) de "Desligando" (22): durante o desligamento a API já devolve `on: false` com `processStatus: iniciando`.
+- `maintenance: true` → tela 24 (selo "Manutenção", sem ação). `/on` responde 409 nesse caso; o app mostra o `detail` e não repete. O painel web v2 ignora a manutenção.
+- O contador ("Tempo restante · 02:59:00") usa somente `expiresAt` retornado pela API. Ao chegar a zero, apresenta finalização e continua consultando; somente a resposta do servidor confirma que desligou.
+
+#### Localização para ligar o exaustor (decidido em 13/10/2026, ainda não implementado)
+
+O morador só pode ligar o exaustor dentro da área do condomínio.
+
+- **A API é a autoridade.** O app obtém a localização no toque em "Ligar exaustor" (e em "Reiniciar tempo") e a envia no `POST /exhausts/{id}/on` (latitude, longitude, precisão e indicação de localização simulada). A API compara com a área do condomínio, configurada no servidor e nunca no app, e recusa com erro próprio quando fora. Uma checagem só no app é contornável.
+- **Desligar nunca exige localização** (segurança). O app continua sem chamar `/off` automaticamente.
+- **Permissão:** localização precisa apenas "durante o uso" (`ACCESS_FINE_LOCATION`), pedida no momento da ação com explicação antes. Sem localização em segundo plano.
+- **Precisão:** usar o provedor do Google Play Services (`play-services-location`, combina GPS, Wi-Fi e rede; melhor dentro do prédio). Aceitar quando o círculo de precisão toca a área do condomínio. Recusar localização simulada (`Location.isMock()` / `isFromMockProvider()`).
+- **Estados de tela a desenhar no Figma:** permissão negada, localização desligada, fora da área e precisão insuficiente.
+- **Privacidade:** a localização só valida o comando; não é armazenada como trajeto nem registrada em log. Declarar na política de privacidade e no formulário "Segurança dos dados" da Play.
+- **Pendente:** coordenadas ou polígono do condomínio e se a equipe (`porteiro`, `sindico`, `admin`) fica isenta.
 - As consultas ocorrem enquanto a área logada está visível (home e tela do exaustor, pois a home mostra o estado — Figma 08b): a cada 5 segundos, ou 2 segundos durante transições. Respeitar `Retry-After`; nenhuma falha causa repetição automática do acionamento. O evento WebSocket `exhaust.changed` pode substituir essa consulta numa etapa futura.
 - A seleção do equipamento intersecta torre/final da unidade ativa com a lista autorizada de `/exhausts`. Não fabricar equipamentos ou permissões ausentes dessa lista.
 - Quando a resposta for inconclusiva, usar os textos aprovados “Não foi possível confirmar a ativação” e “Atualize o estado antes de tentar novamente”, sem afirmar proteção ou encerramento físico não confirmados.
@@ -413,25 +426,68 @@ Hide features the user cannot use, but always handle 403/404 anyway — the serv
 - Commands act on **physical hardware**: disable the button while a command is in flight; 10 commands per minute per account (429 + `Retry-After`); 503 = module offline.
 - 404 on a command means "not yours or does not exist" — refresh the list.
 
-## Preferências locais e telas 21 a 23
+## Home, mensagens e configurações (telas 08a–08d e 09–17)
 
-- A unidade padrão foi removida do Figma e do app (30/09/2026). A unidade ativa é escolhida na tela 22 ("Selecionar unidade") com um toque; a seleção vale durante a sessão enquanto vinculada. No acesso seguinte vale a regra inicial (`selectResidenceUnit`). O seletor continua mostrando unidades bloqueadas com os motivos do contrato.
-- Configurações (21) exibe "Código Freedom" = `person.sequencia`. É o código do morador no cadastro do condomínio e ajuda no atendimento; exceção consciente à regra de não exibir identificadores internos.
+- O menu inferior tem três abas: **Início · Alarme · Exaustor**. Configurações abre pelo ícone de perfil no cabeçalho da home; o sino abre Mensagens (17).
+- Comunicados (08d, 17 e 18) ficam em `feature/message` e usam `/messages` (seção "Condo messages" abaixo): carrossel dos 5 mais recentes na home, contador de não lidas no sino, lista com filtro "Todas/Não lidas" agrupada por dia e detalhe. Abrir o detalhe chama `POST /messages/{id}/read`. Consulta ao entrar na área logada (sem push nem polling); só para equipe ou morador com unidade liberada.
+- A unidade padrão foi removida do Figma e do app (30/09/2026). A unidade ativa é escolhida na tela 10 ("Selecionar unidade") com um toque; a seleção vale durante a sessão enquanto vinculada. No acesso seguinte vale a regra inicial (`selectResidenceUnit`). O seletor continua mostrando unidades bloqueadas com os motivos do contrato.
+- Configurações (09) exibe "Código Freedom" = `person.sequencia`. É o código do morador no cadastro do condomínio e ajuda no atendimento; exceção consciente à regra de não exibir identificadores internos.
+- Privacidade (12): Termos (13) e Política (14) exibem o texto provisório do Figma até existir o conteúdo jurídico aprovado. Dados pessoais (15) mostra nome, e-mail e unidade ativa; CPF e "dados complementares" não existem no contrato e não são exibidos.
+- Excluir conta (16): sem rota `DELETE /auth/me` na API, o botão fica desabilitado com orientação para procurar a administração. A rota é obrigatória para publicar na Play (`CHECKLIST-PUBLICACAO.md`).
 - Idioma é local; inglês e espanhol ficam desabilitados até existir tradução completa. `/me/settings` existe na API e pode sincronizar a preferência no futuro.
 - As preferências residenciais não contêm tokens; ficam em `feature/residence`. O armazenamento de sessão continua exclusivo de `core/session`.
 - Manter os dados demonstrativos fora das integrações reais. Mockups eventualmente necessários por ausência de contrato devem ser identificados como simulação e documentados na entrega.
 
+## Condo messages (comunicados)
+
+Reading: staff, or a resident with an unblocked unit (403 otherwise). Publishing and archiving: `sindico`/`admin` (not used by the app). No push for messages — residents only get push for fire alarms.
+
+| Method | Path | Body / query | Returns |
+|---|---|---|---|
+| GET | `/messages` | `?filter=all\|unread&limit=20&offset=0` (limit ≤ 50) | `{ items: CondoMessage[], unreadCount }` + `meta.pagination` |
+| GET | `/messages/{id}` | — | `CondoMessage` |
+| POST | `/messages/{id}/read` | — | `CondoMessage` with `read: true` (idempotent) |
+
+```json
+{ "id": 12, "category": "manutencao", "label": "Manutenção programada", "title": "…", "body": "…", "publishedAt": "2026-10-13T13:30:00.000Z", "expiresAt": null, "read": false }
+```
+
+- `category`: `manutencao` | `comunicado` | `aviso` | `urgente` (icon and color in the app). `label` is the tag on the card/detail; `null` → category name.
+- Only visible messages come back (published, not archived, not expired), newest first. `unreadCount` ignores filter and page (bell badge).
+
 ## Fire Panel (CIE) — read-only
 
-`GET /cie/status`, `/cie/panel`, `/cie/alarms/active`, `/cie/counters/blocks`, `/cie/counters/outputs`, and `/cie/logs?type=&limit=&cursor=` (cursor-based: pass the cursor returned in the previous page's `data`, not `meta.pagination`). Shapes are in the OpenAPI spec. Command endpoints (`/cie/commands/*`) exist for staff but **the app never calls them** — `feature/fire` only reads.
+`GET /cie/status`, `/cie/panel`, `/cie/alarms/active`, `/cie/events/active?type=`, `/cie/installation`, `/cie/counters/blocks`, `/cie/counters/outputs`, and `/cie/logs?type=&kind=&limit=&cursor=` (cursor-based: pass the cursor returned in the previous page's `data`, not `meta.pagination`). Shapes are in the OpenAPI spec. Command endpoints (`/cie/commands/*`) exist for staff but **the app never calls them** — `feature/fire` only reads.
 
-### Implementação Android das telas 08c e 09–13 (01/10/2026)
+Every log/event item carries `event` (`category`, `label`, `kind`, `severity`) and `display` (`device`, `deviceName`, `place.towerLabel`/`floorLabel`/`area`, `rule`, `loop`, `address`, `zoneName`), already interpreted by the backend — the app does not interpret panel codes. `/cie/alarms/active` also returns `activeAlarms` (active now; `latestAlarmLogs` is history).
 
-- `FireRepository` usa somente `GET /cie/panel`, `/cie/alarms/active` e `/cie/logs`. Nunca adicionar comandos sem pedido explícito: a central é equipamento de segurança real.
-- Estado: `alarms.isTriggered` → Alarme (11 e home 08c, prevalece sobre tudo); painel sem `online`/`connected` → sem comunicação; `falha`/`supervisao` > 0 → Atenção (10); senão Normal (09). Dispositivos apenas bloqueados não geram atenção para o morador.
+### Implementação Android das telas 08c e 26–30c (12/10/2026)
+
+- `FireRepository` usa somente `GET /cie/panel`, `/cie/alarms/active`, `/cie/events/active` e `/cie/logs`. Nunca adicionar comandos sem pedido explícito: a central é equipamento de segurança real.
+- Estado: `alarms.isTriggered` → Alarme (28 e home 08c, prevalece sobre tudo); painel sem `online`/`connected` → sem comunicação; `falha`/`supervisao` > 0 → Atenção (27); senão Normal (26). Dispositivos apenas bloqueados não geram atenção para o morador.
+- `/cie/events/active` só é consultado quando os contadores indicam atenção, para mostrar o "Local do aviso"; se falhar, o estado de atenção continua exibido sem o local.
 - Consulta a cada 10 s enquanto a área logada estiver visível (home mostra o estado); para em `onStop`; respeita `Retry-After`. Sem push nativo, o texto do Figma "Você será avisado se o estado da central mudar" foi substituído por "O estado é atualizado enquanto o aplicativo estiver aberto".
-- Histórico (12): últimos 30 dias, até 4 páginas de 50 eventos seguindo `nextCursor`. Detalhe (13) usa só campos retornados (zona, dispositivo, tipo, horário); nada é inventado.
-- Nomes vêm do painel em caixa alta e com `\u0000`: `cieName()`/`floorLabel()` normalizam ("TORRE B" → "Torre B", "8 ANDAR B T-B" → "8º andar").
+- **Quando o push nativo (FCM) existir**, a faixa da tela 26 passa a depender do estado real do aviso, conferido a cada retorno à tela (o morador pode desligar notificações a qualquer momento):
+
+  | Situação | Texto da faixa |
+  |---|---|
+  | Token FCM registrado na API **e** notificações permitidas (`NotificationManagerCompat.areNotificationsEnabled()` e canal de alertas da central não bloqueado; no Android 13+ exige `POST_NOTIFICATIONS`) | "Você será avisado se o estado da central mudar." (texto do Figma) |
+  | Notificações negadas ou desligadas | "O estado é atualizado enquanto o aplicativo estiver aberto." + ação "Ativar notificações" |
+  | Push ainda não implementado | "O estado é atualizado enquanto o aplicativo estiver aberto." |
+
+  **Quem recebe o quê (decidido em 13/10/2026).** A prioridade vem da gravidade do evento (`event.severity`), nunca da localização do usuário: localização em segundo plano exige revisão especial da Play e o erro de GPS dentro do prédio poderia rebaixar um alarme real.
+
+  | Perfil | Alarme de incêndio | Falha / supervisão | Normalização |
+  |---|---|---|---|
+  | Morador (`role` nulo ou `morador`) | Push de **alta prioridade** | Não recebe | Não recebe |
+  | Equipe (`porteiro`, `sindico`, `admin`) | Push de **alta prioridade** | Push convencional | Push silencioso (opcional) |
+
+  Quem é equipe e também morador recebe como equipe. A API decide os destinatários pelo papel; o app apenas exibe.
+
+  Alertas de incêndio usam mensagem FCM de prioridade alta e canal próprio com som. A entrega não é garantida em tempo real (economia de bateria, otimizações da Samsung), então nenhum texto promete aviso imediato. Até lá, não usar a frase do Figma: hoje a API só tem Web Push (VAPID) para o painel web.
+- A faixa da tela 27 diz "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável." em vez de "A equipe responsável está verificando a ocorrência.", porque a API não informa se há verificação em andamento.
+- Histórico (29): últimos 30 dias, até 4 páginas de 50 eventos seguindo `nextCursor`, agrupados por dia e filtrados no app (Alarmes; Falhas = falha + supervisão; Operação = operação + bloqueio). Detalhe (30a–30c) usa só campos retornados; "Dados técnicos" mostra o registro como veio da API.
+- Rótulos usam `display`/`event` quando presentes. Servidores sem esses campos caem no fallback: nomes do painel em caixa alta e com `\u0000` são normalizados por `cieName()`/`floorLabel()` ("TORRE B" → "Torre B", "8 ANDAR B T-B" → "8º andar").
 
 ## Gates (TAG) — staff only
 

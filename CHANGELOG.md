@@ -4,6 +4,9 @@
 
 ### Adicionado
 
+- Comunicados do condomínio (telas 08d, 17 e 18) em `feature/message`, com `/messages` da API v3: carrossel dos 5 mais recentes na home, contador de não lidas no sino, lista com filtro Todas/Não lidas agrupada por dia e detalhe que marca como lido.
+- Central de incêndio redesenhada (08c e 26–30c): normal, atenção com o local do aviso, sem comunicação e alarme com orientações de segurança; histórico de 30 dias com filtros e ícones por tipo; detalhe com "Dados técnicos". Usa os campos interpretados `event`, `display` e `activeAlarms` da API, com alternativa para servidores antigos.
+- Botão de mostrar/ocultar senha em todos os campos de senha.
 - Central de incêndio (telas 08c e 09–13) em `feature/fire`, somente leitura: estado normal, atenção, sem comunicação e alarme ativo, histórico de 30 dias com paginação por cursor e detalhe do evento. Consulta a cada 10 s enquanto a área logada está visível.
 - Ícones exportados do Figma e densidade proporcional ao frame de 412 dp em telas mais estreitas.
 - Figma concluído da 1ª etapa: tela 20 (exaustor em manutenção), botão "Reiniciar tempo" (tela 16, reenvio do `/on` com 180 minutos) e estado real do exaustor na home (08b).
@@ -19,6 +22,8 @@
 
 ### Alterado
 
+- Revisão das telas contra o Figma de 12–13/10/2026 no Galaxy J4: menu inferior Início · Alarme · Exaustor com ícone preenchido no item selecionado; configurações pelo ícone de perfil e mensagens pelo sino; cabeçalho com a pílula da unidade; margem de 28 dp; cadastro com senha única; exaustor com cartão unidade/equipamento e ilustração por estado; cor primária #4C1D95 e splash #2B0F44.
+- Desempenho em aparelhos lentos: ilustrações em WebP por densidade (~3,6 MB → ~1 MB) e pré-carregadas, JSON decodificado fora da thread da interface e histórico da central montando só os itens visíveis.
 - Menu inferior refeito a partir do novo componente do Figma: item selecionado em quadrado roxo com ícone branco, barra de 72 dp com borda e sombra superiores.
 - Barra dos botões do Android preta com ícones claros do splash até as telas, em vez do cinza-claro padrão que aparecia em aparelhos como o Galaxy J4.
 - Revisão completa contra o Figma no J410G: autenticação, home, exaustor, configurações, barra superior com chevron, navegação inferior ("Início · Alarme · Exaustores · Perfil", sem borda e com sombra) e splash com o mesmo tamanho de logo no nativo e no Compose.
@@ -40,5 +45,6 @@
 
 ### Removido
 
+- Confirmação de senha no cadastro e ícones que deixaram de ser usados na revisão do Figma.
 - Unidade padrão (tela, diálogo, selo e preferência local) e a tela intermediária "Idioma e região", removidas do Figma.
 - Drawables sem uso: `nova_account`, `nova_info_status`, `nova_languages`, `nova_mic_off`, `nova_refresh`.

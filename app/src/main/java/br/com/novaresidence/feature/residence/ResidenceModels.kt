@@ -38,10 +38,13 @@ fun String.personName(): String = trim().lowercase().split(Regex("\\s+")).filter
     if (index > 0 && word in NameParticles) word else word.replaceFirstChar { it.titlecase() }
 }.joinToString(" ")
 
-/** Formato da home e do exaustor (Figma 08a/14): "Apto. 124 - Torre A". */
+/** Formato da home (Figma 08a): "Apto. 124 - Torre A". */
 fun ResidenceUnit.homeLabel(): String = "Apto. ${lote.trim()} - Torre ${quadra.trim()}"
 
-/** Formato do seletor de unidades (Figma 22): "Torre A · Apto. 124". */
+/** Formato do cartão do exaustor (Figma 19): "Apto. 124 · Torre A". */
+fun ResidenceUnit.cardLabel(): String = "Apto. ${lote.trim()} · Torre ${quadra.trim()}"
+
+/** Formato do seletor de unidades e dos dados pessoais (Figma 10 e 15): "Torre A · Apto. 124". */
 fun ResidenceUnit.selectorLabel(): String = "Torre ${quadra.trim()} · Apto. ${lote.trim()}"
 
 fun selectResidenceUnit(residence: Residence, selected: Int?): Int? =

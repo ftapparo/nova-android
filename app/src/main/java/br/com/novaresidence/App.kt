@@ -16,6 +16,7 @@ import br.com.novaresidence.feature.auth.*
 import br.com.novaresidence.feature.residence.*
 import br.com.novaresidence.feature.exhaust.*
 import br.com.novaresidence.feature.fire.*
+import br.com.novaresidence.feature.message.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -33,6 +34,7 @@ class AppViewModel(context: Context) : ViewModel() {
     val residence = ResidenceRepository(api)
     val exhaust = ExhaustRepository(api)
     val fire = FireRepository(api)
+    val messages = MessageRepository(api)
     val residencePreferences = ResidencePreferences(context)
     val ready = MutableStateFlow(false)
     var restoreError: String? = null
@@ -53,6 +55,7 @@ fun App(app: AppViewModel) {
     val residence: ResidenceViewModel = viewModel { ResidenceViewModel(app.residence, app.auth, app.residencePreferences) }
     val exhaust: ExhaustViewModel = viewModel { ExhaustViewModel(app.exhaust, residence::refresh) }
     val fire: FireViewModel = viewModel { FireViewModel(app.fire) }
+    val messages: MessageViewModel = viewModel { MessageViewModel(app.messages) }
     val ready by app.ready.collectAsStateWithLifecycle()
     val user by app.session.user.collectAsStateWithLifecycle()
     val authState by auth.state.collectAsStateWithLifecycle()
@@ -63,6 +66,11 @@ fun App(app: AppViewModel) {
         if (window != null && (!ready || user == null || user?.mustChangePassword == true)) {
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = ready
         }
+    }
+    val resources = view.context.resources
+    // Decodifica em segundo plano as ilustrações mais prováveis, para a primeira abertura das abas não travar.
+    LaunchedEffect(user?.id) {
+        if (user != null) NovaIllustrations.preload(resources, listOf(R.drawable.nova_exhaust_off, R.drawable.nova_fire_normal, R.drawable.nova_exhaust_on))
     }
     LaunchedEffect(ready, user?.id, user?.mustChangePassword) {
         if (!ready) return@LaunchedEffect
@@ -76,7 +84,7 @@ fun App(app: AppViewModel) {
     }
     LifecycleStartEffect(ready, user?.id, user?.mustChangePassword) {
         if (ready && user != null && user?.mustChangePassword == false) residence.refresh()
-        onStopOrDispose {}
+        onStopOrDispose { residence.stop() }
     }
     NovaResidenceTheme {
         if (!ready) NovaSplash()
@@ -95,27 +103,34 @@ fun App(app: AppViewModel) {
                 exhaust.start(unit?.quadra, unit?.lote, allowed)
                 onStopOrDispose { exhaust.stop() }
             }
+            // Comunicados: consultados ao voltar para a área logada (sem push; ver AGENTS.md).
+            LifecycleStartEffect(user?.id, services) {
+                messages.start(services)
+                onStopOrDispose {}
+            }
             LifecycleStartEffect(user?.id, services) {
                 fire.start(services)
                 onStopOrDispose { fire.stop() }
             }
             val exhaustState by exhaust.state.collectAsStateWithLifecycle()
             val fireState by fire.state.collectAsStateWithLifecycle()
+            val messageState by messages.state.collectAsStateWithLifecycle()
             val exhaustStatus = when {
                 !allowed -> ServiceStatus(unit?.blockedMessage() ?: "Indisponível para esta unidade.")
                 exhaustState.phase == ExhaustPhase.Running -> ServiceStatus(exhaustState.homeSummary(), "Em funcionamento", ServiceTone.Running)
                 else -> ServiceStatus(exhaustState.homeSummary())
             }
-            val fireStatus = if (fireState.status == FireStatus.Alarm) ServiceStatus(fireState.homeSummary(), fireState.homeAlarmTitle(), ServiceTone.Alarm)
+            val fireStatus = if (fireState.status == FireStatus.Alarm) ServiceStatus(fireState.homeSummary(), fireState.homeAlarmPlace(), ServiceTone.Alarm)
                 else ServiceStatus(fireState.homeSummary())
             ResidenceScreen(residenceState, user!!, residence::select, residence::refresh, auth::logout, authState.busy, residence::saveLanguage,
                 exhaustStatus = exhaustStatus, fireStatus = fireStatus,
-                fireContent = { current, back, selectUnit, fullScreen ->
-                    FireFeature(fireState, current?.homeLabel(), back, selectUnit, fire::refresh, fire::loadHistory, fullScreen)
-                },
-            ) { current, back, selectUnit, _ ->
-                ExhaustScreen(exhaustState, current?.homeLabel(), current?.blockedMessage() ?: access?.notice(),
-                    exhaust::activate, exhaust::restart, exhaust::refresh, back, selectUnit)
+                unreadMessages = messageState.unreadCount,
+                homeMessages = { open -> MessageCarousel(messageState) { open(it.id) } },
+                messagesContent = { initial, back -> MessagesFeature(messageState, initial, back, messages::loadList, messages::markRead) },
+                fireContent = { _, _, fullScreen -> FireFeature(fireState, fire::refresh, fire::loadHistory, fullScreen) },
+            ) { current, selectUnit, _ ->
+                ExhaustScreen(exhaustState, current?.cardLabel(), current?.blockedMessage() ?: access?.notice(),
+                    exhaust::activate, exhaust::restart, exhaust::refresh, selectUnit)
             }
         }
     }

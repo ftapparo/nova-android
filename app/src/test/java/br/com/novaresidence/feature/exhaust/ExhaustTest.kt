@@ -56,6 +56,7 @@ class ExhaustTest {
         assertEquals(ExhaustPhase.Running, ExhaustState(off.copy(on = true, expiresAt = 9000), nowMillis = 1000).phase)
         assertEquals(8, ExhaustState(off.copy(on = true, expiresAt = 9000), nowMillis = 1000).remainingSeconds()!!.toInt())
         assertEquals("03:00", ExhaustState(off.copy(on = true, expiresAt = 10_800_000), nowMillis = 0).remainingHoursMinutes())
+        assertEquals("02:59:00", ExhaustState(off.copy(on = true, expiresAt = 10_740_000), nowMillis = 0).remainingClock())
         val expired = ExhaustState(off.copy(on = true, expiresAt = 9000), nowMillis = 10000)
         assertEquals(ExhaustPhase.Finishing, expired.phase)
         assertFalse(expired.canActivate)

@@ -3,7 +3,7 @@
 
     <style name="Theme.NovaResidence" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/nova_launch_background</item>
-        <item name="android:statusBarColor">#2E0F44</item>
+        <item name="android:statusBarColor">#2B0F44</item>
         <item name="android:navigationBarColor">#000000</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>

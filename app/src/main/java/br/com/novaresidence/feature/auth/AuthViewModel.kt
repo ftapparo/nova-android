@@ -87,16 +87,16 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     }
 
     fun login(email: String, password: String) = action(validateAuthForm(email, password)) { repository.login(email.trim(), password) }
-    fun signup(email: String, password: String, confirmation: String) = action(validateAuthForm(email, password, newPassword = true, confirmation = confirmation)) { repository.signup(email.trim(), password) }
+    fun signup(email: String, password: String) = action(validateAuthForm(email, password, newPassword = true)) { repository.signup(email.trim(), password) }
     fun recover(email: String) = action(validateAuthForm(email)) {
         repository.recover(email.trim())
         mutableState.update { it.copy(page = AuthPage.RecoveryConfirm, recoveryEmail = email.trim()) }
     }
-    fun confirm(code: String, password: String, confirmation: String) = action(validateAuthForm(
-        password = password, newPassword = true, confirmation = confirmation, code = code,
-    )) { repository.confirmRecovery(state.value.recoveryEmail, code, password) }
-    fun change(current: String, password: String, confirmation: String) = action(
-        validateAuthForm(password = password, newPassword = true, confirmation = confirmation) +
+    fun confirm(code: String, password: String) = action(validateAuthForm(password = password, newPassword = true, code = code)) {
+        repository.confirmRecovery(state.value.recoveryEmail, code, password)
+    }
+    fun change(current: String, password: String) = action(
+        validateAuthForm(password = password, newPassword = true) +
             if (current.isEmpty()) mapOf("currentPassword" to "Informe sua senha atual.") else emptyMap(),
     ) { repository.changePassword(current, password) }
 

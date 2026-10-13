@@ -40,13 +40,11 @@ fun validateAuthForm(
     email: String? = null,
     password: String? = null,
     newPassword: Boolean = false,
-    confirmation: String? = null,
     code: String? = null,
 ): Map<String, String> = buildMap {
     if (email != null && !Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$").matches(email.trim())) put("email", "Informe um e-mail válido.")
     if (password != null && (password.isEmpty() || (newPassword && password.length < 8))) {
         put(if (newPassword) "newPassword" else "password", if (newPassword) "Use pelo menos 8 caracteres." else "Informe sua senha.")
     }
-    if (confirmation != null && confirmation != password) put("confirmation", "As senhas não conferem.")
     if (code != null && !Regex("^[0-9]{6}$").matches(code)) put("code", "Informe o código de 6 dígitos.")
 }

@@ -101,9 +101,11 @@ class ApiTransport(
             }
         }
 
-    suspend inline fun <reified T> get(path: String, token: String? = null): T = decode(request(path, token = token))
+    // Decoding large payloads (e.g. 50 fire panel logs per page) on the main thread froze the UI on slow phones.
+    suspend inline fun <reified T> get(path: String, token: String? = null): T =
+        request(path, token = token).let { data -> withContext(Dispatchers.Default) { decode<T>(data) } }
     suspend inline fun <reified T> post(path: String, body: JsonObject? = null, token: String? = null): T =
-        decode(request(path, body, token, post = true))
+        request(path, body, token, post = true).let { data -> withContext(Dispatchers.Default) { decode<T>(data) } }
 
     inline fun <reified T> decode(data: JsonElement): T = try {
         NovaJson.decodeFromJsonElement<T>(data)

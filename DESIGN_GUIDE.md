@@ -15,7 +15,7 @@ Guia de produto para o app Android. Objetivo: interface profissional, minimalist
 
 Usar fonte padrão Android/Material 3 nos textos funcionais. Reservar a fonte de marca para logotipo e raros destaques. Normal no corpo; Medium para títulos e ações; SemiBold para estado ou valor de destaque. Evitar negrito em blocos inteiros.
 
-Estes são **tokens de produto propostos**, uma personalização permitida pelo Material 3, e devem ser avaliados nas capturas do app:
+Estes são **tokens de produto**, uma personalização permitida pelo Material 3. Desde 12/10/2026 o Figma publica os estilos "Nova / Typography" (Headline Home 22/28 SemiBold, Screen Title 20/26 Medium, Section Title 15/20 SemiBold, Item Title 15/20 Medium, Body 14/20, Supporting 13/18, Caption 12/16); no código eles ficam em `NovaType` (`core/ui/NovaTheme.kt`) e as telas os usam pelo papel:
 
 | Papel | Tamanho / linha | Peso | Uso |
 |---|---:|---|---|
@@ -47,15 +47,13 @@ Escala base: **4, 8, 12, 16, 24 e 32 dp**. Usar 20 dp como possível margem late
 | Campos relacionados | 12–16 dp |
 | Blocos da mesma seção | 16 dp |
 | Seções distintas | 24 dp |
-| Margem de autenticação, home e central | 28 dp (20 + 8 do Figma) |
-| Margem de exaustor e configurações | 24 dp |
-| Margem da tela de boas-vindas | 20 dp (ações com 28 dp) |
+| Margem lateral do conteúdo, em todas as telas | 28 dp (Figma, 12/10/2026). Cartões, botões, listas e divisores começam e terminam nela; o traço do chevron de voltar também (o vetor tem respiro interno, por isso a barra usa 8 dp + alvo de 48 dp) |
 
 Alinhar título, campos, divisores e ações à mesma grade. Evitar texto longo centralizado. Usar espaço ou divisor simples em vez de vários cartões aninhados. Espaço vazio deve ter finalidade; eliminar cadeias de Spacer(20.dp) em formulários.
 
 ## 4. Cor, forma e ícones
 
-Paleta existente como ponto de partida: roxo primário #45207A; roxo escuro #2E0F44; fundo #F5F6FA; texto #1F2933; secundário #6B7280; divisor #E3E6ED. Avaliar contraste por combinação; a existência da cor no projeto não garante aprovação de seu uso.
+Paleta (variáveis `color/…` do Figma, 12/10/2026): roxo primário #4C1D95; cabeçalho da home e splash #2B0F44 (controles do cabeçalho #3A145F); fundo #F5F6FA (telas de serviço #F7F8FC); texto #1F2933 (títulos de estado #151B34); secundário #6B7280; divisor #E3E6ED. Estados: sucesso #237A4B/#E8F7ED, atenção #8A6A00/#F8F4E3, alarme #C23030/#FFECEC, erro #B42318. Faixa informativa #EEECF6 com texto #5F6675. O verde (#248E4E), o cinza (#667080) e o amarelo (#BD9700) do Figma ficam abaixo de 4,5:1 e foram escurecidos na mesma família; o texto #6B7280 sobre #EEECF6 também (4,1:1). Avaliar contraste por combinação; a existência da cor no projeto não garante aprovação de seu uso.
 
 - Mapear cores a papéis de MaterialTheme.colorScheme. Evitar valores literais dispersos nas telas.
 - Usar roxo forte em uma ação primária, seleção e pequenos acentos; não cobrir grandes áreas sem função.
@@ -70,9 +68,9 @@ Paleta existente como ponto de partida: roxo primário #45207A; roxo escuro #2E0
 
 Altura 56 dp, fundo da tela, título 18/24 sp Regular e chevron (Lucide `chevron-left`, 24 dp) em alvo de 48 dp. Aplicar o inset de status apenas uma vez.
 
-### Navegação inferior (revisada em 01/10/2026)
+### Navegação inferior (revisada em 12/10/2026)
 
-Segue o componente **Navigation bar** do Figma (157:1183) e os conjuntos "… Menu Button": 72 dp de altura, fundo branco, borda superior de 1 dp #E3E6ED e sombra para cima (0 −2 8 rgba(64,52,80,.1)); padding 0/8/12/8, botões de 60 dp. Item normal: ícone 24 dp #6B7280 em área 64 × 32 e rótulo 11/16 sp Medium (**Início · Alarme · Exaustores · Perfil**). Item selecionado: quadrado #45207A de 40 dp com raio 15, ícone branco e sem rótulo visível (o rótulo vira descrição de acessibilidade). Oculta nas telas 12, 13, 22 e 23, como no Figma.
+Segue o componente **Navigation bar** do Figma (157:1183) e os conjuntos "… Menu Button": 80 dp de altura, fundo branco, borda superior de 1 dp #E3E6ED e sombra para cima (0 −2 8 rgba(64,52,80,.1)); padding inferior de 12 dp, três botões de 96 × 60 dp centralizados com 16 dp entre eles. Item normal: ícone de contorno 24 dp #6B7280 e rótulo 11/16 sp Medium (**Início · Alarme · Exaustor**; ícones prédio, chama e ventilador). Item selecionado (revisão de 13/10/2026): o mesmo ícone em versão preenchida #4C1D95 de 32 dp (prédio 28 × 32), sem fundo e sem rótulo visível (o rótulo vira descrição de acessibilidade). Configurações abre pelo ícone de perfil do cabeçalho da home, e Mensagens pelo sino. O menu aparece só nas abas; fica oculto em mensagens, configurações (09–16), histórico e detalhe da central (29–30), como no Figma.
 
 ### Barra de navegação do sistema
 

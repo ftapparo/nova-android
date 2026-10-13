@@ -151,3 +151,75 @@ O relógio do J410G está 1 hora adiantado em relação ao horário do condomín
 - `testDebugUnitTest` (incluindo 5 novos testes da central), `lint`, `assembleDebug` e `assembleDebugAndroidTest`: aprovados.
 - `ScreenTest` no J410G pelo AndroidJUnitRunner: 9 testes aprovados (inclui central normal, atenção, alarme, histórico, detalhe e home com alarme, usando dados fictícios).
 - No aparelho, com a API real: login, home, central (normal), histórico e detalhe reais, exaustor ligado e reiniciado (autorizado), configurações e seleção. Nenhum comando foi enviado à central de incêndio nem aos portões.
+
+## Revisão do Figma de 12/10/2026
+
+O arquivo foi reorganizado e renumerado. Todas as telas foram consultadas pelo MCP oficial (`get_metadata`, `get_screenshot`, `get_design_context` e `get_variable_defs`) e comparadas com capturas do J410G.
+
+| Telas | Nós | Implementação |
+|---|---|---|
+| 01–07 Autenticação | `56:1138`, `4:29391`…`4:29808` | Novo texto de boas-vindas, separador "ou continue com", botão "Google". Cadastro com senha única, botão de mostrar senha e dica "Use pelo menos 8 caracteres." (a confirmação saiu do Figma; recuperação e troca obrigatória seguem o mesmo padrão). Nota de spam com ícone. |
+| 08a–08c Home | `214:857`, `214:961`, `214:1066` | Cabeçalho #2B0F44 com pílula da unidade, sino (Mensagens) e perfil (Configurações); folha com cantos de 28 dp; cartões de serviço; "Informativos do condomínio" com estado vazio. |
+| 08d, 17, 18 Comunicados | `90:2382`, `217:856`, `217:877` | Sem rota na API: Mensagens (17) mostra filtros e estado vazio; carrossel (08d) e detalhe (18) aguardam contrato. Nenhum dado demonstrativo. |
+| 09–16 Configurações | `231:809`…`234:881` | Configurações, unidades, idioma, privacidade, termos, política, dados pessoais e exclusão de conta. |
+| 19–24 Exaustor | `245:942`, `246:2841`…`246:3298` | Aba sem voltar, cartão "Unidade ativa · Equipamento", ilustrações por estado, contador HH:MM:SS, botão com ícone de ligar. |
+| 26–30c Central | `257:856`…`269:1003` | Ilustrações por estado, alarme com orientações de segurança, histórico agrupado por dia com filtros e detalhes em seções com "Dados técnicos". |
+| Menu inferior | `157:1183` | Três abas: Início · Alarme · Exaustor. |
+
+### Decisões e divergências
+
+1. **Cor primária** passou a #4C1D95 (`color/primary`); cabeçalho e splash, #2B0F44. Verde e cinza dos selos foram escurecidos para 4,5:1.
+2. **Ilustrações** foram exportadas do Figma e geradas por densidade em WebP (ver "Ilustrações por densidade em WebP" abaixo). Em telas mais baixas que o frame (J4 com botões), encolhem para manter ação e aviso visíveis sem rolagem (DESIGN_GUIDE §6). O estado "sem comunicação" da central usa a ilustração normal em tons de cinza; o Figma não tem esse estado.
+3. **Central**: os textos do Figma "Existe uma aviso", "Local da aviso" e "Detalhes da evento" foram corrigidos. "A equipe responsável está verificando a ocorrência" virou "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável", pois a API não confirma verificação em andamento. O aviso de "você será avisado" continua substituído (sem push nativo).
+4. **Central — dados**: o app usa os campos interpretados `event`/`display` e `activeAlarms` da API v3; servidores que ainda não os enviam caem no tratamento anterior. "Local do aviso" vem de `/cie/events/active`, consultado só quando há falha ou supervisão.
+5. **Recuperação (06)**: o rótulo é "E-mail", como a API exige (o Figma pedia "E-mail, celular ou CPF" e foi corrigido em 13/10/2026). O código (05) expira em 15 minutos pelo contrato, não 10.
+6. **Dados pessoais (15)**: CPF e "Dados complementares" não existem no contrato e não são exibidos.
+7. **Excluir conta (16)**: sem `DELETE /auth/me`, o botão fica desabilitado com orientação para procurar a administração.
+8. **Termos e política (13, 14)**: exibem o texto provisório do próprio Figma; o conteúdo jurídico final é pendência de publicação.
+9. **Exaustor — erro**: o Figma não tem mais tela de erro; os estados "Falha na ativação" e "Não foi possível confirmar a ativação" usam o novo layout com os textos aprovados.
+
+### Pendências na API (`src/v3`)
+
+- `GET /messages` (ou equivalente) para comunicados, com marcação de lidas: telas 08d, 17 e 18.
+- `DELETE /auth/me`: obrigatória para a Play.
+- Dados pessoais complementares (ex.: CPF mascarado) em `/residence/me`, se a tela 15 deve exibi-los.
+
+### Validação (12/10/2026)
+
+- `lint`, `testDebugUnitTest` (39 testes), `assembleDebug`, `assembleDebugAndroidTest` e `installDebug`: aprovados. Os avisos restantes do lint são anteriores a esta revisão (manifesto, ícone do launcher, `ResidencePreferences`, versões de dependências).
+- `ScreenTest` no J410G pelo AndroidJUnitRunner: 9 testes aprovados, com capturas de 01–30a usando dados fictícios.
+- No aparelho, com a API real e a sessão já existente: home, central (normal), histórico e detalhe de evento, e exaustor (desligado). A produção já envia `event`/`display`; isso revelou que operações sem `place` repetiam o nome da zona ("Torre B · Torre B"), corrigido com teste. Nenhum comando foi enviado ao exaustor, à central ou aos portões.
+
+### Ilustrações por densidade em WebP (12/10/2026)
+
+As 7 ilustrações deixaram de ser PNG únicos em `drawable-nodpi` (990 px e 600 px, ~3,6 MB) e passaram a ter uma versão por densidade em WebP, geradas dos originais do Figma (1448 px e 1254 px) com `cwebp` 1.6.0:
+
+```
+cwebp -q 85 -alpha_q 100 -m 6 -sharp_yuv -resize <largura> 0 original.png -o drawable-<densidade>/nova_….webp
+```
+
+| Densidade | Exaustor (329 dp) | Central (200 dp) | Total das 7 |
+|---|---|---|---|
+| mdpi | 329 px | 200 px | 71 KB |
+| hdpi | 494 px | 300 px | 117 KB |
+| xhdpi (J4) | 658 px | 400 px | 168 KB |
+| xxhdpi | 987 px | 600 px | 280 KB |
+| xxxhdpi | 1316 px | 800 px | 402 KB |
+
+O Android escolhe a versão da densidade do aparelho; no App Bundle, a Play entrega só essa versão. Para regenerar, usar os mesmos parâmetros a partir dos PNGs exportados do Figma.
+
+## Revisão do Figma de 13/10/2026
+
+Pente fino em todas as telas: estrutura comparada com a revisão anterior (`get_metadata`) e capturas de todos os frames comparadas pixel a pixel. Telas 01–06, 09–16, 18, 30a e 30c ficaram idênticas.
+
+| Tela | Mudança no Figma | No app |
+|---|---|---|
+| Menu inferior (157:1183 e "… Menu Button") | Ícones react-icons (prédio, chama, ventilador). Selecionado = ícone preenchido roxo de 32 dp, sem fundo e sem rótulo | Implementado (`nova_home*`, `nova_alarm_*`, `nova_exhaust_*`) |
+| 08a–08d Home | Cabeçalho 16 dp mais baixo; ícones prédio, sino (BiBell 22), usuário (AiOutlineUser 22); serviços com chama e ventilador de 24 dp | Implementado |
+| 07 Erro | Aviso com "i" contornado de 22 dp | `NovaNotice` usa `NovaInfoMark` |
+| 19–24 Exaustor | Prédio de 28 dp no cartão; faixa informativa #EEECF6 | Implementado; texto da faixa em #5F6675 para 4,5:1 |
+| 27 Atenção, 30b Falha | Amarelo #BD9700 sobre #F8F4E3 | Fundo #F8F4E3; texto e ícones em #8A6A00 (o #BD9700 tem 2,8:1) |
+| 29 Histórico | Ícones de 24 dp sem círculo: sirene, alerta, chave inglesa; linhas de 88 dp | Implementado (`nova_event_*`) |
+| 17 Mensagens | Ícones das linhas | Sem efeito: a lista não tem dados (sem rota na API) |
+
+Validação: lint, 39 testes unitários, `assembleDebug` e 9 testes de tela no J410G aprovados; capturas conferidas com os PNGs do Figma.

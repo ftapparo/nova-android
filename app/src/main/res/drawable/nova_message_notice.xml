@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exportado do Figma (kixzSbydhXP4k7qTSKWJbK), ícone de comunicado da tela 17. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+  <path
+      android:pathData="M11,6C14.041,6.078 17.014,5.088 19.4,3.2C19.549,3.089 19.725,3.021 19.91,3.004C20.095,2.987 20.281,3.023 20.447,3.106C20.613,3.189 20.753,3.316 20.851,3.474C20.948,3.632 21,3.814 21,4V16C21,16.186 20.948,16.368 20.851,16.526C20.753,16.684 20.613,16.811 20.447,16.894C20.281,16.978 20.095,17.013 19.91,16.996C19.725,16.979 19.549,16.911 19.4,16.8C17.014,14.913 14.041,13.922 11,14H5C4.47,14 3.961,13.789 3.586,13.414C3.211,13.039 3,12.53 3,12V8C3,7.47 3.211,6.961 3.586,6.586C3.961,6.211 4.47,6 5,6H11Z"
+      android:strokeLineJoin="round"
+      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#4C1D95"
+      android:strokeLineCap="round"/>
+  <path
+      android:pathData="M6,14C6,16.596 6.842,19.123 8.4,21.2C8.718,21.624 9.192,21.905 9.717,21.98C10.242,22.055 10.776,21.918 11.2,21.6C11.624,21.282 11.905,20.808 11.98,20.283C12.055,19.758 11.918,19.224 11.6,18.8C10.561,17.415 10,15.731 10,14"
+      android:strokeLineJoin="round"
+      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#4C1D95"
+      android:strokeLineCap="round"/>
+  <path
+      android:pathData="M8,6V14"
+      android:strokeLineJoin="round"
+      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#4C1D95"
+      android:strokeLineCap="round"/>
+</vector>

@@ -10,140 +10,297 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.novaresidence.BuildConfig
+import br.com.novaresidence.R
 import br.com.novaresidence.core.session.AuthUser
 import br.com.novaresidence.core.ui.*
 
-internal enum class ResidencePage { Home, Fire, Exhaust, Profile, SelectUnit, SelectLanguage }
-
-// Margem lateral das telas 21–23 no Figma.
-private val Margin = 24.dp
-private val RadioOutline = Color(0xFF49454F)
+// Margem lateral das telas 09–16 no Figma.
+private val Margin = 28.dp
+private val RadioOutline = Color(0xFF6B7280)
 
 @Composable
 internal fun ResidenceSettings(
     page: ResidencePage, state: ResidenceState, user: AuthUser, navigate: (ResidencePage) -> Unit,
     back: () -> Unit, select: (Int) -> Unit, logout: () -> Unit, busy: Boolean, saveLanguage: () -> Unit,
 ) {
-    val units = state.residence?.units.orEmpty()
     val previousSave = remember(page) { state.languageSaves }
     LaunchedEffect(state.languageSaves) {
         if (page == ResidencePage.SelectLanguage && state.languageSaves > previousSave) back()
     }
     val title = when (page) {
-        ResidencePage.Profile -> "Configurações"
         ResidencePage.SelectUnit -> "Selecionar unidade"
-        else -> "Selecionar idioma"
+        ResidencePage.SelectLanguage -> "Selecionar idioma"
+        ResidencePage.Privacy -> "Privacidade"
+        ResidencePage.Terms -> "Termos de uso"
+        ResidencePage.PrivacyPolicy -> "Política de privacidade"
+        ResidencePage.PersonalData -> "Dados pessoais"
+        ResidencePage.DeleteAccount -> "Excluir conta"
+        else -> "Configurações"
     }
-    Column(Modifier.fillMaxSize().background(NovaBackground)) {
+    Column(Modifier.fillMaxSize().background(Color.White)) {
         NovaTopBar(title, back)
-        BoxWithConstraints(Modifier.weight(1f)) {
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxWidth()
                 .verticalScroll(rememberScrollState()).heightIn(min = maxHeight), verticalArrangement = Arrangement.SpaceBetween) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (page == ResidencePage.Profile) 4.dp else 5.dp)) {
-                    when (page) {
-                        ResidencePage.Profile -> {
-                            Spacer(Modifier.height(12.dp))
-                            SectionLabel("Conta")
-                            val person = state.residence?.person
-                            SettingsRow(person?.nome?.takeIf { it.isNotBlank() }?.personName() ?: "Conta Nova Residence", listOfNotNull(
-                                user.email?.let { "E-mail: $it" },
-                                person?.let { "Código Freedom: ${it.sequencia}" },
-                            ))
-                            SectionLabel("Unidade")
-                            SettingsRow("Minhas unidades", listOf(if (units.size == 1) "1 unidade vinculada" else "${units.size} unidades vinculadas"),
-                                click = if (units.isEmpty()) null else ({ navigate(ResidencePage.SelectUnit) }))
-                            SectionLabel("Preferências")
-                            SettingsRow("Idioma", listOf("Português (Brasil)")) { navigate(ResidencePage.SelectLanguage) }
-                            // O link ocupa 48 dp de toque; 2 dp + 14 dp internos reproduzem os 16 dp do Figma abaixo do divisor.
-                            HorizontalDivider(Modifier.padding(start = Margin, end = Margin, top = 16.dp, bottom = 2.dp), color = NovaOutline)
-                            NovaTextLink("Desconectar", logout, Modifier.padding(horizontal = Margin), enabled = !busy, color = NovaDanger)
-                            if (busy) NovaLoading()
-                        }
-                        ResidencePage.SelectUnit -> {
-                            Guidance("Selecione a unidade que deseja usar no aplicativo.")
-                            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                units.forEach { entry ->
-                                    val selected = entry.sequencia == state.selectedUnit
-                                    SettingsChoice(entry.selectorLabel(), entry.blockedMessage() ?: if (selected) "Unidade selecionada" else "Unidade vinculada", selected, minHeight = 68.dp) {
-                                        select(entry.sequencia)
-                                    }
-                                }
-                            }
-                            if (units.isEmpty()) Text(state.residence?.notice() ?: "Nenhuma unidade vinculada.", Modifier.padding(horizontal = Margin), style = MaterialTheme.typography.bodyMedium)
-                            Row(Modifier.padding(start = Margin, end = Margin, top = 32.dp).fillMaxWidth().background(NovaSecondaryContainer, RoundedCornerShape(12.dp)).padding(16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text("i", Modifier.width(20.dp), style = MaterialTheme.typography.labelLarge, color = NovaPrimary, textAlign = TextAlign.Center)
-                                Text("Os vínculos são atualizados pelo cadastro do condomínio.", fontSize = 13.sp, lineHeight = 16.sp, color = NovaOnSurfaceVariant)
-                            }
-                        }
-                        ResidencePage.SelectLanguage -> {
-                            Guidance("O aplicativo será exibido no idioma escolhido.")
-                            // Inglês e espanhol aparecem no Figma, mas ficam desabilitados até existir tradução completa.
-                            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                SettingsChoice("Português (Brasil)", null, true) {}
-                                SettingsChoice("English", null, false, enabled = false) {}
-                                SettingsChoice("Español", null, false, enabled = false) {}
-                            }
-                        }
-                        else -> Unit
-                    }
-                    state.preferenceError?.let { Box(Modifier.padding(horizontal = Margin, vertical = 8.dp)) { NovaNotice(it) } }
-                    if (state.savingPreference) NovaLoading()
-                }
-                Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp)) {
-                    when (page) {
-                        ResidencePage.Profile -> Text("v${BuildConfig.VERSION_NAME}", Modifier.fillMaxWidth(), fontSize = 12.sp, lineHeight = 16.sp, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
-                        ResidencePage.SelectLanguage -> NovaButton("Salvar idioma", saveLanguage, enabled = !state.savingPreference)
-                        else -> Unit
-                    }
+                when (page) {
+                    ResidencePage.SelectUnit -> SelectUnit(state, select)
+                    ResidencePage.SelectLanguage -> SelectLanguage(state, saveLanguage)
+                    ResidencePage.Privacy -> Privacy(navigate)
+                    ResidencePage.Terms -> LegalText(TermsTitle, TermsBody)
+                    ResidencePage.PrivacyPolicy -> LegalText(PolicyTitle, PolicyBody)
+                    ResidencePage.PersonalData -> PersonalData(state, user, navigate)
+                    ResidencePage.DeleteAccount -> DeleteAccount(back)
+                    else -> Settings(state, user, navigate, logout, busy)
                 }
             }
         }
     }
 }
 
+/** Configurações (Figma 09). */
 @Composable
-private fun Guidance(text: String) {
-    Text(text, Modifier.fillMaxWidth().padding(horizontal = Margin, vertical = 16.dp), style = MaterialTheme.typography.bodyMedium.copy(letterSpacing = 0.sp), color = NovaOnSurfaceVariant)
-}
-
-@Composable
-private fun SectionLabel(title: String) {
-    Text(title, Modifier.fillMaxWidth().padding(horizontal = Margin), fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, color = NovaOnSurfaceVariant)
-}
-
-@Composable
-private fun SettingsRow(title: String, details: List<String>, click: (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().background(Color.White).then(if (click != null) Modifier.clickable(role = Role.Button, onClick = click) else Modifier)
-        .heightIn(min = 48.dp).padding(horizontal = Margin, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = NovaOnSurface)
-            details.forEach { Text(it, fontSize = 13.sp, lineHeight = 18.sp, color = NovaOnSurfaceVariant) }
+private fun ColumnScope.Settings(state: ResidenceState, user: AuthUser, navigate: (ResidencePage) -> Unit, logout: () -> Unit, busy: Boolean) {
+    val units = state.residence?.units.orEmpty()
+    val person = state.residence?.person
+    Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp), verticalArrangement = Arrangement.spacedBy(28.dp)) {
+        Column {
+            SectionTitle("Conta")
+            Column(Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(person?.nome?.takeIf { it.isNotBlank() }?.personName() ?: "Conta Nova Residence", style = NovaType.ItemTitle, color = NovaOnSurface)
+                user.email?.let { Text(it, style = NovaType.Body, color = NovaOnSurfaceVariant) }
+                person?.let { Text("Código Freedom: ${it.sequencia}", style = NovaType.Body, color = NovaOnSurfaceVariant) }
+            }
         }
-        if (click != null) Text("›", fontSize = 22.sp, lineHeight = 24.sp, color = NovaOnSurfaceVariant)
+        Column {
+            SectionTitle("Configurações")
+            SettingsRow("Minhas unidades", if (units.size == 1) "1 unidade vinculada" else "${units.size} unidades vinculadas",
+                click = if (units.isEmpty()) null else ({ navigate(ResidencePage.SelectUnit) }))
+            HorizontalDivider(color = NovaOutline)
+            SettingsRow("Idioma", "Português (Brasil)") { navigate(ResidencePage.SelectLanguage) }
+            HorizontalDivider(color = NovaOutline)
+            SettingsRow("Privacidade", "Política, termos e dados pessoais") { navigate(ResidencePage.Privacy) }
+        }
+    }
+    Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        NovaTextLink("Desconectar", logout, Modifier.width(160.dp), enabled = !busy, color = NovaError,
+            style = NovaType.ItemTitle, alignment = Alignment.CenterStart, underline = true)
+        if (busy) NovaLoading()
+        Text("Versão do app ${BuildConfig.VERSION_NAME}", style = NovaType.Supporting, color = NovaOnSurfaceVariant)
     }
 }
 
-/** Linha de escolha do Figma (22/23): texto à esquerda e rádio de 20 dp à direita, com 24 dp de margem. */
+/** Selecionar unidade (Figma 10): a escolha vale durante a sessão. */
 @Composable
-private fun SettingsChoice(title: String, subtitle: String?, selected: Boolean, enabled: Boolean = true, minHeight: Dp = 64.dp, click: () -> Unit) {
-    Row(Modifier.fillMaxWidth().background(Color.White).selectable(selected, enabled = enabled, role = Role.RadioButton, onClick = click)
+private fun SelectUnit(state: ResidenceState, select: (Int) -> Unit) {
+    val units = state.residence?.units.orEmpty()
+    Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp)) {
+        Guidance("Selecione a unidade que deseja usar no aplicativo.")
+        Spacer(Modifier.height(36.dp))
+        Column(Modifier.selectableGroup()) {
+            units.forEachIndexed { index, entry ->
+                if (index > 0) HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
+                val selected = entry.sequencia == state.selectedUnit
+                Choice(entry.selectorLabel(), entry.blockedMessage() ?: if (selected) "Unidade selecionada" else "Unidade vinculada", selected, minHeight = 76.dp) {
+                    select(entry.sequencia)
+                }
+            }
+        }
+        if (units.isEmpty()) Text(state.residence?.notice() ?: "Nenhuma unidade vinculada.", Modifier.padding(horizontal = Margin), style = NovaType.Body)
+        Row(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 32.dp), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.Top) {
+            Icon(painterResource(R.drawable.nova_info_outline), null, Modifier.padding(top = 1.dp).size(18.dp), tint = NovaPrimary)
+            Text("Os vínculos são atualizados pelo cadastro do condomínio.", Modifier.weight(1f, fill = false),
+                style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
+        }
+    }
+}
+
+/** Selecionar idioma (Figma 11). Inglês e espanhol ficam desabilitados até existir tradução completa. */
+@Composable
+private fun ColumnScope.SelectLanguage(state: ResidenceState, saveLanguage: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(top = 24.dp)) {
+        Guidance("O aplicativo será exibido no idioma escolhido.")
+        Spacer(Modifier.height(36.dp))
+        Column(Modifier.selectableGroup()) {
+            Choice("Português (Brasil)", null, true) {}
+            HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
+            Choice("English", null, false, enabled = false) {}
+            HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
+            Choice("Español", null, false, enabled = false) {}
+        }
+        state.preferenceError?.let { Box(Modifier.padding(horizontal = Margin, vertical = 16.dp)) { NovaNotice(it) } }
+        if (state.savingPreference) NovaLoading()
+    }
+    NovaButton("Salvar idioma", saveLanguage, Modifier.padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), enabled = !state.savingPreference)
+}
+
+/** Privacidade (Figma 12). */
+@Composable
+private fun Privacy(navigate: (ResidencePage) -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp)) {
+        SettingsRow("Termos de uso", "Regras e condições de uso do aplicativo") { navigate(ResidencePage.Terms) }
+        HorizontalDivider(color = NovaOutline)
+        SettingsRow("Política de privacidade", "Como seus dados são utilizados e protegidos") { navigate(ResidencePage.PrivacyPolicy) }
+        HorizontalDivider(color = NovaOutline)
+        SettingsRow("Dados pessoais", "Consulte os dados vinculados à sua conta") { navigate(ResidencePage.PersonalData) }
+        HorizontalDivider(color = NovaOutline)
+        SettingsRow("Solicitar exclusão da conta", "Solicite a remoção do acesso e dos dados do aplicativo") { navigate(ResidencePage.DeleteAccount) }
+    }
+}
+
+// Textos provisórios do próprio Figma (13 e 14): o conteúdo jurídico definitivo ainda será aprovado.
+private const val TermsTitle = "Termos de uso do aplicativo Nova Residence"
+private val TermsBody = """
+    Esta tela está preparada para receber o texto jurídico definitivo dos Termos de Uso. O conteúdo final deve ser revisado e aprovado antes da publicação do aplicativo.
+
+    Sugestão de estrutura:
+
+    1. Objetivo e escopo do aplicativo
+    2. Cadastro e autenticação
+    3. Uso dos serviços do condomínio
+    4. Responsabilidades do usuário
+    5. Disponibilidade e limitações do serviço
+    6. Privacidade e proteção de dados
+    7. Alterações dos termos
+    8. Contato
+""".trimIndent()
+
+private const val PolicyTitle = "Privacidade e proteção de dados"
+private val PolicyBody = """
+    Esta tela está preparada para receber a Política de Privacidade definitiva. O texto final deve refletir exatamente os dados tratados pelo aplicativo e ser revisado antes da publicação.
+
+    A política deverá explicar, de forma clara:
+
+    • quais dados são coletados ou recebidos do condomínio;
+    • para quais finalidades os dados são utilizados;
+    • bases legais aplicáveis;
+    • compartilhamento com prestadores e integrações;
+    • armazenamento e segurança;
+    • prazo de retenção;
+    • direitos do titular;
+    • canal de contato para assuntos de privacidade.
+""".trimIndent()
+
+/** Termos de uso e política de privacidade (Figma 13 e 14). */
+@Composable
+private fun LegalText(title: String, body: String) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = Margin, vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        Text("Última atualização: conteúdo jurídico a definir", style = NovaType.Supporting, color = NovaOnSurfaceVariant)
+        Text(title, Modifier.semantics { heading() }, style = NovaType.ScreenTitle.copy(fontWeight = FontWeight.SemiBold), color = NovaOnSurface)
+        Text(body, style = NovaType.Body.copy(lineHeight = 21.sp), color = NovaOnSurface)
+    }
+}
+
+/**
+ * Dados pessoais (Figma 15). A API não devolve CPF nem dados complementares da pessoa,
+ * então essas linhas do Figma não são exibidas.
+ */
+@Composable
+private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (ResidencePage) -> Unit) {
+    val residence = state.residence
+    val unit = residence?.units?.firstOrNull { it.sequencia == state.selectedUnit }
+    Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp)) {
+        Guidance("Dados vinculados à sua conta e ao cadastro do condomínio.")
+        Column(Modifier.padding(horizontal = Margin)) {
+            val rows = listOfNotNull(
+                residence?.person?.nome?.takeIf { it.isNotBlank() }?.let { "Nome" to it.personName() },
+                user.email?.let { "E-mail" to it },
+            )
+            rows.forEach { (label, value) ->
+                DataRow(label, value)
+                HorizontalDivider(color = NovaOutline)
+            }
+            DataRow("Unidade ativa", unit?.selectorLabel() ?: "Nenhuma unidade",
+                click = if (residence?.units.isNullOrEmpty()) null else ({ navigate(ResidencePage.SelectUnit) }))
+        }
+    }
+}
+
+/** Excluir conta (Figma 16). */
+@Composable
+private fun ColumnScope.DeleteAccount(back: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 28.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Text("Excluir sua conta", Modifier.semantics { heading() }, style = NovaType.ScreenTitle.copy(fontWeight = FontWeight.SemiBold), color = NovaOnSurface)
+        Text("Ao excluir sua conta, seu acesso ao aplicativo será encerrado. Alguns dados podem continuar armazenados pelo condomínio quando necessários para obrigações legais, administrativas ou de segurança.",
+            style = NovaType.Body.copy(lineHeight = 21.sp), color = NovaOnSurface)
+        Column(Modifier.fillMaxWidth().background(NovaErrorContainer, RoundedCornerShape(14.dp)).padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Antes de continuar", style = NovaType.BodyEmphasis, color = NovaError)
+            Text("Essa ação remove o acesso da sua conta ao aplicativo. Se precisar voltar a utilizar o app, poderá ser necessário um novo vínculo pela administração do condomínio.",
+                style = NovaType.Supporting, color = NovaOnSurfaceVariant)
+        }
+    }
+    Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        NovaButton("Cancelar", back, style = NovaButtonStyle.Neutral)
+        // A API ainda não tem rota de exclusão da própria conta (CHECKLIST-PUBLICACAO.md): o botão fica
+        // desabilitado em vez de simular uma exclusão que não aconteceria.
+        NovaButton("Excluir conta", {}, enabled = false, style = NovaButtonStyle.Danger)
+        Text("A exclusão pelo aplicativo ainda não está disponível. Enquanto isso, solicite-a à administração do condomínio.",
+            Modifier.fillMaxWidth(), style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
+    }
+}
+
+@Composable
+private fun Guidance(text: String) {
+    Text(text, Modifier.fillMaxWidth().padding(horizontal = Margin), style = NovaType.Body, color = NovaOnSurfaceVariant)
+}
+
+@Composable
+private fun SectionTitle(title: String) {
+    Text(title, Modifier.semantics { heading() }, style = NovaType.Section, color = NovaOnSurface)
+}
+
+/** Linha das configurações (Figma 09 e 12): título, apoio e círculo com chevron. */
+@Composable
+private fun SettingsRow(title: String, detail: String, click: (() -> Unit)? = null) {
+    Row(Modifier.fillMaxWidth().then(if (click != null) Modifier.clickable(role = Role.Button, onClick = click) else Modifier)
+        .heightIn(min = 84.dp).padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = NovaType.ItemTitle, color = NovaOnSurface)
+            Text(detail, style = NovaType.Body, color = NovaOnSurfaceVariant)
+        }
+        if (click != null) NovaChevronAction()
+    }
+}
+
+/** Linha dos dados pessoais (Figma 15): rótulo e valor, com chevron quando abre outra tela. */
+@Composable
+private fun DataRow(label: String, value: String, click: (() -> Unit)? = null) {
+    Row(Modifier.fillMaxWidth().then(if (click != null) Modifier.clickable(role = Role.Button, onClick = click) else Modifier)
+        .heightIn(min = 112.dp).padding(vertical = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(label, style = NovaType.ItemTitle, color = NovaOnSurface)
+            Text(value, style = NovaType.Body, color = NovaOnSurfaceVariant)
+        }
+        if (click != null) NovaChevronAction()
+    }
+}
+
+/** Linha de escolha do Figma (10/11): texto à esquerda e rádio de 20 dp à direita. */
+@Composable
+private fun Choice(title: String, subtitle: String?, selected: Boolean, enabled: Boolean = true, minHeight: Dp = 68.dp, click: () -> Unit) {
+    Row(Modifier.fillMaxWidth().selectable(selected, enabled = enabled, role = Role.RadioButton, onClick = click)
         .heightIn(min = minHeight).padding(horizontal = Margin, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = if (enabled) NovaOnSurface else NovaDisabledContent)
-            subtitle?.let { Text(it, fontSize = 13.sp, lineHeight = 18.sp, color = NovaOnSurfaceVariant) }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = NovaType.ItemTitle, color = if (enabled) NovaOnSurface else NovaDisabledContent)
+            subtitle?.let { Text(it, style = NovaType.Body, color = NovaOnSurfaceVariant) }
         }
         val ring = when { !enabled -> NovaDisabledContent; selected -> NovaPrimary; else -> RadioOutline }
         Box(Modifier.size(20.dp).border(2.dp, ring, CircleShape), contentAlignment = Alignment.Center) {

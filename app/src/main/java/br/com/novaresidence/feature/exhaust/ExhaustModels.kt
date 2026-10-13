@@ -56,6 +56,11 @@ data class ExhaustState(
         "%02d:%02d".format(Locale.ROOT, seconds / 3600, (seconds % 3600) / 60)
     }
 
+    /** Contador da tela do exaustor (Figma 21): "02:59:00". */
+    fun remainingClock(): String? = remainingSeconds()?.let { seconds ->
+        "%02d:%02d:%02d".format(Locale.ROOT, seconds / 3600, (seconds % 3600) / 60, seconds % 60)
+    }
+
     /** Resumo exibido na linha do exaustor na home (telas 08a/08b). */
     fun homeSummary(): String = when (phase) {
         ExhaustPhase.Loading -> "Consultando equipamento…"
