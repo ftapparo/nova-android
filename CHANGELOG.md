@@ -4,6 +4,9 @@
 
 ### Adicionado
 
+- Termo de Uso (13) e Política de Privacidade (14) v1.0: página vigente publicada pela API (`GET /legal`), em WebView restrito (sem JavaScript; links e PDF abrem fora do app) e com o texto na escala do corpo do app. Aviso "Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade" nas boas-vindas e no cadastro; o cadastro envia a versão aceita e o Google a envia quando o catálogo carrega. Tela de aceite para conta antiga ou versão nova do Termo (`mustAcceptTerms`).
+- Exclusão da própria conta (16) com `DELETE /auth/me`: a sessão só é apagada depois da confirmação da API; em falha, a pessoa continua conectada e vê o erro. Equipe vê o botão desabilitado (contas removidas pela administração).
+- CPF mascarado nos dados pessoais (15), vindo de `person.cpfMasked`; o CPF completo não chega ao app.
 - Comunicados do condomínio (telas 08d, 17 e 18) em `feature/message`, com `/messages` da API v3: carrossel dos 5 mais recentes na home, contador de não lidas no sino, lista com filtro Todas/Não lidas agrupada por dia e detalhe que marca como lido.
 - Central de incêndio redesenhada (08c e 26–30c): normal, atenção com o local do aviso, sem comunicação e alarme com orientações de segurança; histórico de 30 dias com filtros e ícones por tipo; detalhe com "Dados técnicos". Usa os campos interpretados `event`, `display` e `activeAlarms` da API, com alternativa para servidores antigos.
 - Botão de mostrar/ocultar senha em todos os campos de senha.

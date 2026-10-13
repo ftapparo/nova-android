@@ -36,20 +36,25 @@ class AuthRepositoryTest {
         return NovaJson.parseToJsonElement(request.body.readUtf8()).jsonObject
     }
 
-    @Test fun `login and signup store session and send exactly email and password`() = runBlocking {
+    @Test fun `login sends exactly email and password and signup adds the accepted terms version`() = runBlocking {
         enqueueSession(true)
         auth.login("morador@example.com", "temporary")
         assertEquals(setOf("email", "password"), takeBody("auth/login").keys)
         assertTrue(session.user.value!!.mustChangePassword)
         enqueueSession()
-        auth.signup("new@example.com", "password123")
-        assertEquals(setOf("email", "password"), takeBody("auth/signup").keys)
+        auth.signup("new@example.com", "password123", "1.0")
+        val body = takeBody("auth/signup")
+        assertEquals(setOf("email", "password", "acceptedTermsVersion"), body.keys)
+        assertEquals("1.0", body["acceptedTermsVersion"]!!.jsonPrimitive.content)
         assertFalse(session.user.value!!.mustChangePassword)
     }
 
-    @Test fun `Google sends only idToken and recovery uses six digit code and fresh password`() = runBlocking {
+    @Test fun `Google omits terms version when unknown and recovery uses six digit code and fresh password`() = runBlocking {
         enqueueSession()
-        auth.google("google-token")
+        auth.google("google-token", "1.0")
+        assertEquals(setOf("idToken", "acceptedTermsVersion"), takeBody("auth/google").keys)
+        enqueueSession()
+        auth.google("google-token", null)
         assertEquals(setOf("idToken"), takeBody("auth/google").keys)
         server.enqueue(MockResponse().setResponseCode(202).setBody("""{"success":true,"data":null,"meta":{}}"""))
         auth.recover("morador@example.com")
@@ -71,6 +76,26 @@ class AuthRepositoryTest {
         auth.logout()
         assertEquals("/v3/api/auth/logout", server.takeRequest().path)
         assertNull(store.value)
+    }
+
+    @Test fun `account deletion sends DELETE with confirmation and clears the session only after success`() = runBlocking {
+        session.replace(testSession(), session.generation())
+        server.enqueue(MockResponse().setResponseCode(503).setBody(
+            """{"success":false,"error":{"type":"urn:nova-api:upstream-error","status":503},"meta":{}}"""))
+        val failure = runCatching { auth.deleteAccount() }.exceptionOrNull() as ApiException
+        assertEquals(ApiErrorKind.Unavailable, failure.kind)
+        server.takeRequest()
+        assertNotNull(store.value)
+
+        server.enqueue(MockResponse().setBody("""{"success":true,"data":null,"meta":{}}"""))
+        auth.deleteAccount()
+        val request = server.takeRequest()
+        assertEquals("DELETE", request.method)
+        assertEquals("/v3/api/auth/me", request.path)
+        assertEquals("Bearer ${testSession().accessToken}", request.getHeader("Authorization"))
+        assertEquals(JsonPrimitive(true), NovaJson.parseToJsonElement(request.body.readUtf8()).jsonObject["confirm"])
+        assertNull(store.value)
+        assertNull(session.user.value)
     }
 
     @Test fun `validation accepts login passwords below signup minimum and preserves password whitespace`() {

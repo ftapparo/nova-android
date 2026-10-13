@@ -292,7 +292,8 @@ Session response (`SessionData`), returned by login, signup, Google, refresh and
     "id": "9152eea2-c5e7-4fec-a296-85f20c68f51f",
     "email": "morador@gmail.com",
     "role": null,
-    "mustChangePassword": false
+    "mustChangePassword": false,
+    "mustAcceptTerms": false
   }
 }
 ```
@@ -301,12 +302,13 @@ Session response (`SessionData`), returned by login, signup, Google, refresh and
 
 | Method | Path | Auth | Body | Returns |
 |---|---|---|---|---|
-| POST | `/auth/signup` | — | `{ email, password }` (password ≥ 8) | 201 `SessionData` |
+| POST | `/auth/signup` | — | `{ email, password, acceptedTermsVersion }` (password ≥ 8; version = current Terms, else 400 and no account) | 201 `SessionData` |
 | POST | `/auth/login` | — | `{ email, password }` | 200 `SessionData` |
-| POST | `/auth/google` | — | `{ idToken, nonce? }` | 200 `SessionData` |
+| POST | `/auth/google` | — | `{ idToken, nonce?, acceptedTermsVersion? }` | 200 `SessionData` |
 | POST | `/auth/refresh` | — | `{ refreshToken }` | 200 `SessionData` |
 | POST | `/auth/logout` | Bearer | — | 200 `null` |
 | GET | `/auth/me` | Bearer | — | 200 `AuthUser` |
+| DELETE | `/auth/me` | Bearer | `{ confirm: true }` | 200 `null` — deletes the own account; staff get 403; 503 = nothing deleted |
 | POST | `/auth/password/change` | Bearer | `{ currentPassword, newPassword }` | 200 `SessionData` |
 | POST | `/auth/password/recover` | — | `{ email }` | 202 `null` (always, even if the e-mail has no account) |
 | POST | `/auth/password/recover/confirm` | — | `{ email, code, newPassword }` (`code` = 6 digits from the e-mail, valid 15 min) | 200 `SessionData` |
@@ -328,6 +330,13 @@ Rate limits (all answer 429 with `Retry-After`): login 20 per IP and 5 wrong pas
 - `nonce`: send it **only if** the app set a nonce in the Google request. If you do use one, pass the **raw** nonce to the API and its SHA-256 hash to Google. Sending a nonce that is not in the token makes the login fail.
 - First Google sign-in creates the account (no role, pending link). If an account with the same e-mail already exists, the Google identity is attached to it — same user id.
 
+### Terms of Use and Privacy Policy
+
+- `GET /legal` (public, no token): current documents — `document` (`termo-de-uso` | `politica-de-privacidade`), `title`, `version`, `effectiveDate`, `sha256` of the official PDF, `htmlUrl`, `pdfUrl`. The public pages live outside `/v3/api` (`/termos-de-uso`, `/politica-de-privacidade`, `/<doc>/pdf`), so store links do not change with the API version. The PDF is the official document; the HTML page is for reading on the phone.
+- The app (`feature/legal`) shows the HTML page in a restricted WebView (no JavaScript, no file access, other links and the PDF open outside the app). The welcome (Google can create the account) and signup screens say "Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade" with links; signup sends the current version, Google sends it when the catalog loaded (otherwise the account comes back with `mustAcceptTerms`).
+- `user.mustAcceptTerms: true` (older account or new Terms version) → acceptance screen before the logged-in area, `POST /legal/terms/accept` `{ version }`, then `GET /auth/me`. 409 = a newer version was published: reload `GET /legal` and show it. The API does not block other routes without acceptance.
+- Public account-deletion page (Google Play requirement): `/excluir-conta` on the same host.
+
 ### Mandatory password change
 
 Staff can reset a user's password to a temporary one. While `user.mustChangePassword` is `true`:
@@ -344,7 +353,7 @@ Right after login (and on app resume), call `GET /residence/me` (Bearer). It dec
 {
   "status": "ativo",
   "blocked": false,
-  "person": { "sequencia": 91, "nome": "FULANO DE TAL" },
+  "person": { "sequencia": 91, "nome": "FULANO DE TAL", "cpfMasked": "•••.456.789-••" },
   "units": [
     {
       "sequencia": 97, "quadra": "A", "lote": "124", "label": "A-124",
@@ -432,8 +441,8 @@ O morador só pode ligar o exaustor dentro da área do condomínio.
 - Comunicados (08d, 17 e 18) ficam em `feature/message` e usam `/messages` (seção "Condo messages" abaixo): carrossel dos 5 mais recentes na home, contador de não lidas no sino, lista com filtro "Todas/Não lidas" agrupada por dia e detalhe. Abrir o detalhe chama `POST /messages/{id}/read`. Consulta ao entrar na área logada (sem push nem polling); só para equipe ou morador com unidade liberada.
 - A unidade padrão foi removida do Figma e do app (30/09/2026). A unidade ativa é escolhida na tela 10 ("Selecionar unidade") com um toque; a seleção vale durante a sessão enquanto vinculada. No acesso seguinte vale a regra inicial (`selectResidenceUnit`). O seletor continua mostrando unidades bloqueadas com os motivos do contrato.
 - Configurações (09) exibe "Código Freedom" = `person.sequencia`. É o código do morador no cadastro do condomínio e ajuda no atendimento; exceção consciente à regra de não exibir identificadores internos.
-- Privacidade (12): Termos (13) e Política (14) exibem o texto provisório do Figma até existir o conteúdo jurídico aprovado. Dados pessoais (15) mostra nome, e-mail e unidade ativa; CPF e "dados complementares" não existem no contrato e não são exibidos.
-- Excluir conta (16): sem rota `DELETE /auth/me` na API, o botão fica desabilitado com orientação para procurar a administração. A rota é obrigatória para publicar na Play (`CHECKLIST-PUBLICACAO.md`).
+- Privacidade (12): Termos (13) e Política (14) exibem a página vigente publicada pela API (`feature/legal`, seção "Terms of Use and Privacy Policy"). Dados pessoais (15) mostra nome, CPF mascarado (`person.cpfMasked`; a API nunca envia o CPF completo, e a linha some quando vem nulo), e-mail e unidade ativa; "dados complementares" não existem no contrato e não são exibidos.
+- Excluir conta (16): a própria tela é a confirmação; "Excluir conta" chama `DELETE /auth/me` e, só depois da resposta de sucesso, limpa a sessão e volta às boas-vindas com "Sua conta foi excluída.". Em falha, a sessão continua e o erro aparece na tela (503: nada foi excluído). Para equipe (`porteiro`, `sindico`, `admin`) o botão fica desabilitado: essas contas são removidas pela administração.
 - Idioma é local; inglês e espanhol ficam desabilitados até existir tradução completa. `/me/settings` existe na API e pode sincronizar a preferência no futuro.
 - As preferências residenciais não contêm tokens; ficam em `feature/residence`. O armazenamento de sessão continua exclusivo de `core/session`.
 - Manter os dados demonstrativos fora das integrações reais. Mockups eventualmente necessários por ausência de contrato devem ser identificados como simulação e documentados na entrega.

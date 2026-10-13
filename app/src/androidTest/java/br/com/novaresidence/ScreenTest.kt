@@ -16,6 +16,7 @@ import br.com.novaresidence.feature.residence.*
 import br.com.novaresidence.feature.exhaust.*
 import br.com.novaresidence.feature.fire.*
 import br.com.novaresidence.feature.message.*
+import br.com.novaresidence.feature.legal.*
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -33,7 +34,7 @@ class ScreenTest {
         }
         // These UI tests never contact a live backend.
         val coordinator = SessionCoordinator(store) { error("No network in visual tests") }
-        return AuthViewModel(AuthRepository(ApiClient(ApiTransport("http://127.0.0.1:1"), coordinator)))
+        return AuthViewModel(AuthRepository(ApiClient(ApiTransport("http://127.0.0.1:1"), coordinator))) { "1.0" }
     }
     private fun capture(name: String) {
         compose.waitForIdle()
@@ -51,11 +52,12 @@ class ScreenTest {
 
     @Test fun authScreensAndValidation() {
         val model = auth()
-        compose.setContent { val state by model.state.collectAsState(); NovaResidenceTheme { AuthScreen(state, model) } }
+        compose.setContent { val state by model.state.collectAsState(); NovaResidenceTheme { AuthScreen(state, model) {} } }
         compose.onNodeWithText("Bem-vindo").assertIsDisplayed()
         compose.onNodeWithText("ou continue com").assertIsDisplayed()
         compose.onNodeWithText("Google").performScrollTo().assertIsEnabled()
         compose.onNodeWithText("Criar conta").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade.").assertExists()
         capture("02_welcome")
         compose.onNodeWithText("Entrar").performClick()
         compose.onNodeWithText("E-mail").assertIsDisplayed()
@@ -95,7 +97,7 @@ class ScreenTest {
     @Test fun busyAndRateLimitedScreensDisableSubmission() {
         val model = auth()
         var state by mutableStateOf(AuthState(page = AuthPage.Welcome, busy = true))
-        compose.setContent { NovaResidenceTheme { AuthScreen(state, model) } }
+        compose.setContent { NovaResidenceTheme { AuthScreen(state, model) {} } }
         compose.onNodeWithText("Google").performScrollTo().assertIsNotEnabled()
         compose.runOnIdle { state = state.copy(page = AuthPage.Login) }
         compose.onNodeWithText("Entrar").assertIsNotEnabled()
@@ -266,9 +268,14 @@ class ScreenTest {
     @Test fun settingsUnitSelectionLanguageAndPrivacy() {
         val first = ResidenceUnit(1, "B", "84", "B-84", true, false, true, false, null)
         val second = first.copy(sequencia = 2, quadra = "A", label = "A-84")
-        var state by mutableStateOf(ResidenceState(Residence("ativo", false, ResidencePerson(91, "Morador de teste"), listOf(first, second)), 1))
+        var state by mutableStateOf(ResidenceState(Residence("ativo", false, ResidencePerson(91, "Morador de teste", "•••.456.789-••"), listOf(first, second)), 1))
+        var deletions = 0
+        // Sem WebView nem rede: o documento aparece no estado de falha, com o título e a ação de tentar de novo.
+        val offline = LegalState(error = "Não foi possível carregar o documento.")
         compose.setContent { NovaResidenceTheme {
-            ResidenceScreen(state, AuthUser("test", "resident@example.com", "morador", false), { state = state.copy(selectedUnit = it) }, {}, {}, false)
+            ResidenceScreen(state, AuthUser("test", "resident@example.com", "morador", false), { state = state.copy(selectedUnit = it) }, {}, {}, false,
+                legalContent = { terms, back -> LegalDocumentScreen(offline, if (terms) TermsDocument else PrivacyDocument, back) {} },
+                deleteAccount = { deletions++ })
         } }
         compose.onNodeWithContentDescription("Configurações").performClick()
         compose.onNodeWithText("resident@example.com").assertIsDisplayed()
@@ -290,23 +297,26 @@ class ScreenTest {
         compose.onNodeWithText("Privacidade").performScrollTo().performClick()
         capture("12_privacy")
         compose.onNodeWithText("Termos de uso").performClick()
-        compose.onNodeWithText("Termos de uso do aplicativo Nova Residence").assertIsDisplayed()
+        compose.onNodeWithText("Termo de Uso").assertIsDisplayed()
+        compose.onNodeWithText("Tentar novamente").assertIsEnabled()
         capture("13_terms")
         compose.onNodeWithContentDescription("Voltar").performClick()
         compose.onNodeWithText("Política de privacidade").performClick()
-        compose.onNodeWithText("Privacidade e proteção de dados").assertIsDisplayed()
+        compose.onNodeWithText("Política de Privacidade").assertIsDisplayed()
         capture("14_privacy_policy")
         compose.onNodeWithContentDescription("Voltar").performClick()
         compose.onNodeWithText("Dados pessoais").performClick()
         compose.onNodeWithText("Morador de Teste").assertIsDisplayed()
         compose.onNodeWithText("Torre A · Apto. 84").assertIsDisplayed()
-        compose.onNodeWithText("CPF").assertDoesNotExist()
+        compose.onNodeWithText("CPF").assertIsDisplayed()
+        compose.onNodeWithText("•••.456.789-••").assertIsDisplayed()
         capture("15_personal_data")
         compose.onNodeWithContentDescription("Voltar").performClick()
         compose.onNodeWithText("Solicitar exclusão da conta").performClick()
-        compose.onNode(hasText("Excluir conta") and hasClickAction()).assertIsNotEnabled()
         compose.onNodeWithText("Cancelar").performScrollTo().assertIsEnabled()
         capture("16_delete_account")
+        compose.onNode(hasText("Excluir conta") and hasClickAction()).performScrollTo().assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(1, deletions) }
         compose.onNodeWithText("Cancelar").performClick()
         compose.onNodeWithText("Termos de uso").assertIsDisplayed()
     }

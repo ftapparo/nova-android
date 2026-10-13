@@ -1,8 +1,17 @@
 package br.com.novaresidence
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -17,6 +26,7 @@ import br.com.novaresidence.feature.residence.*
 import br.com.novaresidence.feature.exhaust.*
 import br.com.novaresidence.feature.fire.*
 import br.com.novaresidence.feature.message.*
+import br.com.novaresidence.feature.legal.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -35,6 +45,7 @@ class AppViewModel(context: Context) : ViewModel() {
     val exhaust = ExhaustRepository(api)
     val fire = FireRepository(api)
     val messages = MessageRepository(api)
+    val legal = LegalRepository(api)
     val residencePreferences = ResidencePreferences(context)
     val ready = MutableStateFlow(false)
     var restoreError: String? = null
@@ -51,7 +62,8 @@ class AppViewModel(context: Context) : ViewModel() {
 
 @Composable
 fun App(app: AppViewModel) {
-    val auth: AuthViewModel = viewModel { AuthViewModel(app.auth) }
+    val auth: AuthViewModel = viewModel { AuthViewModel(app.auth, app.legal::termsVersion) }
+    val legal: LegalViewModel = viewModel { LegalViewModel(app.legal) }
     val residence: ResidenceViewModel = viewModel { ResidenceViewModel(app.residence, app.auth, app.residencePreferences) }
     val exhaust: ExhaustViewModel = viewModel { ExhaustViewModel(app.exhaust, residence::refresh) }
     val fire: FireViewModel = viewModel { FireViewModel(app.fire) }
@@ -60,10 +72,14 @@ fun App(app: AppViewModel) {
     val user by app.session.user.collectAsStateWithLifecycle()
     val authState by auth.state.collectAsStateWithLifecycle()
     val residenceState by residence.state.collectAsStateWithLifecycle()
+    val legalState by legal.state.collectAsStateWithLifecycle()
+    // Termo ou Política aberto a partir das telas de entrada ou do aceite (nas configurações, a navegação é da residência).
+    var legalDocument by rememberSaveable { mutableStateOf<String?>(null) }
+    val openLegal: (String) -> Unit = { legal.load(); legalDocument = it }
     val view = LocalView.current
     SideEffect {
         val window = (view.context as? android.app.Activity)?.window
-        if (window != null && (!ready || user == null || user?.mustChangePassword == true)) {
+        if (window != null && (!ready || user == null || user?.mustChangePassword == true || user?.mustAcceptTerms == true || legalDocument != null)) {
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = ready
         }
     }
@@ -86,11 +102,18 @@ fun App(app: AppViewModel) {
         if (ready && user != null && user?.mustChangePassword == false) residence.refresh()
         onStopOrDispose { residence.stop() }
     }
-    NovaResidenceTheme {
+    NovaResidenceTheme { Box(Modifier.fillMaxSize()) {
+        // A tela de baixo continua composta (o formulário não perde o que foi digitado), mas fica fora da
+        // acessibilidade e não recebe toques enquanto o documento está aberto.
+        Box(if (legalDocument != null) Modifier.fillMaxSize().clearAndSetSemantics {} else Modifier.fillMaxSize()) {
         if (!ready) NovaSplash()
         else if (user == null || user?.mustChangePassword == true) AuthScreen(
-            if (user?.mustChangePassword == true) authState.copy(page = AuthPage.ChangePassword) else authState, auth,
+            if (user?.mustChangePassword == true) authState.copy(page = AuthPage.ChangePassword) else authState, auth, openLegal,
         )
+        else if (user?.mustAcceptTerms == true) {
+            LaunchedEffect(Unit) { legal.load() }
+            TermsAcceptanceScreen(legalState, { legal.acceptTerms { app.auth.me() } }, auth::logout, openLegal) { legal.load(refresh = true) }
+        }
         else if (residenceState.loading && residenceState.residence == null && residenceState.error == null) NovaSplash()
         else {
             val access = residenceState.residence
@@ -128,10 +151,22 @@ fun App(app: AppViewModel) {
                 homeMessages = { open -> MessageCarousel(messageState) { open(it.id) } },
                 messagesContent = { initial, back -> MessagesFeature(messageState, initial, back, messages::loadList, messages::markRead) },
                 fireContent = { _, _, fullScreen -> FireFeature(fireState, fire::refresh, fire::loadHistory, fullScreen) },
+                legalContent = { terms, back ->
+                    LaunchedEffect(Unit) { legal.load() }
+                    LegalDocumentScreen(legalState, if (terms) TermsDocument else PrivacyDocument, back) { legal.load(refresh = true) }
+                },
+                deleteAccount = auth::deleteAccount, deleteError = authState.deleteError,
             ) { current, selectUnit, _ ->
                 ExhaustScreen(exhaustState, current?.cardLabel(), current?.blockedMessage() ?: access?.notice(),
                     exhaust::activate, exhaust::restart, exhaust::refresh, selectUnit)
             }
         }
-    }
+        }
+        legalDocument?.let { document ->
+            BackHandler { legalDocument = null }
+            Box(Modifier.fillMaxSize().pointerInput(Unit) {}.background(NovaBackground).systemBarsPadding()) {
+                LegalDocumentScreen(legalState, document, { legalDocument = null }) { legal.load(refresh = true) }
+            }
+        }
+    } }
 }

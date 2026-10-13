@@ -48,7 +48,7 @@ class ApiTransport(
 ) {
     private val apiUrl = baseUrl.trimEnd('/') + "/v3/api/"
 
-    suspend fun request(path: String, body: JsonObject? = null, token: String? = null, post: Boolean = false): JsonElement =
+    suspend fun request(path: String, body: JsonObject? = null, token: String? = null, post: Boolean = false, delete: Boolean = false): JsonElement =
         withContext(Dispatchers.IO) {
             val request = Request.Builder().url(apiUrl + path.trimStart('/')).apply {
                 header("Accept", "application/json")
@@ -56,6 +56,8 @@ class ApiTransport(
                 if (post) {
                     // Bodyless endpoints must not advertise an empty JSON document.
                     post(body?.toString()?.toRequestBody("application/json".toMediaType()) ?: ByteArray(0).toRequestBody())
+                } else if (delete) {
+                    delete(body?.toString()?.toRequestBody("application/json".toMediaType()))
                 }
             }.build()
             try {

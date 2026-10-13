@@ -16,15 +16,15 @@ Legenda: `[x]` feito · `[~]` parcial ou a conferir · `[ ]` falta.
 - [x] Fidelidade ao Figma: densidade proporcional, menu inferior e splash
 - [x] Barra dos botões do Android preta
 - [~] Comunicados na home (08d/08e): só o estado vazio — opcional na 1ª versão (exige rota na API)
-- [ ] **Exclusão de conta no app** — obrigatória na Play: tela com confirmação em Perfil
+- [x] **Exclusão de conta no app** — Configurações → Privacidade → Solicitar exclusão da conta (13/10/2026)
 - [ ] Push nativo para alarme com o app fechado — opcional na 1ª versão (exige FCM na API)
 
 ## API (v3)
 
 - [x] Rotas de autenticação, residência, exaustor e central no ar
 - [x] Campos `command` e `maintenance` do exaustor no ar
-- [ ] **`DELETE /auth/me`** — obrigatória: excluir conta, vínculo e preferências (em `src/v3`)
-- [ ] **Página web de exclusão de conta** — obrigatória: página pública com instruções ou formulário
+- [ ] **`DELETE /auth/me`** — implementada em `src/v3` (13/10/2026); falta o deploy
+- [ ] **Página web de exclusão de conta** — `/excluir-conta` implementada na API (13/10/2026); falta o deploy e informar a URL na Play
 
 ## Build de release
 
@@ -42,7 +42,7 @@ Legenda: `[x]` feito · `[~]` parcial ou a conferir · `[ ]` falta.
 
 - [ ] Número D-U-N-S do MEI (gratuito, leva alguns dias — pedir primeiro)
 - [ ] Conta de organização criada (US$ 25) e identidade verificada
-- [ ] Política de privacidade em URL pública (pode ficar no domínio `flaviotapparo.com.br`)
+- [ ] Política de privacidade em URL pública: `/politica-de-privacidade` publicada pela API (13/10/2026); falta o deploy e informar a URL na Play
 - [ ] Formulário "Segurança dos dados": e-mail, nome e unidade; criptografia em trânsito; exclusão disponível
 - [ ] Classificação de conteúdo e público-alvo
 - [ ] Ficha da loja: descrição, capturas de tela do celular e imagem de destaque 1024×500

@@ -7,15 +7,20 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 class AuthRepository(private val api: ApiClient) {
-    private suspend fun authenticate(path: String, vararg fields: Pair<String, String>) {
+    private suspend fun authenticate(path: String, vararg fields: Pair<String, String?>) {
         val generation = api.session.generation()
-        val session = api.transport.post<SessionData>(path, buildJsonObject { fields.forEach { put(it.first, it.second) } })
+        val session = api.transport.post<SessionData>(path, buildJsonObject { fields.forEach { (key, value) -> if (value != null) put(key, value) } })
         api.session.replace(session, generation)
     }
 
     suspend fun login(email: String, password: String) = authenticate("auth/login", "email" to email, "password" to password)
-    suspend fun signup(email: String, password: String) = authenticate("auth/signup", "email" to email, "password" to password)
-    suspend fun google(idToken: String) = authenticate("auth/google", "idToken" to idToken)
+    /** [termsVersion]: versão vigente do Termo de Uso aceita na tela de cadastro (a API recusa outra). */
+    suspend fun signup(email: String, password: String, termsVersion: String) =
+        authenticate("auth/signup", "email" to email, "password" to password, "acceptedTermsVersion" to termsVersion)
+    // A API registra o aceite só na primeira vez de cada versão. Sem a versão (catálogo indisponível), a
+    // conta volta com `mustAcceptTerms` e o app pede o aceite depois, em vez de impedir o login.
+    suspend fun google(idToken: String, termsVersion: String?) =
+        authenticate("auth/google", "idToken" to idToken, "acceptedTermsVersion" to termsVersion)
     suspend fun recover(email: String) {
         api.transport.request("auth/password/recover", buildJsonObject { put("email", email) }, post = true)
     }
@@ -34,6 +39,15 @@ class AuthRepository(private val api: ApiClient) {
         return api.get<AuthUser>("auth/me").also { api.session.updateUser(it, generation) }
     }
     suspend fun logout() = api.session.logout { api.transport.request("auth/logout", token = it, post = true) }
+
+    /**
+     * Exclui a própria conta (`DELETE /auth/me`). Só limpa a sessão local depois da confirmação da API:
+     * numa falha, nada foi excluído e a pessoa continua conectada para tentar de novo.
+     */
+    suspend fun deleteAccount() {
+        api.session.authorize { api.transport.request("auth/me", buildJsonObject { put("confirm", true) }, it, delete = true) }
+        api.session.clear()
+    }
 }
 
 fun validateAuthForm(

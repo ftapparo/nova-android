@@ -41,5 +41,10 @@ class ResidenceTest {
         val result = NovaJson.decodeFromString<Residence>("""{"status":"pendente","blocked":true,"person":null,"units":[]}""")
         assertNull(result.person)
         assertTrue(result.units.isEmpty())
+        val linked = NovaJson.decodeFromString<Residence>(
+            """{"status":"sem-unidade","blocked":true,"person":{"sequencia":91,"nome":"FULANO","cpfMasked":"•••.456.789-••"},"units":[]}""")
+        assertEquals("•••.456.789-••", linked.person!!.cpfMasked)
+        // Servidor anterior ao campo: a tela de dados pessoais só omite a linha do CPF.
+        assertNull(NovaJson.decodeFromString<ResidencePerson>("""{"sequencia":91,"nome":"FULANO"}""").cpfMasked)
     }
 }

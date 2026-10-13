@@ -8,6 +8,8 @@ data class AuthUser(
     val email: String?,
     val role: String?,
     val mustChangePassword: Boolean,
+    /** Conta antiga ou Termo de Uso em versão nova: o app pede o aceite antes de seguir. */
+    val mustAcceptTerms: Boolean = false,
 )
 
 @Serializable

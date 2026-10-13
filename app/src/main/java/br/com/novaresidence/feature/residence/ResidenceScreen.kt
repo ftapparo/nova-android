@@ -68,6 +68,10 @@ fun ResidenceScreen(
     /** Mensagens (17/18); [initialMessage] abre direto o detalhe. */
     messagesContent: (@Composable (initialMessage: Long?, back: () -> Unit) -> Unit)? = null,
     fireContent: ServiceContent? = null,
+    /** Termo de Uso ([terms] = true) ou Política de Privacidade (13 e 14), publicados pela API. */
+    legalContent: (@Composable (terms: Boolean, back: () -> Unit) -> Unit)? = null,
+    /** Excluir conta (16); [deleteError] é a falha da última tentativa. */
+    deleteAccount: () -> Unit = {}, deleteError: String? = null,
     exhaustContent: ServiceContent? = null,
 ) {
     // Abas reiniciam a pilha; as demais telas empilham sobre a atual e voltam na ordem inversa.
@@ -107,7 +111,8 @@ fun ResidenceScreen(
                 ResidencePage.Fire -> fireContent?.invoke(unit, selectUnit, setFullScreen)
                 ResidencePage.Exhaust -> exhaustContent?.invoke(unit, selectUnit, setFullScreen)
                 ResidencePage.Messages -> messagesContent?.invoke(pendingMessage, back)
-                else -> ResidenceSettings(page, state, user, navigate, back, select, logout, busy, saveLanguage)
+                ResidencePage.Terms, ResidencePage.PrivacyPolicy -> legalContent?.invoke(page == ResidencePage.Terms, back)
+                else -> ResidenceSettings(page, state, user, navigate, back, select, logout, busy, saveLanguage, deleteAccount, deleteError)
             }
         }
         if (navVisible) NavigationBarFigma {

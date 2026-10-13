@@ -39,6 +39,7 @@ private val RadioOutline = Color(0xFF6B7280)
 internal fun ResidenceSettings(
     page: ResidencePage, state: ResidenceState, user: AuthUser, navigate: (ResidencePage) -> Unit,
     back: () -> Unit, select: (Int) -> Unit, logout: () -> Unit, busy: Boolean, saveLanguage: () -> Unit,
+    deleteAccount: () -> Unit, deleteError: String?,
 ) {
     val previousSave = remember(page) { state.languageSaves }
     LaunchedEffect(state.languageSaves) {
@@ -48,8 +49,6 @@ internal fun ResidenceSettings(
         ResidencePage.SelectUnit -> "Selecionar unidade"
         ResidencePage.SelectLanguage -> "Selecionar idioma"
         ResidencePage.Privacy -> "Privacidade"
-        ResidencePage.Terms -> "Termos de uso"
-        ResidencePage.PrivacyPolicy -> "Política de privacidade"
         ResidencePage.PersonalData -> "Dados pessoais"
         ResidencePage.DeleteAccount -> "Excluir conta"
         else -> "Configurações"
@@ -63,10 +62,8 @@ internal fun ResidenceSettings(
                     ResidencePage.SelectUnit -> SelectUnit(state, select)
                     ResidencePage.SelectLanguage -> SelectLanguage(state, saveLanguage)
                     ResidencePage.Privacy -> Privacy(navigate)
-                    ResidencePage.Terms -> LegalText(TermsTitle, TermsBody)
-                    ResidencePage.PrivacyPolicy -> LegalText(PolicyTitle, PolicyBody)
                     ResidencePage.PersonalData -> PersonalData(state, user, navigate)
-                    ResidencePage.DeleteAccount -> DeleteAccount(back)
+                    ResidencePage.DeleteAccount -> DeleteAccount(user, back, deleteAccount, busy, deleteError)
                     else -> Settings(state, user, navigate, logout, busy)
                 }
             }
@@ -165,52 +162,9 @@ private fun Privacy(navigate: (ResidencePage) -> Unit) {
     }
 }
 
-// Textos provisórios do próprio Figma (13 e 14): o conteúdo jurídico definitivo ainda será aprovado.
-private const val TermsTitle = "Termos de uso do aplicativo Nova Residence"
-private val TermsBody = """
-    Esta tela está preparada para receber o texto jurídico definitivo dos Termos de Uso. O conteúdo final deve ser revisado e aprovado antes da publicação do aplicativo.
-
-    Sugestão de estrutura:
-
-    1. Objetivo e escopo do aplicativo
-    2. Cadastro e autenticação
-    3. Uso dos serviços do condomínio
-    4. Responsabilidades do usuário
-    5. Disponibilidade e limitações do serviço
-    6. Privacidade e proteção de dados
-    7. Alterações dos termos
-    8. Contato
-""".trimIndent()
-
-private const val PolicyTitle = "Privacidade e proteção de dados"
-private val PolicyBody = """
-    Esta tela está preparada para receber a Política de Privacidade definitiva. O texto final deve refletir exatamente os dados tratados pelo aplicativo e ser revisado antes da publicação.
-
-    A política deverá explicar, de forma clara:
-
-    • quais dados são coletados ou recebidos do condomínio;
-    • para quais finalidades os dados são utilizados;
-    • bases legais aplicáveis;
-    • compartilhamento com prestadores e integrações;
-    • armazenamento e segurança;
-    • prazo de retenção;
-    • direitos do titular;
-    • canal de contato para assuntos de privacidade.
-""".trimIndent()
-
-/** Termos de uso e política de privacidade (Figma 13 e 14). */
-@Composable
-private fun LegalText(title: String, body: String) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = Margin, vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text("Última atualização: conteúdo jurídico a definir", style = NovaType.Supporting, color = NovaOnSurfaceVariant)
-        Text(title, Modifier.semantics { heading() }, style = NovaType.ScreenTitle.copy(fontWeight = FontWeight.SemiBold), color = NovaOnSurface)
-        Text(body, style = NovaType.Body.copy(lineHeight = 21.sp), color = NovaOnSurface)
-    }
-}
-
 /**
- * Dados pessoais (Figma 15). A API não devolve CPF nem dados complementares da pessoa,
- * então essas linhas do Figma não são exibidas.
+ * Dados pessoais (Figma 15). O CPF vem mascarado da API; os "dados complementares" do Figma
+ * não existem no contrato e não são exibidos.
  */
 @Composable
 private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (ResidencePage) -> Unit) {
@@ -221,6 +175,7 @@ private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (Resid
         Column(Modifier.padding(horizontal = Margin)) {
             val rows = listOfNotNull(
                 residence?.person?.nome?.takeIf { it.isNotBlank() }?.let { "Nome" to it.personName() },
+                residence?.person?.cpfMasked?.let { "CPF" to it },
                 user.email?.let { "E-mail" to it },
             )
             rows.forEach { (label, value) ->
@@ -233,9 +188,13 @@ private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (Resid
     }
 }
 
-/** Excluir conta (Figma 16). */
+/**
+ * Excluir conta (Figma 16): a própria tela é a confirmação. A API exclui na hora; contas da equipe são
+ * removidas pela administração (a API responde 403), então o botão nem é oferecido a elas.
+ */
 @Composable
-private fun ColumnScope.DeleteAccount(back: () -> Unit) {
+private fun ColumnScope.DeleteAccount(user: AuthUser, back: () -> Unit, delete: () -> Unit, busy: Boolean, error: String?) {
+    val staff = user.role in setOf("porteiro", "sindico", "admin")
     Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 28.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Text("Excluir sua conta", Modifier.semantics { heading() }, style = NovaType.ScreenTitle.copy(fontWeight = FontWeight.SemiBold), color = NovaOnSurface)
         Text("Ao excluir sua conta, seu acesso ao aplicativo será encerrado. Alguns dados podem continuar armazenados pelo condomínio quando necessários para obrigações legais, administrativas ou de segurança.",
@@ -243,16 +202,15 @@ private fun ColumnScope.DeleteAccount(back: () -> Unit) {
         Column(Modifier.fillMaxWidth().background(NovaErrorContainer, RoundedCornerShape(14.dp)).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Antes de continuar", style = NovaType.BodyEmphasis, color = NovaError)
-            Text("Essa ação remove o acesso da sua conta ao aplicativo. Se precisar voltar a utilizar o app, poderá ser necessário um novo vínculo pela administração do condomínio.",
+            Text("A exclusão é imediata e não pode ser desfeita. Se precisar voltar a utilizar o app, será necessário criar uma nova conta e um novo vínculo pela administração do condomínio.",
                 style = NovaType.Supporting, color = NovaOnSurfaceVariant)
         }
+        error?.let { NovaNotice(it) }
     }
     Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        NovaButton("Cancelar", back, style = NovaButtonStyle.Neutral)
-        // A API ainda não tem rota de exclusão da própria conta (CHECKLIST-PUBLICACAO.md): o botão fica
-        // desabilitado em vez de simular uma exclusão que não aconteceria.
-        NovaButton("Excluir conta", {}, enabled = false, style = NovaButtonStyle.Danger)
-        Text("A exclusão pelo aplicativo ainda não está disponível. Enquanto isso, solicite-a à administração do condomínio.",
+        NovaButton("Cancelar", back, enabled = !busy, style = NovaButtonStyle.Neutral)
+        NovaButton(if (busy) "Excluindo conta…" else "Excluir conta", delete, enabled = !busy && !staff, style = NovaButtonStyle.Danger)
+        if (staff) Text("Contas da equipe são removidas pela administração do condomínio.",
             Modifier.fillMaxWidth(), style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
     }
 }

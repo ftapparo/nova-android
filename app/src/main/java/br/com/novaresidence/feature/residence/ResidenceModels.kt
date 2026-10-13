@@ -3,7 +3,11 @@ package br.com.novaresidence.feature.residence
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ResidencePerson(val sequencia: Int, val nome: String)
+data class ResidencePerson(
+    val sequencia: Int, val nome: String,
+    /** "•••.456.789-••" (a API nunca envia o CPF completo); nulo se ausente no cadastro ou em servidor antigo. */
+    val cpfMasked: String? = null,
+)
 
 @Serializable
 data class ResidenceUnit(

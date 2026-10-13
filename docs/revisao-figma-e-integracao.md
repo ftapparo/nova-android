@@ -173,16 +173,14 @@ O arquivo foi reorganizado e renumerado. Todas as telas foram consultadas pelo M
 3. **Central**: os textos do Figma "Existe uma aviso", "Local da aviso" e "Detalhes da evento" foram corrigidos. "A equipe responsável está verificando a ocorrência" virou "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável", pois a API não confirma verificação em andamento. O aviso de "você será avisado" continua substituído (sem push nativo).
 4. **Central — dados**: o app usa os campos interpretados `event`/`display` e `activeAlarms` da API v3; servidores que ainda não os enviam caem no tratamento anterior. "Local do aviso" vem de `/cie/events/active`, consultado só quando há falha ou supervisão.
 5. **Recuperação (06)**: o rótulo é "E-mail", como a API exige (o Figma pedia "E-mail, celular ou CPF" e foi corrigido em 13/10/2026). O código (05) expira em 15 minutos pelo contrato, não 10.
-6. **Dados pessoais (15)**: CPF e "Dados complementares" não existem no contrato e não são exibidos.
-7. **Excluir conta (16)**: sem `DELETE /auth/me`, o botão fica desabilitado com orientação para procurar a administração.
-8. **Termos e política (13, 14)**: exibem o texto provisório do próprio Figma; o conteúdo jurídico final é pendência de publicação.
+6. **Dados pessoais (15)**: o CPF aparece mascarado ("•••.456.789-••", `person.cpfMasked`); "Dados complementares" não existem no contrato e não são exibidos.
+7. **Excluir conta (16)**: funcional desde 13/10/2026 (`DELETE /auth/me`); a própria tela é a confirmação. Para a equipe, o botão fica desabilitado.
+8. **Termos e política (13, 14)**: exibem a página vigente publicada pela API (Termo de Uso e Política de Privacidade v1.0), no lugar do texto provisório do Figma. Boas-vindas e cadastro ganharam o aviso "Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade", e há uma tela de aceite para conta antiga ou versão nova do Termo — nenhum dos dois existe no Figma.
 9. **Exaustor — erro**: o Figma não tem mais tela de erro; os estados "Falha na ativação" e "Não foi possível confirmar a ativação" usam o novo layout com os textos aprovados.
 
 ### Pendências na API (`src/v3`)
 
-- `GET /messages` (ou equivalente) para comunicados, com marcação de lidas: telas 08d, 17 e 18.
-- `DELETE /auth/me`: obrigatória para a Play.
-- Dados pessoais complementares (ex.: CPF mascarado) em `/residence/me`, se a tela 15 deve exibi-los.
+- Concluídas em 13/10/2026 (aguardando deploy): `/messages` (08d, 17 e 18), Termo/Política com aceite, `DELETE /auth/me`, página `/excluir-conta` e `person.cpfMasked` em `/residence/me`.
 
 ### Validação (12/10/2026)
 

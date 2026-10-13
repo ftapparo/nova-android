@@ -31,14 +31,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import br.com.novaresidence.R
 import br.com.novaresidence.core.ui.*
+import br.com.novaresidence.feature.legal.LegalLinksText
 
 // O OutlinedTextField reserva 8 dp acima da borda para a legenda; os espaços abaixo
 // descontam esse valor para que a distância visível seja a mesma do Figma.
 private val FieldLabelInset = 8.dp
 private val FieldVariant = Color(0xFF49454F)
 
+/** [openLegal] abre o Termo de Uso ou a Política de Privacidade (identificador do documento na API). */
 @Composable
-fun AuthScreen(state: AuthState, viewModel: AuthViewModel) {
+fun AuthScreen(state: AuthState, viewModel: AuthViewModel, openLegal: (String) -> Unit) {
     BackHandler(state.page != AuthPage.Welcome) {
         if (!state.busy && state.page != AuthPage.ChangePassword) viewModel.back()
     }
@@ -54,9 +56,9 @@ fun AuthScreen(state: AuthState, viewModel: AuthViewModel) {
         Box(Modifier.weight(1f)) {
             key(state.page) {
                 when (state.page) {
-                    AuthPage.Welcome -> WelcomeContent(state, viewModel)
+                    AuthPage.Welcome -> WelcomeContent(state, viewModel, openLegal)
                     AuthPage.Error -> ErrorContent(state, viewModel)
-                    else -> AuthForm(state, viewModel)
+                    else -> AuthForm(state, viewModel, openLegal)
                 }
             }
         }
@@ -77,7 +79,7 @@ private fun AuthContent(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-private fun WelcomeContent(state: AuthState, viewModel: AuthViewModel) {
+private fun WelcomeContent(state: AuthState, viewModel: AuthViewModel, openLegal: (String) -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         Column(
             Modifier.align(Alignment.TopCenter).widthIn(max = 480.dp).fillMaxWidth()
@@ -100,6 +102,8 @@ private fun WelcomeContent(state: AuthState, viewModel: AuthViewModel) {
                         HorizontalDivider(Modifier.weight(1f), color = NovaOutline)
                     }
                     GoogleButton(state, viewModel)
+                    // O login com Google pode criar a conta: o aviso fica junto da ação (sem tela no Figma).
+                    LegalLinksText("Ao continuar, você concorda com o ", openLegal, Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                     AuthFeedback(state)
                 }
             }
@@ -156,7 +160,7 @@ private fun ErrorContent(state: AuthState, viewModel: AuthViewModel) {
 }
 
 @Composable
-private fun AuthForm(state: AuthState, viewModel: AuthViewModel) {
+private fun AuthForm(state: AuthState, viewModel: AuthViewModel, openLegal: (String) -> Unit) {
     // Senhas ficam apenas na composição, sem persistência no estado da Activity.
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -206,6 +210,11 @@ private fun AuthForm(state: AuthState, viewModel: AuthViewModel) {
             }
         }
         Spacer(Modifier.height(16.dp))
+        if (signup) {
+            // A API registra o aceite da versão vigente junto com o cadastro.
+            LegalLinksText("Ao continuar, você concorda com o ", openLegal)
+            Spacer(Modifier.height(16.dp))
+        }
         NovaButton(when (page) {
             AuthPage.Login -> "Entrar"
             AuthPage.Signup -> "Continuar"

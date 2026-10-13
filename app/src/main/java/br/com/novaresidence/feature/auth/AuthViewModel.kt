@@ -2,6 +2,7 @@ package br.com.novaresidence.feature.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import br.com.novaresidence.core.network.ApiErrorKind
 import br.com.novaresidence.core.network.ApiException
 import br.com.novaresidence.core.session.SessionStorageException
 import kotlinx.coroutines.CancellationException
@@ -22,9 +23,12 @@ data class AuthState(
     val fields: Map<String, String> = emptyMap(),
     val retrySeconds: Long = 0,
     val recoveryEmail: String = "",
+    /** Falha da exclusão da conta (16): aparece na área logada, separada dos erros das telas de entrada. */
+    val deleteError: String? = null,
 )
 
-class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
+/** [termsVersion]: versão vigente do Termo de Uso, a que o cadastro e o login com Google mostram. */
+class AuthViewModel(private val repository: AuthRepository, private val termsVersion: suspend () -> String) : ViewModel() {
     private val mutableState = MutableStateFlow(AuthState())
     val state = mutableState.asStateFlow()
     private var cooldownEnd = 0L
@@ -51,7 +55,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     private fun action(errors: Map<String, String> = emptyMap(), allowDuringCooldown: Boolean = false, block: suspend () -> Unit) {
         if (state.value.busy || (!allowDuringCooldown && state.value.retrySeconds > 0)) return
         if (errors.isNotEmpty()) { mutableState.update { it.copy(fields = errors, error = null) }; return }
-        mutableState.update { it.copy(busy = true, error = null, fields = emptyMap(), requestId = null) }
+        mutableState.update { it.copy(busy = true, error = null, fields = emptyMap(), requestId = null, deleteError = null) }
         viewModelScope.launch {
             try {
                 block()
@@ -87,7 +91,9 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     }
 
     fun login(email: String, password: String) = action(validateAuthForm(email, password)) { repository.login(email.trim(), password) }
-    fun signup(email: String, password: String) = action(validateAuthForm(email, password, newPassword = true)) { repository.signup(email.trim(), password) }
+    fun signup(email: String, password: String) = action(validateAuthForm(email, password, newPassword = true)) {
+        repository.signup(email.trim(), password, termsVersion())
+    }
     fun recover(email: String) = action(validateAuthForm(email)) {
         repository.recover(email.trim())
         mutableState.update { it.copy(page = AuthPage.RecoveryConfirm, recoveryEmail = email.trim()) }
@@ -111,10 +117,36 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
             showMessage("Não foi possível entrar com Google. Tente novamente ou use seu e-mail.")
             return@action
         }
-        repository.google(token)
+        val version = try { termsVersion() } catch (_: ApiException) { null }
+        repository.google(token, version)
     }
 
     fun logout() = action(allowDuringCooldown = true) {
         try { repository.logout() } finally { mutableState.update { it.copy(page = AuthPage.Welcome) } }
+    }
+
+    /** Excluir conta (16). Em caso de sucesso a sessão já foi limpa e a pessoa volta às boas-vindas. */
+    fun deleteAccount() {
+        if (state.value.busy) return
+        mutableState.update { it.copy(busy = true, deleteError = null) }
+        viewModelScope.launch {
+            try {
+                repository.deleteAccount()
+                mutableState.value = AuthState(error = "Sua conta foi excluída.")
+            } catch (error: ApiException) {
+                mutableState.update { it.copy(deleteError = when (error.kind) {
+                    ApiErrorKind.Forbidden -> "Contas da equipe são removidas pela administração do condomínio."
+                    // 503: o login não foi excluído e a API desfez o restante.
+                    ApiErrorKind.Unavailable -> "Serviço indisponível. Nenhum dado foi excluído; tente novamente."
+                    else -> error.userMessage()
+                }) }
+            } catch (error: SessionStorageException) {
+                mutableState.update { it.copy(deleteError = error.userMessage) }
+            } catch (error: CancellationException) {
+                throw error
+            } finally {
+                mutableState.update { it.copy(busy = false) }
+            }
+        }
     }
 }
