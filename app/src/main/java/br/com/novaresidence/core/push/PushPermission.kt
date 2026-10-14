@@ -1,9 +1,7 @@
 package br.com.novaresidence.core.push
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -59,12 +57,6 @@ fun openAlarmChannelSettings(context: Context) {
     context.startActivity(Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
         .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
         .putExtra(Settings.EXTRA_CHANNEL_ID, PushChannels.FireAlarm))
-}
-
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
 }
 
 /** Cartão da home que pede para ativar as notificações (uma ação principal e uma para dispensar). */

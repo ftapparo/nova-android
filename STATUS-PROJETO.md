@@ -152,10 +152,10 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção "Push notifications". Mecani
 | ✅ | **J4 (14/10):** "faltam 15 minutos" chegou a quem ligou; com o app fechado, o "desligado" pelo painel v2 chegou e o toque abriu o exaustor já atualizado |
 | ❌ | **Validar no J4:** alarme com o app fechado e tela bloqueada (com a equipe) e cartão de permissão num Android 13+ |
 | ✅ | **Figma (14/10):** cartão da home (08e), tela Notificações para morador/equipe e estados de permissão, canal bloqueado e registro pendente (09a–09e); central com ação "Ativar notificações" (26b) |
-| 🟡 | **Publicação:** Política de Privacidade 1.2 (token, identificador de instalação, modelo e versões, conteúdo dos avisos e retenção) pronta na API, falta o deploy; respostas do formulário "Segurança dos dados" em [docs/seguranca-dos-dados.md](docs/seguranca-dos-dados.md), a preencher no Play Console |
+| 🟡 | **Publicação:** Política de Privacidade 1.2 (token, identificador de instalação, modelo e versões, conteúdo dos avisos e retenção) pronta na API, falta o deploy; formulário "Segurança dos dados" salvo como rascunho no Play Console (14/10) conforme [docs/seguranca-dos-dados.md](docs/seguranca-dos-dados.md); para concluir, falta a etapa Público-alvo (18 anos ou mais) |
 | ⚠️ | **Limite:** a entrega não é garantida em tempo real (economia de bateria, otimizações Samsung); nenhum texto promete aviso imediato |
 
-## 7.2 Localização para ligar o exaustor — decidido em 13/10, não implementado
+## 7.2 Localização para ligar o exaustor — decidido em 13/10, implementado em 14/10
 
 Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 
@@ -164,12 +164,17 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 | ✅ | **Decisão:** morador só liga o exaustor dentro da área do condomínio; validação feita **na API**, com a localização enviada no comando |
 | ✅ | **Decisão:** desligar nunca exige localização; reiniciar tempo exige |
 | ✅ | **Decisão:** localização só "durante o uso", sem segundo plano; não é armazenada |
-| ❓ | Coordenadas ou polígono do terreno do condomínio |
-| ❓ | Equipe (porteiro, síndico, admin) isenta da verificação? |
-| ❌ | **API:** área do condomínio no servidor, validação no `POST /exhausts/{id}/on` e erro específico para "fora da área" |
-| ❌ | **App:** permissão, leitura da localização (`play-services-location`), detecção de localização simulada e envio no comando |
-| ❌ | **Figma:** estados de permissão negada, localização desligada, fora da área e precisão insuficiente |
-| ❌ | **Publicação:** declarar localização na política de privacidade e na "Segurança dos dados" |
+| ✅ | **Decisão (14/10):** área em círculo (centro + raio) configurado no servidor; aceita quando o círculo de precisão do aparelho toca a área, com precisão de até 100 m |
+| ✅ | **Decisão (14/10):** equipe (porteiro, síndico, admin) isenta; o app nem pede a permissão. Sem período de transição: o app ainda não foi publicado |
+| ✅ | **Área (14/10):** centro -20.836533, -49.368565 e raio de 100 m, nas variáveis de ambiente `EXHAUST_GEOFENCE_LAT`, `_LNG` e `_RADIUS_M` da API (Portainer; sem elas, comando de morador recebe 503). Com a precisão de até 100 m, aceita leituras a até ~200 m do centro |
+| ✅ | **API** (14/10, commit `64645ab`, em produção): `location` no `POST /exhausts/{id}/on`, `exhaust.geofence.ts`, 403 com títulos estáveis ("Localização necessária", "Localização simulada", "Localização imprecisa", "Fora da área do condomínio"), recusas contando no limite de 10/min, só o resultado em log; `openapi.json`, `APP-GUIDE.md` e `CHANGELOG.md` atualizados; `tsc` limpo |
+| ✅ | **App** (14/10): permissão, leitura com `play-services-location`, localização simulada enviada como `mock`, avisos com ação na tela do exaustor e envio no comando; 5 testes unitários novos, teste de tela dos estados |
+| ✅ | **Figma** (14/10): 25c–25i — localização necessária, não permitida, aproximada, desligada, fora do condomínio, imprecisa e simulada |
+| 🟡 | **Publicação:** Política 1.2 já cobre (§3.8, §8-A); "Local exato" incluído em [docs/seguranca-dos-dados.md](docs/seguranca-dos-dados.md), falta atualizar o rascunho no Play Console |
+| ✅ | **Produção (14/10, deploy `64645ab`):** com conta de morador (A-124 → A4), `curl` recebeu os 4 títulos — sem localização, simulada, precisão de 500 m e ponto a ~5 km — sem acionar o relé; variáveis da área configuradas (403, não 503) |
+| ✅ | **J4 (14/10, Android 8.1, conta como morador):** "Ligar exaustor" sem permissão → "Localização necessária" sem enviar nada; negar → aviso some; negar com "Não perguntar novamente" → "Localização não permitida" com "Abrir configurações" (abre os dados do app); localização desligada → "Localização desligada" e "Ativar localização" abre o diálogo do Play Services, que religa; com permissão, dentro do condomínio, o A4 ligou em ~1 s e "Reiniciar tempo" voltou o prazo de 02:59:26 para 03:00:13. A4 desligado pela API em seguida |
+| ✅ | **J4 (14/10):** localização simulada pelo provedor do Google (`setMockMode`) → "Localização simulada" (25i), recusada pela API sem acionar o relé. Simulação só no GPS do Android não chega ao app: o provedor do Google usou a posição real |
+| ❌ | Devolver o papel `admin` à conta usada no teste (`raw_app_meta_data.role`) |
 
 ## 8. Build de release e Play Console
 
@@ -194,7 +199,7 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 5. ❌ Trocar a senha pessoal usada nos testes (também consta do checklist de publicação).
 6. ✅ Faixa da tela 27 sincronizada no Figma com o texto implementado no app (13/10).
 7. 🟡 Push nativo funcionando no J4 (seção 7.1): redeploy da correção `cf58d48` e validar o alarme com a equipe; telas do Figma atualizadas em 14/10.
-8. ❓ Informar as coordenadas do condomínio e se a equipe fica isenta da verificação de localização (seção 7.2).
+8. 🟡 Verificação de localização do exaustor (seção 7.2): implementada e validada em produção e no J4 em 14/10 (centro -20.836533, -49.368565, raio 100 m); falta devolver o papel admin à conta usada no teste.
 9. ✅ Cores ajustadas para contraste refletidas no Figma (13/10).
 10. 🟡 Validar um alarme da central com a equipe.
 

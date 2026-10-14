@@ -43,6 +43,20 @@ No Figma, atualizados Configurações com acesso a Notificações, recuperação
 
 São 17 frames novos, editáveis, com Roboto e reaproveitamento de componentes. As telas longas de notificações e dos documentos têm viewport com rolagem vertical. Os exemplos representam estados implementados; localização e operação administrativa de exaustores continuam fora desta revisão porque ainda não foram implementadas.
 
+### Localização para ligar o exaustor — 14/10/2026
+
+Sete frames clonados da 25a (mesma ilustração, título, descrição, botão de 52 dp e faixa de informação), com rótulo do botão em largura automática. O app usa os mesmos textos (`ExhaustScreen.kt`, `locationCopy`); o estado "Verificando localização..." é só o rótulo do botão desabilitado e não tem frame.
+
+| Frames novos | Nós |
+|---|---|
+| 25c — localização necessária (antes do pedido do sistema) | `341:1388` |
+| 25d — localização não permitida (abre as configurações) | `341:1434` |
+| 25e — só localização aproximada | `341:1480` |
+| 25f — localização do aparelho desligada | `341:1526` |
+| 25g — fora do condomínio (403 da API) | `341:1572` |
+| 25h — localização imprecisa ou sem leitura | `341:1618` |
+| 25i — localização simulada | `341:1664` |
+
 Validação: `lint`, `testDebugUnitTest` (57 testes) e `assembleDebug` aprovados; 11 testes de tela aprovados no Galaxy J4, incluindo preferências de notificações e condição da faixa da central. Capturas usam dados simulados, sem consultas de teste à API de produção ou comandos ao hardware. Comparações lado a lado, com largura normalizada para 412 dp e barras de status recortadas, ficam em `artifacts/figma-sync-20261014/compare_*.png`. A ilustração menor e a altura útil diferente no J4 seguem a adaptação prevista no guia; a imagem do exaustor foi conferida contra o original do MCP e mantida. Há diferenças de métricas da fonte Android do J4 em relação ao Roboto do Figma, com quebras de linha e alturas de conteúdo variáveis; os tokens em dp/sp foram preservados, sem compensação manual por aparelho. Renderizações do Figma foram verificadas para reflow, fontes, hierarquia e ausência de interfaces rasterizadas. A janela de teste mantém a tela acesa e aguarda a composição antes das capturas para evitar falhas quando o aparelho entra em repouso.
 
 | Tela | Nó Figma | Implementação |

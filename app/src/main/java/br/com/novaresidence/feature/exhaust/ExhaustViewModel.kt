@@ -18,7 +18,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerializationException
 
-class ExhaustViewModel(private val repository: ExhaustRepository, private val accessChanged: () -> Unit = {}) : ViewModel() {
+/** [locate] lê a localização no toque (morador); a equipe é isenta e não a envia. */
+class ExhaustViewModel(
+    private val repository: ExhaustRepository,
+    private val locate: suspend () -> LocationResult,
+    private val accessChanged: () -> Unit = {},
+) : ViewModel() {
     private val mutableState = MutableStateFlow(ExhaustState())
     val state = mutableState.asStateFlow()
     private var polling: Job? = null
@@ -31,10 +36,12 @@ class ExhaustViewModel(private val repository: ExhaustRepository, private val ac
     /** Evento chegou durante uma consulta: a resposta em curso pode ser anterior a ele. */
     private var refreshAgain = false
     private var live = false
+    private var staff = false
     private val wake = Channel<Unit>(Channel.CONFLATED)
 
-    fun start(tower: String?, apartment: String?, allowed: Boolean) {
+    fun start(tower: String?, apartment: String?, allowed: Boolean, staff: Boolean = false) {
         stop()
+        this.staff = staff
         generation++
         val current = generation
         target = if (allowed && tower != null && apartment != null) tower to apartment else null
@@ -135,6 +142,9 @@ class ExhaustViewModel(private val repository: ExhaustRepository, private val ac
         send(restart = false)
     }
 
+    /** Volta de "Permitir localização" ou "Ativar localização": limpa o aviso; o comando só sai com novo toque. */
+    fun clearLocation() { mutableState.update { it.copy(location = null) } }
+
     /** Reenvia o /on com o exaustor ligado: a API recalcula o prazo sem mexer no relé. */
     fun restart() {
         if (!state.value.canRestart) return
@@ -145,16 +155,31 @@ class ExhaustViewModel(private val repository: ExhaustRepository, private val ac
         if (refreshing || command?.isActive == true || remainingCooldown() > 0) return
         val item = state.value.exhaust ?: return
         val current = generation
-        mutableState.update { it.copy(sending = true, restarting = restart, error = null, requestId = null) }
+        val exempt = staff
+        mutableState.update { it.copy(sending = true, restarting = restart, locating = !exempt, location = null, error = null, requestId = null) }
         command = viewModelScope.launch {
             try {
-                val updated = repository.activate(item.id)
+                // Sem leitura válida nada é enviado, então o comando não fica incerto.
+                val location = if (exempt) null else when (val result = locate()) {
+                    is LocationResult.Fix -> result.location
+                    else -> {
+                        if (current == generation) mutableState.update { it.copy(location = result.issue()) }
+                        return@launch
+                    }
+                }
+                if (current != generation) return@launch
+                mutableState.update { it.copy(locating = false) }
+                val updated = repository.activate(item.id, location)
                 if (current == generation) {
                     if (updated.id != item.id) throw ApiException(ApiErrorKind.InvalidResponse)
                     mutableState.update { it.copy(exhaust = updated, activationUncertain = false) }
                 }
             } catch (error: ApiException) {
-                if (current == generation) {
+                val issue = if (error.kind == ApiErrorKind.Forbidden) locationIssueFor(error.title) else null
+                // Recusa de localização vem antes do relé: não é perda de acesso nem resultado incerto.
+                if (current == generation && issue != null) {
+                    mutableState.update { it.copy(location = issue, requestId = error.requestId) }
+                } else if (current == generation) {
                     report(error, uncertain = true)
                     if (error.kind in setOf(ApiErrorKind.NotFound, ApiErrorKind.Forbidden)) {
                         mutableState.update { it.copy(exhaust = null) }
@@ -167,8 +192,15 @@ class ExhaustViewModel(private val repository: ExhaustRepository, private val ac
                 }
             } catch (error: CancellationException) { throw error }
             finally {
-                if (current == generation) mutableState.update { it.copy(sending = false, restarting = false) }
+                if (current == generation) mutableState.update { it.copy(sending = false, restarting = false, locating = false) }
             }
         }
     }
+}
+
+private fun LocationResult.issue(): LocationIssue = when (this) {
+    LocationResult.PermissionNeeded -> LocationIssue.Permission
+    LocationResult.ApproximateOnly -> LocationIssue.Approximate
+    LocationResult.Disabled -> LocationIssue.Disabled
+    LocationResult.Unavailable, is LocationResult.Fix -> LocationIssue.Unavailable
 }

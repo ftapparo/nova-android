@@ -41,6 +41,7 @@ class AppViewModel(application: NovaApplication) : ViewModel() {
     val auth = AuthRepository(api, graph::signOutDevice, graph::forgetDevice)
     val residence = ResidenceRepository(api)
     val exhaust = ExhaustRepository(api)
+    val exhaustLocator = ExhaustLocator(application)
     val fire = FireRepository(api)
     val messages = MessageRepository(api)
     val legal = LegalRepository(api)
@@ -71,7 +72,7 @@ fun App(app: AppViewModel) {
     val auth: AuthViewModel = viewModel { AuthViewModel(app.auth, app.legal::termsVersion) }
     val legal: LegalViewModel = viewModel { LegalViewModel(app.legal) }
     val residence: ResidenceViewModel = viewModel { ResidenceViewModel(app.residence, app.auth, app.residencePreferences) }
-    val exhaust: ExhaustViewModel = viewModel { ExhaustViewModel(app.exhaust, residence::refresh) }
+    val exhaust: ExhaustViewModel = viewModel { ExhaustViewModel(app.exhaust, app.exhaustLocator::current, residence::refresh) }
     val fire: FireViewModel = viewModel { FireViewModel(app.fire) }
     val messages: MessageViewModel = viewModel { MessageViewModel(app.messages) }
     val notifications: NotificationViewModel = viewModel { NotificationViewModel(app.notifications) }
@@ -84,6 +85,7 @@ fun App(app: AppViewModel) {
     val pushPromptDismissed by app.push.promptDismissed.collectAsStateWithLifecycle()
     val pendingOpen by app.pendingOpen.collectAsStateWithLifecycle()
     val enableNotifications = rememberNotificationEnabler(app.push) { app.push.refreshStatus(); app.registerPush(force = true) }
+    val locationEnabler = rememberLocationEnabler(exhaust::clearLocation)
     // Termo ou Política aberto a partir das telas de entrada ou do aceite (nas configurações, a navegação é da residência).
     var legalDocument by rememberSaveable { mutableStateOf<String?>(null) }
     val openLegal: (String) -> Unit = { legal.load(); legalDocument = it }
@@ -141,8 +143,10 @@ fun App(app: AppViewModel) {
             val services = access?.canSeeServices(user?.role) == true
             // A home mostra o estado do exaustor e da central (Figma 08a–08c): as consultas valem para toda a
             // área logada visível, e não só para a tela de cada serviço. Param em onStop.
-            LifecycleStartEffect(user?.id, unit?.sequencia, allowed) {
-                exhaust.start(unit?.quadra, unit?.lote, allowed)
+            // A equipe é isenta da verificação de localização na API: o app nem pede a permissão.
+            val staff = user?.role in StaffRoles
+            LifecycleStartEffect(user?.id, unit?.sequencia, allowed, staff) {
+                exhaust.start(unit?.quadra, unit?.lote, allowed, staff)
                 onStopOrDispose { exhaust.stop() }
             }
             // Aviso recebido com o app aberto: a tela correspondente reconsulta o estado na hora.
@@ -222,7 +226,8 @@ fun App(app: AppViewModel) {
                 deleteAccount = auth::deleteAccount, deleteError = authState.deleteError,
             ) { current, selectUnit, _ ->
                 ExhaustScreen(exhaustState, current?.cardLabel(), current?.blockedMessage() ?: access?.notice(),
-                    exhaust::activate, exhaust::restart, exhaust::refresh, selectUnit)
+                    exhaust::activate, exhaust::restart, exhaust::refresh, selectUnit,
+                    locationEnabler.permissionBlocked(), locationEnabler::resolve)
             }
         }
         }

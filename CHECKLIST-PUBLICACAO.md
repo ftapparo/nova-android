@@ -44,8 +44,9 @@ Legenda: `[x]` feito · `[~]` parcial ou a conferir · `[ ]` falta.
 - [ ] Número D-U-N-S do MEI (gratuito, leva alguns dias — pedir primeiro)
 - [ ] Conta de organização criada (US$ 25) e identidade verificada
 - [ ] Política de privacidade em URL pública: `/politica-de-privacidade` publicada pela API (13/10/2026); falta o deploy e informar a URL na Play
-- [ ] Formulário "Segurança dos dados": preencher conforme `docs/seguranca-dos-dados.md` (e-mail, nome, IDs de usuário, outras ações, IDs do dispositivo, diagnóstico; nada compartilhado; criptografia em trânsito; exclusão disponível)
-- [ ] Classificação de conteúdo e público-alvo
+- [~] Formulário "Segurança dos dados": rascunho salvo em 14/10/2026 conforme `docs/seguranca-dos-dados.md`; falta incluir **Local exato** (localização para ligar o exaustor), concluir depois do público-alvo e enviar para revisão (e-mail, nome, IDs de usuário, outras ações, IDs do dispositivo, diagnóstico, local exato; nada compartilhado; criptografia em trânsito; exclusão disponível)
+- [ ] Permissões: localização só em primeiro plano (`ACCESS_FINE_LOCATION`/`ACCESS_COARSE_LOCATION`), sem `ACCESS_BACKGROUND_LOCATION`, então não há declaração de localização em segundo plano; confirmar no Play Console que nenhuma declaração extra foi pedida
+- [ ] Classificação de conteúdo e público-alvo: público **18 anos ou mais**; app utilitário, sem violência, conteúdo sexual, apostas, compras ou interação entre usuários
 - [ ] Ficha da loja: descrição, capturas de tela do celular e imagem de destaque 1024×500
 - [ ] Conta de teste para a revisão do Google: conta dedicada com unidade ativa, nunca a pessoal
 - [ ] Teste interno: enviar o `.aab`, instalar pela loja e validar o login com Google

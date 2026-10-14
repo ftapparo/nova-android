@@ -27,6 +27,14 @@ class ExhaustTest {
     private val off = Exhaust("A4", "A", 4, false, null, "executado", true)
     private val jsonOff = """{"id":"A4","tower":"A","final":4,"on":false,"expiresAt":null,"processStatus":"executado","moduleOnline":true}"""
     private fun response(data: String) = MockResponse().setBody("""{"success":true,"data":$data,"meta":{"requestId":"test"}}""")
+    private fun forbidden(title: String) = MockResponse().setResponseCode(403)
+        .setBody("""{"success":false,"error":{"type":"urn:nova-api:forbidden","title":"$title","detail":"Texto variável"},"meta":{"requestId":"location"}}""")
+    private val fix = LocationResult.Fix(CommandLocation(-20.81, -49.38, 12.5f, false))
+    private val residentBody = """{"minutes":180,"location":{"latitude":-20.81,"longitude":-49.38,"accuracy":12.5,"mock":false}}"""
+    private var located: LocationResult = fix
+    private var locateCalls = 0
+    private var accessChanges = 0
+    private fun model() = ExhaustViewModel(repository, { locateCalls++; located }) { accessChanges++ }
 
     @Before fun setup() = runBlocking {
         Dispatchers.setMain(main)
@@ -42,11 +50,11 @@ class ExhaustTest {
         main.close()
         server.shutdown()
     }
-    private suspend fun start(): ExhaustViewModel {
+    private suspend fun start(staff: Boolean = false): ExhaustViewModel {
         server.enqueue(response("[$jsonOff]"))
-        val value = ExhaustViewModel(repository)
+        val value = model()
         model = value
-        withContext(main) { value.start("A", "124", true) }
+        withContext(main) { value.start("A", "124", true, staff) }
         withTimeout(5000) { value.state.first { it.canActivate } }
         assertEquals("/v3/api/exhausts", server.takeRequest().path)
         return value
@@ -95,7 +103,7 @@ class ExhaustTest {
         assertNull(listOf(off, off).forUnit("A", "124"))
     }
 
-    @Test fun `ativacao envia 180 minutos e bloqueia toque duplicado`() = runBlocking {
+    @Test fun `ativacao envia 180 minutos com a localizacao e bloqueia toque duplicado`() = runBlocking {
         val value = start()
         server.enqueue(response(jsonOff.replace("\"on\":false", "\"on\":true")).setBodyDelay(200, TimeUnit.MILLISECONDS))
         withContext(main) { value.activate(); value.activate() }
@@ -104,15 +112,67 @@ class ExhaustTest {
         val request = server.takeRequest()
         assertEquals("POST", request.method)
         assertEquals("/v3/api/exhausts/A4/on", request.path)
-        assertEquals("{\"minutes\":180}", request.body.readUtf8())
+        assertEquals(residentBody, request.body.readUtf8())
         assertNotNull(request.getHeader("Authorization"))
         assertEquals(2, server.requestCount)
+        assertEquals(1, locateCalls)
     }
 
-    @Test fun `reiniciar tempo reenvia 180 minutos uma unica vez`() = runBlocking {
+    @Test fun `equipe e isenta e envia sem ler a localizacao`() = runBlocking {
+        val value = start(staff = true)
+        server.enqueue(response(jsonOff.replace("\"on\":false", "\"on\":true")))
+        withContext(main) { value.activate() }
+        withTimeout(5000) { value.state.first { !it.sending && it.exhaust?.on == true } }
+        assertEquals("{\"minutes\":180}", server.takeRequest().body.readUtf8())
+        assertEquals(0, locateCalls)
+    }
+
+    @Test fun `sem leitura valida da localizacao nada e enviado`() = runBlocking {
+        val cases = listOf(LocationResult.PermissionNeeded to LocationIssue.Permission, LocationResult.ApproximateOnly to LocationIssue.Approximate,
+            LocationResult.Disabled to LocationIssue.Disabled, LocationResult.Unavailable to LocationIssue.Unavailable)
+        val value = start()
+        for ((result, issue) in cases) {
+            located = result
+            withContext(main) { value.activate() }
+            withTimeout(5000) { value.state.first { !it.sending && it.location == issue } }
+            assertFalse(value.state.value.activationUncertain)
+            assertTrue(value.state.value.canActivate)
+        }
+        assertEquals(1, server.requestCount)
+        withContext(main) { value.clearLocation() }
+        assertNull(value.state.value.location)
+    }
+
+    @Test fun `recusa de localizacao da api nao tira o acesso nem deixa o comando incerto`() = runBlocking {
+        val value = start()
+        val cases = listOf("Fora da área do condomínio" to LocationIssue.Outside, "Localização imprecisa" to LocationIssue.Inaccurate,
+            "Localização simulada" to LocationIssue.Mock, "Localização necessária" to LocationIssue.Unavailable)
+        for ((title, issue) in cases) {
+            server.enqueue(forbidden(title))
+            withContext(main) { value.activate() }
+            withTimeout(5000) { value.state.first { !it.sending && it.location == issue } }
+            assertNotNull(value.state.value.exhaust)
+            assertFalse(value.state.value.activationUncertain)
+            assertTrue(value.state.value.canActivate)
+        }
+        assertEquals(0, accessChanges)
+        assertEquals(5, server.requestCount)
+    }
+
+    @Test fun `403 sem titulo de localizacao continua sendo perda de acesso`() = runBlocking {
+        val value = start()
+        server.enqueue(forbidden("Acesso negado"))
+        withContext(main) { value.activate() }
+        withTimeout(5000) { value.state.first { !it.sending && it.error != null } }
+        assertNull(value.state.value.exhaust)
+        assertNull(value.state.value.location)
+        assertEquals(1, accessChanges)
+    }
+
+    @Test fun `reiniciar tempo reenvia 180 minutos com a localizacao uma unica vez`() = runBlocking {
         val jsonOn = jsonOff.replace("\"on\":false", "\"on\":true").replace("\"expiresAt\":null", "\"expiresAt\":${System.currentTimeMillis() + 3_600_000}")
         server.enqueue(response("[$jsonOn]"))
-        val value = ExhaustViewModel(repository)
+        val value = model()
         model = value
         withContext(main) { value.start("A", "124", true) }
         withTimeout(5000) { value.state.first { it.canRestart } }
@@ -124,7 +184,7 @@ class ExhaustTest {
         withTimeout(5000) { value.state.first { !it.sending } }
         val request = server.takeRequest()
         assertEquals("/v3/api/exhausts/A4/on", request.path)
-        assertEquals("{\"minutes\":180}", request.body.readUtf8())
+        assertEquals(residentBody, request.body.readUtf8())
         assertEquals(2, server.requestCount)
     }
 
@@ -175,7 +235,7 @@ class ExhaustTest {
     }
 
     @Test fun `unidade bloqueada nao consulta equipamento`() = runBlocking {
-        val value = ExhaustViewModel(repository)
+        val value = model()
         model = value
         withContext(main) { value.start("A", "124", false); value.activate() }
         assertEquals(ExhaustPhase.Unavailable, value.state.value.phase)

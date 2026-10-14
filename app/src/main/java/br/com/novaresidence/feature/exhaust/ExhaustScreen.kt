@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,15 +34,39 @@ import br.com.novaresidence.core.ui.*
 private data class StateCopy(val image: Int, val title: String, val description: String, val info: String?)
 
 private const val AutoOff = "Desligamento automático ao final do tempo programado."
+private const val LocationPrivacy = "A localização é usada só no momento do comando e não é guardada."
+
+/** Aviso de localização (Figma 25c–25i); o botão resolve no aparelho ([action]) ou repete o toque ([retry]). */
+private data class LocationCopy(val title: String, val description: String, val info: String, val action: String? = null, val retry: Boolean = false)
+
+private fun locationCopy(issue: LocationIssue, permissionBlocked: Boolean): LocationCopy = when (issue) {
+    LocationIssue.Permission -> if (permissionBlocked) LocationCopy("Localização não permitida",
+        "Permita o acesso à localização nas configurações do aparelho.", LocationPrivacy, "Abrir configurações")
+        else LocationCopy("Localização necessária", "Para ligar o exaustor, o app confere se você está no condomínio.", LocationPrivacy, "Permitir localização")
+    LocationIssue.Approximate -> LocationCopy("Localização precisa necessária",
+        "A localização aproximada não basta para confirmar que você está no condomínio.", LocationPrivacy,
+        if (permissionBlocked) "Abrir configurações" else "Permitir localização precisa")
+    LocationIssue.Disabled -> LocationCopy("Localização desligada", "Ative a localização do aparelho para ligar o exaustor.", LocationPrivacy, "Ativar localização")
+    LocationIssue.Outside -> LocationCopy("Fora do condomínio", "Você precisa estar no condomínio para ligar o exaustor.",
+        "A localização do aparelho pode ter erro dentro de prédios; tente perto de uma janela.")
+    LocationIssue.Inaccurate, LocationIssue.Unavailable -> LocationCopy("Localização imprecisa",
+        "Não foi possível confirmar sua localização com precisão.", "Tente perto de uma janela ou em área aberta do condomínio.", retry = true)
+    LocationIssue.Mock -> LocationCopy("Localização simulada", "Desative o aplicativo de localização simulada para ligar o exaustor.",
+        "Por segurança, o comando não é aceito com localização simulada.", retry = true)
+}
 
 /** Exaustor da unidade ativa (Figma 19–24). [unitLabel] segue o formato "Apto. 124 · Torre A". */
 @Composable
 fun ExhaustScreen(
     state: ExhaustState, unitLabel: String?, blockedMessage: String?,
     activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit, selectUnit: () -> Unit,
+    permissionBlocked: Boolean = false, locationAction: (LocationIssue) -> Unit = {},
 ) {
     val phase = state.phase
-    val copy = when (phase) {
+    // O aviso de localização só substitui os estados em que o botão envia comando.
+    val location = state.location?.takeIf { phase == ExhaustPhase.Off || phase == ExhaustPhase.Running }
+        ?.let { it to locationCopy(it, permissionBlocked) }
+    val phaseCopy = when (phase) {
         ExhaustPhase.Off -> StateCopy(R.drawable.nova_exhaust_off, "Desligado", "Pronto para utilização.", AutoOff)
         ExhaustPhase.Starting -> StateCopy(R.drawable.nova_exhaust_off, "Ligando", "Aguarde o exaustor ser acionado.", AutoOff)
         ExhaustPhase.Running -> StateCopy(R.drawable.nova_exhaust_on, "Ligado",
@@ -61,6 +86,7 @@ fun ExhaustScreen(
             blockedMessage ?: if (unitLabel == null) "Selecione uma unidade vinculada para consultar seu exaustor." else "Nenhum exaustor disponível para esta unidade.",
             "O estado exibido é exclusivo do equipamento da sua unidade.")
     }
+    val copy = location?.second?.let { StateCopy(phaseCopy.image, it.title, it.description, it.info) } ?: phaseCopy
     Column(Modifier.fillMaxSize().background(NovaServiceBackground)) {
         NovaTopBar("Exaustor")
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
@@ -79,7 +105,7 @@ fun ExhaustScreen(
                         if (phase == ExhaustPhase.Error) state.error?.let { Text(it, Modifier.fillMaxWidth(), style = NovaType.Body, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
                         if (state.retrySeconds > 0) Text("Tente novamente em ${state.retrySeconds}s", style = NovaType.Body, color = NovaOnSurfaceVariant)
                         Column(Modifier.fillMaxWidth().padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            Action(phase, state, blockedMessage, activate, restart, refresh)
+                            Action(phase, state, blockedMessage, activate, restart, refresh, location, locationAction)
                             copy.info?.let { NovaInfoStrip(it) }
                             state.requestId?.let { Text("Referência para suporte: $it", Modifier.fillMaxWidth(), style = NovaType.Caption, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
                         }
@@ -91,8 +117,28 @@ fun ExhaustScreen(
 }
 
 @Composable
-private fun Action(phase: ExhaustPhase, state: ExhaustState, blockedMessage: String?, activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit) {
+private fun Action(
+    phase: ExhaustPhase, state: ExhaustState, blockedMessage: String?, activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit,
+    location: Pair<LocationIssue, LocationCopy>?, locationAction: (LocationIssue) -> Unit,
+) {
     val power = NovaType.Button.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+    val running = phase == ExhaustPhase.Running
+    val action = location?.second?.action
+    when {
+        state.locating -> NovaButton("Verificando localização...", {}, enabled = false, icon = if (running) null else R.drawable.nova_power,
+            style = if (running) NovaButtonStyle.Outlined else NovaButtonStyle.Primary, height = 52.dp, textStyle = power)
+        location != null && action != null -> NovaButton(action, { locationAction(location.first) }, enabled = blockedMessage == null, height = 52.dp)
+        location != null && location.second.retry -> NovaButton("Tentar novamente", if (running) restart else activate,
+            enabled = (if (running) state.canRestart else state.canActivate) && blockedMessage == null, height = 52.dp)
+        else -> PhaseAction(phase, state, blockedMessage, activate, restart, refresh, power)
+    }
+}
+
+@Composable
+private fun PhaseAction(
+    phase: ExhaustPhase, state: ExhaustState, blockedMessage: String?, activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit,
+    power: TextStyle,
+) {
     when (phase) {
         ExhaustPhase.Off -> NovaButton("Ligar exaustor", activate, enabled = state.canActivate && blockedMessage == null,
             icon = R.drawable.nova_power, height = 52.dp, textStyle = power)

@@ -282,6 +282,60 @@ class ScreenTest {
         assertEquals(0, commands)
     }
 
+    @Test fun exhaustLocationStatesOfferTheRightAction() {
+        val unit = ResidenceUnit(1, "B", "84", "B-84", true, false, true, false, null)
+        val residence = ResidenceState(Residence("ativo", false, ResidencePerson(91, "Morador de teste"), listOf(unit)), 1)
+        val off = ExhaustState(Exhaust("B4", "B", 4, false, null, "executado", true), loading = false, nowMillis = 1000)
+        var state by mutableStateOf(off.copy(sending = true, locating = true))
+        var blocked by mutableStateOf(false)
+        var commands = 0
+        val resolved = mutableListOf<LocationIssue>()
+        compose.setContent {
+            NovaResidenceTheme {
+                ResidenceScreen(residence, AuthUser("test", null, "morador", false), {}, {}, {}, false,
+                    exhaustStatus = ServiceStatus(state.homeSummary())) { current, selectUnit, _ ->
+                    ExhaustScreen(state, current?.cardLabel(), null, { commands++ }, {}, {}, selectUnit, blocked) { resolved += it }
+                }
+            }
+        }
+        waitForContent()
+        tab("Exaustor").performClick()
+        compose.onNodeWithText("Verificando localização...").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Ligando").assertDoesNotExist()
+        capture("25_exhaust_locating")
+        val cases = listOf(
+            Triple(LocationIssue.Permission, "Localização necessária", "Permitir localização"),
+            Triple(LocationIssue.Approximate, "Localização precisa necessária", "Permitir localização precisa"),
+            Triple(LocationIssue.Disabled, "Localização desligada", "Ativar localização"),
+        )
+        for ((issue, title, action) in cases) {
+            compose.runOnIdle { state = off.copy(location = issue) }
+            compose.onNodeWithText(title).assertIsDisplayed()
+            compose.onNodeWithText(action).performScrollTo().assertIsEnabled().performClick()
+            capture("25_exhaust_location_${issue.name.lowercase()}")
+        }
+        compose.runOnIdle { assertEquals(cases.map { it.first }, resolved); blocked = true; state = off.copy(location = LocationIssue.Permission) }
+        compose.onNodeWithText("Localização não permitida").assertIsDisplayed()
+        compose.onNodeWithText("Abrir configurações").performScrollTo().assertIsEnabled()
+        capture("25_exhaust_location_denied")
+        compose.runOnIdle { state = off.copy(location = LocationIssue.Outside) }
+        compose.onNodeWithText("Fora do condomínio").assertIsDisplayed()
+        compose.onNodeWithText("Ligar exaustor").performScrollTo().assertIsEnabled()
+        capture("25_exhaust_location_outside")
+        compose.runOnIdle { state = off.copy(location = LocationIssue.Inaccurate) }
+        compose.onNodeWithText("Localização imprecisa").assertIsDisplayed()
+        compose.onNodeWithText("Tentar novamente").performScrollTo().assertIsEnabled()
+        capture("25_exhaust_location_inaccurate")
+        compose.runOnIdle { state = off.copy(location = LocationIssue.Mock) }
+        compose.onNodeWithText("Localização simulada").assertIsDisplayed()
+        compose.onNodeWithText("Tentar novamente").performScrollTo().performClick()
+        capture("25_exhaust_location_mock")
+        compose.runOnIdle { assertEquals(1, commands) }
+        // Aviso só substitui estados com botão de comando; offline continua prevalecendo.
+        compose.runOnIdle { state = off.copy(exhaust = off.exhaust!!.copy(moduleOnline = false), location = LocationIssue.Outside) }
+        compose.onNodeWithText("Fora do condomínio").assertDoesNotExist()
+    }
+
     @Test fun settingsUnitSelectionLanguageAndPrivacy() {
         val first = ResidenceUnit(1, "B", "84", "B-84", true, false, true, false, null)
         val second = first.copy(sequencia = 2, quadra = "A", label = "A-84")

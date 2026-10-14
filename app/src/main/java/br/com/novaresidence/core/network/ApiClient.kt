@@ -24,6 +24,8 @@ class ApiException(
     val requestId: String? = null,
     val fieldErrors: List<FieldError> = emptyList(),
     val retryAfterSeconds: Long = 0,
+    /** Só alguns títulos são estáveis e documentados pela API (ex.: recusas de localização do exaustor). */
+    val title: String? = null,
 ) : Exception(kind.name) {
     fun userMessage(): String = when (kind) {
         ApiErrorKind.Validation -> "Confira os dados informados."
@@ -100,6 +102,7 @@ class ApiTransport(
                             FieldError(fieldPath, message)
                         }.orEmpty(),
                         retryAfterSeconds = response.header("Retry-After")?.toLongOrNull()?.coerceIn(0, 86400) ?: 0,
+                        title = (error?.get("title") as? JsonPrimitive)?.contentOrNull,
                     )
                 }
             } catch (_: IOException) {

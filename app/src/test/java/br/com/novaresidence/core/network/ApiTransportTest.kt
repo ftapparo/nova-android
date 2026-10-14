@@ -39,6 +39,13 @@ class ApiTransportTest {
         }
     }
 
+    @Test fun `stable error title is exposed for documented meanings`() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(403).setBody("""{"success":false,"error":{"type":"urn:nova-api:forbidden","title":"Fora da área do condomínio","detail":"Texto variável"},"meta":{}}"""))
+        val failure = try { transport.request("exhausts/A4/on", post = true); error("Expected failure") } catch (error: ApiException) { error }
+        assertEquals(ApiErrorKind.Forbidden, failure.kind)
+        assertEquals("Fora da área do condomínio", failure.title)
+    }
+
     @Test fun `malformed envelope and typed response become recoverable failures`() = runBlocking {
         for (body in listOf("not json", "[]", "{}", "{\"success\":true}", "{\"success\":true,\"data\":null}")) {
             server.enqueue(MockResponse().setBody(body))

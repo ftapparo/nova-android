@@ -266,7 +266,7 @@ Error (RFC 7807, adapted):
 |---|---|---|
 | `urn:nova-api:validation-error` | 400 | Show field errors from `validationErrors` |
 | `urn:nova-api:unauthorized` | 401 | Wrong credentials on login; elsewhere, refresh once, then log out |
-| `urn:nova-api:forbidden` | 403 | See "Mandatory password change" below; otherwise "Acesso negado" |
+| `urn:nova-api:forbidden` | 403 | See "Mandatory password change" below; exhaust location refusals by stable `title` (see Exhaust Fans); otherwise "Acesso negado" |
 | `urn:nova-api:not-found` | 404 | Resource missing or not accessible to this user |
 | `urn:nova-api:conflict` | 409 | e.g. e-mail already registered |
 | `urn:nova-api:rate-limited` | 429 | Honor the `Retry-After` header (seconds); disable the action meanwhile |
@@ -406,17 +406,18 @@ Hide features the user cannot use, but always handle 403/404 anyway — the serv
 - `maintenance: true` → tela 24 (selo "Manutenção", sem ação). `/on` responde 409 nesse caso; o app mostra o `detail` e não repete. O painel web v2 ignora a manutenção.
 - O contador ("Tempo restante · 02:59:00") usa somente `expiresAt` retornado pela API. Ao chegar a zero, apresenta finalização e continua consultando; somente a resposta do servidor confirma que desligou.
 
-#### Localização para ligar o exaustor (decidido em 13/10/2026, ainda não implementado)
+#### Localização para ligar o exaustor (decidido em 13/10/2026, implementado em 14/10/2026)
 
-O morador só pode ligar o exaustor dentro da área do condomínio.
+O morador só liga ou reinicia o exaustor dentro da área do condomínio.
 
-- **A API é a autoridade.** O app obtém a localização no toque em "Ligar exaustor" (e em "Reiniciar tempo") e a envia no `POST /exhausts/{id}/on` (latitude, longitude, precisão e indicação de localização simulada). A API compara com a área do condomínio, configurada no servidor e nunca no app, e recusa com erro próprio quando fora. Uma checagem só no app é contornável.
+- **A API é a autoridade.** No toque em "Ligar exaustor" ou "Reiniciar tempo", `ExhaustLocator` (`feature/exhaust/ExhaustLocation.kt`) lê a localização uma vez e o app envia `location: { latitude, longitude, accuracy, mock }` no `POST /exhausts/{id}/on`. A área é um círculo (centro + raio) configurado no servidor (`EXHAUST_GEOFENCE_*`), nunca no app; a API aceita quando o círculo de precisão toca a área e `accuracy` ≤ 100 m (configurável).
+- **Equipe isenta:** `porteiro`, `sindico` e `admin` não enviam localização e o app nem pede a permissão (`ExhaustViewModel.start(..., staff)`). Quem é equipe e também morador conta como equipe.
+- **Recusas da API:** 403 `forbidden` com `title` estável — "Localização necessária", "Localização simulada", "Localização imprecisa", "Fora da área do condomínio" (`locationIssueFor`). Nada chegou ao relé: não é perda de acesso (não chama `accessChanged`) nem comando incerto. Área não configurada no servidor = 503. As recusas contam no limite de 10 comandos por minuto.
 - **Desligar nunca exige localização** (segurança). O app continua sem chamar `/off` automaticamente.
-- **Permissão:** localização precisa apenas "durante o uso" (`ACCESS_FINE_LOCATION`), pedida no momento da ação com explicação antes. Sem localização em segundo plano.
-- **Precisão:** usar o provedor do Google Play Services (`play-services-location`, combina GPS, Wi-Fi e rede; melhor dentro do prédio). Aceitar quando o círculo de precisão toca a área do condomínio. Recusar localização simulada (`Location.isMock()` / `isFromMockProvider()`).
-- **Estados de tela a desenhar no Figma:** permissão negada, localização desligada, fora da área e precisão insuficiente.
-- **Privacidade:** a localização só valida o comando; não é armazenada como trajeto nem registrada em log. Declarar na política de privacidade e no formulário "Segurança dos dados" da Play.
-- **Pendente:** coordenadas ou polígono do condomínio e se a equipe (`porteiro`, `sindico`, `admin`) fica isenta.
+- **Permissão:** `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION` (o Android 12+ exige pedir as duas), só "durante o uso", pedida a partir do aviso da tela. Sem localização em segundo plano. Sem permissão, com só a aproximada ou com a localização desligada, nada é enviado e a tela mostra o aviso com a ação (`LocationEnabler`: pedido do sistema enquanto ele ainda aparece, depois as configurações do app; diálogo do Play Services para ligar a localização). Na volta, o aviso some e o comando só sai com novo toque.
+- **Precisão:** provedor do Google Play Services (`play-services-location`, `getCurrentLocation` com alta precisão, leitura de até 30 s, espera de 15 s). Localização simulada (`Location.isMock` / `isFromMockProvider`) é enviada com `mock: true` e a API recusa.
+- **Telas:** Figma 25c–25i (localização necessária, não permitida, aproximada, desligada, fora do condomínio, imprecisa, simulada); o botão mostra "Verificando localização..." durante a leitura. O aviso só substitui os estados com botão de comando (desligado e ligado).
+- **Privacidade:** a localização só valida o comando; não é armazenada como trajeto nem registrada em log, no app ou na API (que registra só o resultado). Coberta pela Política de Privacidade 1.2 (§3.8 e §8-A); declarar "Local exato" na "Segurança dos dados" (`docs/seguranca-dos-dados.md`).
 - As consultas ocorrem enquanto a área logada está visível (home e tela do exaustor, pois a home mostra o estado — Figma 08b). Com o WebSocket conectado, `exhaust.changed` do exaustor da unidade ativa dispara a reconsulta na hora e o laço fica em 30 s (5 s em transição); sem ele, 5 s (2 s em transição). Respeitar `Retry-After`; nenhuma falha causa repetição automática do acionamento.
 - A seleção do equipamento intersecta torre/final da unidade ativa com a lista autorizada de `/exhausts`. Não fabricar equipamentos ou permissões ausentes dessa lista.
 - Quando a resposta for inconclusiva, usar os textos aprovados “Não foi possível confirmar a ativação” e “Atualize o estado antes de tentar novamente”, sem afirmar proteção ou encerramento físico não confirmados.
@@ -424,7 +425,7 @@ O morador só pode ligar o exaustor dentro da área do condomínio.
 | Method | Path | Body | Returns |
 |---|---|---|---|
 | GET | `/exhausts` | — | 200 `Exhaust[]` (only the ones this user may see) |
-| POST | `/exhausts/{id}/on` | `{ minutes? }` (1–1440; omit = stays on until turned off; resend while on = restart timer) | 200 `Exhaust`; 409 in maintenance |
+| POST | `/exhausts/{id}/on` | `{ minutes?, location? }` (1–1440; omit = stays on until turned off; resend while on = restart timer; `location` required for residents) | 200 `Exhaust`; 403 location refused; 409 in maintenance |
 | POST | `/exhausts/{id}/off` | — | 200 `Exhaust` |
 | PUT | `/exhausts/{id}/maintenance` | `{ maintenance }` | 200 `Exhaust` — `sindico`/`admin` only, not used by the app yet |
 

@@ -14,6 +14,21 @@ data class Exhaust(
 
 enum class ExhaustPhase { Loading, Off, Starting, Running, Finishing, Offline, Maintenance, Error, Unavailable }
 
+/**
+ * Por que o comando não saiu por causa da localização (Figma 25c–25i). Os quatro primeiros são do aparelho
+ * e nada foi enviado; os demais vêm do 403 da API, recusado antes do relé. Em nenhum caso o comando fica incerto.
+ */
+enum class LocationIssue { Permission, Approximate, Disabled, Unavailable, Outside, Inaccurate, Mock }
+
+/** Títulos estáveis do 403 de `POST /exhausts/{id}/on` (APP-GUIDE §2); "Localização necessária" só ocorre sem leitura. */
+internal fun locationIssueFor(title: String?): LocationIssue? = when (title) {
+    "Fora da área do condomínio" -> LocationIssue.Outside
+    "Localização imprecisa" -> LocationIssue.Inaccurate
+    "Localização simulada" -> LocationIssue.Mock
+    "Localização necessária" -> LocationIssue.Unavailable
+    else -> null
+}
+
 data class ExhaustState(
     val exhaust: Exhaust? = null,
     val loading: Boolean = true,
@@ -24,11 +39,14 @@ data class ExhaustState(
     val retrySeconds: Long = 0,
     val nowMillis: Long = System.currentTimeMillis(),
     val activationUncertain: Boolean = false,
+    /** Lendo a localização antes de enviar o comando ("Verificando localização..."). */
+    val locating: Boolean = false,
+    val location: LocationIssue? = null,
 ) {
     val phase: ExhaustPhase get() {
         val item = exhaust
         return when {
-            sending && !restarting -> ExhaustPhase.Starting
+            sending && !restarting && !locating -> ExhaustPhase.Starting
             error != null -> ExhaustPhase.Error
             item == null -> if (loading) ExhaustPhase.Loading else ExhaustPhase.Unavailable
             !item.moduleOnline -> ExhaustPhase.Offline
