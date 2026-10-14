@@ -18,7 +18,7 @@ Legenda: `[x]` feito · `[~]` parcial ou a conferir · `[ ]` falta.
 - [~] Comunicados na home (08d/08e): só o estado vazio — opcional na 1ª versão (exige rota na API)
 - [x] **Exclusão de conta no app** — Configurações → Privacidade → Solicitar exclusão da conta (13/10/2026)
 - [~] Push nativo (alarme, exaustor e comunicados) implementado no app e na API — falta o projeto Firebase (`google-services.json`) e a validação no J4
-- [ ] Política de privacidade e "Segurança dos dados" citando o token do aparelho usado para as notificações
+- [~] Política de Privacidade 1.2 citando o token do aparelho e os demais dados das notificações (API, falta o deploy); "Segurança dos dados" com as respostas em `docs/seguranca-dos-dados.md`
 
 ## API (v3)
 
@@ -44,7 +44,7 @@ Legenda: `[x]` feito · `[~]` parcial ou a conferir · `[ ]` falta.
 - [ ] Número D-U-N-S do MEI (gratuito, leva alguns dias — pedir primeiro)
 - [ ] Conta de organização criada (US$ 25) e identidade verificada
 - [ ] Política de privacidade em URL pública: `/politica-de-privacidade` publicada pela API (13/10/2026); falta o deploy e informar a URL na Play
-- [ ] Formulário "Segurança dos dados": e-mail, nome e unidade; criptografia em trânsito; exclusão disponível
+- [ ] Formulário "Segurança dos dados": preencher conforme `docs/seguranca-dos-dados.md` (e-mail, nome, IDs de usuário, outras ações, IDs do dispositivo, diagnóstico; nada compartilhado; criptografia em trânsito; exclusão disponível)
 - [ ] Classificação de conteúdo e público-alvo
 - [ ] Ficha da loja: descrição, capturas de tela do celular e imagem de destaque 1024×500
 - [ ] Conta de teste para a revisão do Google: conta dedicada com unidade ativa, nunca a pessoal

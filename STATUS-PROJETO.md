@@ -116,7 +116,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Contraste: amarelo, verde e cinzas escurecidos no Figma conforme os tokens do app e o DESIGN_GUIDE | 13/10 |
 | ❌ | Otimização R8 e Baseline Profile (velocidade na primeira abertura de cada tela) | — |
 | 🟡 | Push nativo (FCM): central, exaustor e comunicados — implementado e validado no J4 (teste, comunicado e exaustor desligado); falta o alarme real (seção 7.1) | 13/10 · 14/10 |
-| 🟡 | WebSocket `/v3/ws` em tempo real com o app aberto: eventos da central e do exaustor disparam a reconsulta na hora; consulta periódica vira rede de segurança (60 s / 30 s). Reconexão com ticket novo, 4001 e backoff; 8 testes unitários. Validado no J4 (14/10): com a tela do exaustor aberta, o desligamento pelo painel v2 apareceu como "Desligando" e depois "Desligado" sem esperar a consulta de 30 s; ligar pelo app passou de "Ligando" a "Ligado" em menos de 1 s. Falta medir o volume do `cie.status.updated` | 14/10 |
+| ✅ | WebSocket `/v3/ws` em tempo real com o app aberto: eventos da central e do exaustor disparam a reconsulta na hora; consulta periódica vira rede de segurança (60 s / 30 s). Reconexão com ticket novo, 4001 e backoff; 8 testes unitários. Validado no J4 (14/10): com a tela do exaustor aberta, o desligamento pelo painel v2 apareceu como "Desligando" e depois "Desligado" sem esperar a consulta de 30 s; ligar pelo app passou de "Ligando" a "Ligado" em menos de 1 s. Volume medido em 14/10: 15 `cie.status.updated` por minuto (um a cada 4 s), ~1 KB cada, ~16 KB/min ≈ 0,9 MB por hora de app aberto — baixo, sem filtro na API | 14/10 |
 
 ## 7. Dependências na API (`src/v3`)
 
@@ -152,7 +152,7 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção "Push notifications". Mecani
 | ✅ | **J4 (14/10):** "faltam 15 minutos" chegou a quem ligou; com o app fechado, o "desligado" pelo painel v2 chegou e o toque abriu o exaustor já atualizado |
 | ❌ | **Validar no J4:** alarme com o app fechado e tela bloqueada (com a equipe) e cartão de permissão num Android 13+ |
 | ✅ | **Figma (14/10):** cartão da home (08e), tela Notificações para morador/equipe e estados de permissão, canal bloqueado e registro pendente (09a–09e); central com ação "Ativar notificações" (26b) |
-| ❌ | **Publicação:** declarar o token do aparelho na Política de Privacidade e na "Segurança dos dados" (IDs do dispositivo) |
+| 🟡 | **Publicação:** Política de Privacidade 1.2 (token, identificador de instalação, modelo e versões, conteúdo dos avisos e retenção) pronta na API, falta o deploy; respostas do formulário "Segurança dos dados" em [docs/seguranca-dos-dados.md](docs/seguranca-dos-dados.md), a preencher no Play Console |
 | ⚠️ | **Limite:** a entrega não é garantida em tempo real (economia de bateria, otimizações Samsung); nenhum texto promete aviso imediato |
 
 ## 7.2 Localização para ligar o exaustor — decidido em 13/10, não implementado
