@@ -17,6 +17,9 @@ import br.com.novaresidence.feature.exhaust.*
 import br.com.novaresidence.feature.fire.*
 import br.com.novaresidence.feature.message.*
 import br.com.novaresidence.feature.legal.*
+import br.com.novaresidence.feature.notification.*
+import br.com.novaresidence.core.push.PushStatus
+import br.com.novaresidence.core.push.NotificationPrompt
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -25,7 +28,13 @@ import java.io.File
 
 class ScreenTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
-    @Before fun edgeToEdge() { compose.activityRule.scenario.onActivity { it.enableEdgeToEdge() } }
+    @Before fun edgeToEdge() {
+        compose.activityRule.scenario.onActivity {
+            it.enableEdgeToEdge()
+            // Capturas e gestos precisam de uma janela desenhada; o J4 pode apagar a tela durante a suíte.
+            it.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
     private fun auth(): AuthViewModel {
         val store = object : SessionStore {
             override fun read(): SessionData? = null
@@ -37,6 +46,7 @@ class ScreenTest {
         return AuthViewModel(AuthRepository(ApiClient(ApiTransport("http://127.0.0.1:1"), coordinator))) { "1.0" }
     }
     private fun capture(name: String) {
+        waitForContent()
         compose.waitForIdle()
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val directory = context.getExternalFilesDir("screenshots")!!
@@ -45,6 +55,11 @@ class ScreenTest {
             val bitmap = if (name.endsWith("_dialog")) InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
                 else compose.onRoot().captureToImage().asAndroidBitmap()
             bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+        }
+    }
+    private fun waitForContent() {
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodes(isRoot()).fetchSemanticsNodes(atLeastOneRootRequired = false).isNotEmpty()
         }
     }
     private fun tab(label: String) = compose.onNode(hasText(label) and SemanticsMatcher.expectValue(
@@ -228,6 +243,7 @@ class ScreenTest {
                 }
             }
         }
+        waitForContent()
         tab("Exaustor").performClick()
         compose.onNodeWithText("Apto. 84 · Torre B").assertIsDisplayed()
         compose.onNodeWithText("Disponível").assertIsDisplayed()
@@ -329,13 +345,16 @@ class ScreenTest {
         val failure = CieLog("falha:2", "falha", 2, deviceName = "3 ANDAR T-A", zoneName = "TORRE A", deviceTypeLabel = "Acionador Manual", occurredAt = "2026-09-20T12:00:00.000Z")
         val normal = FireState(CiePanel(online = true, connected = true, lastUpdated = System.currentTimeMillis()), CieAlarms(false), loading = false, history = listOf(alarmLog, failure))
         var state by mutableStateOf(normal)
+        var notificationsReady by mutableStateOf(false)
+        var permissionRequests = 0
         val unit = ResidenceUnit(1, "A", "124", "A-124", true, false, true, false, null)
         compose.setContent {
             NovaResidenceTheme {
                 ResidenceScreen(ResidenceState(Residence("ativo", false, ResidencePerson(91, "MORADOR DE TESTE"), listOf(unit)), 1),
                     AuthUser("test", null, "morador", false), {}, {}, {}, false,
                     fireStatus = ServiceStatus(state.homeSummary(), state.homeAlarmPlace(), if (state.status == FireStatus.Alarm) ServiceTone.Alarm else ServiceTone.Neutral),
-                    fireContent = { _, _, fullScreen -> FireFeature(state, {}, {}, fullScreen) })
+                    fireContent = { _, _, fullScreen -> FireFeature(state, {}, {}, fullScreen,
+                        notificationsReady = notificationsReady, enableNotifications = { permissionRequests++ }) })
             }
         }
         compose.onNodeWithText("Nenhum alarme de incêndio ativo.").assertIsDisplayed()
@@ -344,6 +363,11 @@ class ScreenTest {
         compose.onNodeWithText("Central online").assertIsDisplayed()
         compose.onNodeWithText("Atualizado agora").performScrollTo().assertIsDisplayed()
         capture("26_fire_normal")
+        compose.onNodeWithText("Ativar notificações").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(1, permissionRequests); notificationsReady = true }
+        compose.onNodeWithText("Ativar notificações").assertDoesNotExist()
+        compose.onNodeWithText("Você será avisado se o estado da central mudar.").performScrollTo().assertIsDisplayed()
+        capture("26_fire_notifications_ready")
         compose.runOnIdle { state = normal.copy(alarms = CieAlarms(false, CieCounters(falha = 1)), activeEvents = listOf(failure)) }
         compose.onNodeWithText("Em verificação").assertIsDisplayed()
         compose.onNodeWithText("Torre A · 3º andar").performScrollTo().assertIsDisplayed()
@@ -378,5 +402,59 @@ class ScreenTest {
         tab("Início").performClick()
         compose.onNodeWithText("Torre B - Andar 8").assertIsDisplayed()
         capture("08c_home_fire_alarm")
+    }
+
+    @Test fun notificationPreferencesRespectPermissionAndStaffRole() {
+        var status by mutableStateOf(PushStatus.Ready)
+        var staff by mutableStateOf(false)
+        var state by mutableStateOf(NotificationState(preferences = NotificationPreferences()))
+        var permissionRequests = 0
+        var retries = 0
+        val changed = mutableListOf<NotificationOption>()
+        compose.setContent { NovaResidenceTheme {
+            NotificationScreen(state, status, staff, {}, { option, enabled ->
+                changed += option
+                state = state.copy(preferences = state.preferences!!.with(option, enabled))
+            }, {}, { permissionRequests++ }, { retries++ }, {})
+        } }
+        compose.onNodeWithText("Este aparelho recebe as notificações do condomínio.").assertIsDisplayed()
+        compose.onNodeWithText("Alertas da central").assertDoesNotExist()
+        capture("09a_notifications_resident")
+        compose.onNodeWithText("Comunicados").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(listOf(NotificationOption.Messages), changed) }
+        compose.runOnIdle { staff = true }
+        compose.onNodeWithText("Alertas da central").performScrollTo().assertIsDisplayed()
+        capture("09b_notifications_staff")
+        compose.runOnIdle { status = PushStatus.PermissionNeeded }
+        compose.onNodeWithText("Enviar notificação de teste").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Ativar notificações").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(1, permissionRequests) }
+        capture("09c_notifications_permission")
+        compose.runOnIdle { status = PushStatus.ChannelBlocked }
+        compose.onNodeWithText("Abrir configurações").performScrollTo().assertIsEnabled()
+        capture("09d_notifications_channel_blocked")
+        compose.runOnIdle { status = PushStatus.NotRegistered }
+        compose.onNodeWithText("Tentar novamente").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(1, retries) }
+        capture("09e_notifications_registration")
+    }
+
+    @Test fun notificationPromptCanBeEnabledOrDismissed() {
+        var dismissed by mutableStateOf(false)
+        var requests = 0
+        compose.setContent { NovaResidenceTheme {
+            val unit = ResidenceUnit(1, "A", "124", "A-124", true, false, true, false, null)
+            ResidenceScreen(ResidenceState(Residence("ativo", false, ResidencePerson(91, "Morador de teste"), listOf(unit)), 1),
+                AuthUser("test", null, "morador", false), {}, {}, {}, false,
+                fireStatus = ServiceStatus("Nenhum alarme de incêndio ativo."),
+                exhaustStatus = ServiceStatus("Disponível para utilização."),
+                notificationPrompt = if (!dismissed) ({ NotificationPrompt({ requests++ }, { dismissed = true }) }) else null)
+        } }
+        compose.onNodeWithText("Ative as notificações").assertIsDisplayed()
+        capture("08e_home_notification_prompt")
+        compose.onNodeWithText("Ativar notificações").performClick()
+        compose.runOnIdle { assertEquals(1, requests) }
+        compose.onNodeWithText("Agora não").performClick()
+        compose.onNodeWithText("Ative as notificações").assertDoesNotExist()
     }
 }

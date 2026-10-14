@@ -55,7 +55,7 @@ private fun MessageBadge(message: CondoMessage, dot: Boolean) {
 }
 
 /**
- * "Informativos do condomínio" na home (Figma 08d): carrossel de cartões de 330 dp com "Ver mais"
+ * "Informativos do condomínio" na home (Figma 08d): carrossel de cartões de 356 dp com "Ver mais"
  * e indicador de página. Sem comunicados, mostra o cartão vazio do 08a.
  */
 @Composable
@@ -70,18 +70,22 @@ fun MessageCarousel(state: MessageState, open: (CondoMessage) -> Unit) {
     }
     val pager = rememberPagerState { messages.size }
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        HorizontalPager(pager, Modifier.fillMaxWidth(), pageSize = PageSize.Fixed(330.dp), pageSpacing = 12.dp, verticalAlignment = Alignment.Top) { page ->
-            val message = messages[page]
-            val shape = RoundedCornerShape(16.dp)
-            Column(Modifier.height(220.dp).fillMaxWidth().clip(shape).background(Color.White).border(1.dp, NovaOutline, shape)
-                .clickable(role = Role.Button, onClickLabel = "Ver mais") { open(message) }
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                MessageBadge(message, dot = true)
-                Text(message.title, style = NovaType.ItemTitle, color = NovaOnSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(message.body, Modifier.weight(1f), style = NovaType.Body, color = NovaOnSurface, overflow = TextOverflow.Ellipsis)
-                Row(Modifier.fillMaxWidth().heightIn(min = 28.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Ver mais", style = NovaType.Button, color = NovaPrimary)
-                    Icon(painterResource(R.drawable.nova_chevron_forward), null, Modifier.size(18.dp), tint = NovaPrimary)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            // O próximo cartão aparece até a borda da folha; o primeiro continua alinhado à margem de 28 dp.
+            HorizontalPager(pager, Modifier.wrapContentWidth(Alignment.Start, unbounded = true).width(maxWidth + 28.dp),
+                pageSize = PageSize.Fixed(356.dp), pageSpacing = 12.dp, verticalAlignment = Alignment.Top) { page ->
+                val message = messages[page]
+                val shape = RoundedCornerShape(16.dp)
+                Column(Modifier.height(208.dp).fillMaxWidth().clip(shape).background(Color.White).border(1.dp, NovaOutline, shape)
+                    .clickable(role = Role.Button, onClickLabel = "Ver mais") { open(message) }
+                    .padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    MessageBadge(message, dot = true)
+                    Text(message.title, style = NovaType.ItemTitle, color = NovaOnSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(message.body, Modifier.weight(1f), style = NovaType.Body, color = NovaOnSurface, overflow = TextOverflow.Ellipsis)
+                    Row(Modifier.fillMaxWidth().heightIn(min = 28.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Ver mais", style = NovaType.Button, color = NovaPrimary)
+                        Icon(painterResource(R.drawable.nova_chevron_forward), null, Modifier.size(18.dp), tint = NovaPrimary)
+                    }
                 }
             }
         }

@@ -26,6 +26,25 @@ Validação: leitura da estrutura, fontes e imagens pelo MCP, seguida de captura
 
 ## Telas revisadas
 
+### Sincronização bidirecional — 14/10/2026
+
+No Android, aplicados do Figma o intervalo de 4 dp entre ícone e rótulo do menu inferior e cartões do carrossel com 356 × 208 dp e padding vertical de 12 dp. O viewport chega à borda direita da folha para continuar mostrando parte do próximo cartão. O cartão de ativação das notificações também recebeu `NovaOnTint` no texto de apoio e na ação secundária para manter contraste sobre a superfície tingida. As alterações de push já presentes no workspace foram preservadas.
+
+No Figma, atualizados Configurações com acesso a Notificações, recuperação com nova senha e validade de 15 minutos, opções de idioma desabilitadas, margens de 28 dp e navegação de 80 dp nas telas de serviço, cores de superfície/estado e ícone vetorial de ligar conforme `nova_power.xml`. Os cartões seguintes do carrossel foram unificados com a edição do principal. Termo, Política e exemplo de aceite agora mostram o conteúdo oficial 1.1; a versão continua dinâmica no app.
+
+| Frames novos | Nós |
+|---|---|
+| 03b — troca obrigatória de senha | `323:1063` |
+| 08e — home com ativação de notificações | `321:1243` |
+| 08f–08j — cadastro pendente, sem unidade, unidade bloqueada, erro e conta bloqueada | `323:1123`, `323:1216`, `323:1309`, `323:1400`, `330:1363` |
+| 09a–09e — notificações: morador, equipe, permissão negada, canal bloqueado e registro pendente | `321:916`, `321:977`, `321:1045`, `321:1111`, `321:1177` |
+| 25a–25b — resultado inconclusivo e exaustor indisponível | `323:1493`, `323:1553` |
+| 26b–26d — notificações desativadas, central sem comunicação e estado indisponível | `320:869`, `323:1613`, `323:1660` |
+
+São 17 frames novos, editáveis, com Roboto e reaproveitamento de componentes. As telas longas de notificações e dos documentos têm viewport com rolagem vertical. Os exemplos representam estados implementados; localização e operação administrativa de exaustores continuam fora desta revisão porque ainda não foram implementadas.
+
+Validação: `lint`, `testDebugUnitTest` (57 testes) e `assembleDebug` aprovados; 11 testes de tela aprovados no Galaxy J4, incluindo preferências de notificações e condição da faixa da central. Capturas usam dados simulados, sem consultas de teste à API de produção ou comandos ao hardware. Comparações lado a lado, com largura normalizada para 412 dp e barras de status recortadas, ficam em `artifacts/figma-sync-20261014/compare_*.png`. A ilustração menor e a altura útil diferente no J4 seguem a adaptação prevista no guia; a imagem do exaustor foi conferida contra o original do MCP e mantida. Há diferenças de métricas da fonte Android do J4 em relação ao Roboto do Figma, com quebras de linha e alturas de conteúdo variáveis; os tokens em dp/sp foram preservados, sem compensação manual por aparelho. Renderizações do Figma foram verificadas para reflow, fontes, hierarquia e ausência de interfaces rasterizadas. A janela de teste mantém a tela acesa e aguarda a composição antes das capturas para evitar falhas quando o aparelho entra em repouso.
+
 | Tela | Nó Figma | Implementação |
 |---|---|---|
 | 01 — Splash | `56:1138` | Marca branca oficial, fundo roxo e inicialização nativa/Compose sem atraso artificial. |

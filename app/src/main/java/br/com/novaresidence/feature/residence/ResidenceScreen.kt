@@ -188,7 +188,7 @@ private fun NavItem(selected: Boolean, label: String, icon: Int, selectedIcon: I
         contentAlignment = Alignment.Center) {
         // O vetor de cada ícone preenchido já tem o tamanho do Figma (prédio 28×32, chama e ventilador 32×32).
         if (selected) Icon(painterResource(selectedIcon), null, Modifier.padding(bottom = 4.dp), tint = NovaPrimary)
-        else Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        else Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             val color = if (enabled) NovaOnSurfaceVariant else NovaDisabledContent
             Icon(painterResource(icon), null, Modifier.size(24.dp), tint = color)
             Text(label, style = NovaType.NavLabel, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
