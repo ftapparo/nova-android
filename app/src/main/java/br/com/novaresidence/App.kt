@@ -1,6 +1,5 @@
 package br.com.novaresidence
 
-import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,7 +17,7 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import br.com.novaresidence.core.network.*
+import br.com.novaresidence.core.push.*
 import br.com.novaresidence.core.session.*
 import br.com.novaresidence.core.ui.*
 import br.com.novaresidence.feature.auth.*
@@ -27,36 +26,40 @@ import br.com.novaresidence.feature.exhaust.*
 import br.com.novaresidence.feature.fire.*
 import br.com.novaresidence.feature.message.*
 import br.com.novaresidence.feature.legal.*
+import br.com.novaresidence.feature.notification.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
-class AppViewModel(context: Context) : ViewModel() {
-    private val transport = ApiTransport(BuildConfig.V3_BASE_URL)
-    val session = SessionCoordinator(EncryptedSessionStore(context.applicationContext)) { token ->
-        transport.post<SessionData>("auth/refresh", buildJsonObject { put("refreshToken", token) })
-    }
-    private val api = ApiClient(transport, session)
-    val auth = AuthRepository(api)
+class AppViewModel(application: NovaApplication) : ViewModel() {
+    val graph = application.graph
+    private val api = graph.api
+    val session = graph.session
+    val push = graph.push
+    val auth = AuthRepository(api, graph::signOutDevice, graph::forgetDevice)
     val residence = ResidenceRepository(api)
     val exhaust = ExhaustRepository(api)
     val fire = FireRepository(api)
     val messages = MessageRepository(api)
     val legal = LegalRepository(api)
-    val residencePreferences = ResidencePreferences(context)
+    val notifications = NotificationRepository(api)
+    val residencePreferences = ResidencePreferences(application)
     val ready = MutableStateFlow(false)
     var restoreError: String? = null
         private set
+    /** Destino de uma notificação tocada, aplicado quando a área logada estiver disponível. */
+    val pendingOpen = MutableStateFlow<PushOpen?>(null)
 
     init {
         viewModelScope.launch {
-            try { withContext(Dispatchers.IO) { session.restore() } }
-            catch (error: SessionStorageException) { restoreError = error.userMessage }
+            try { restoreError = withContext(Dispatchers.IO) { graph.restoreSession() } }
             finally { ready.value = true }
         }
+    }
+
+    fun registerPush(force: Boolean = false) {
+        viewModelScope.launch { graph.registerPush(force) }
     }
 }
 
@@ -68,11 +71,16 @@ fun App(app: AppViewModel) {
     val exhaust: ExhaustViewModel = viewModel { ExhaustViewModel(app.exhaust, residence::refresh) }
     val fire: FireViewModel = viewModel { FireViewModel(app.fire) }
     val messages: MessageViewModel = viewModel { MessageViewModel(app.messages) }
+    val notifications: NotificationViewModel = viewModel { NotificationViewModel(app.notifications) }
     val ready by app.ready.collectAsStateWithLifecycle()
     val user by app.session.user.collectAsStateWithLifecycle()
     val authState by auth.state.collectAsStateWithLifecycle()
     val residenceState by residence.state.collectAsStateWithLifecycle()
     val legalState by legal.state.collectAsStateWithLifecycle()
+    val pushStatus by app.push.status.collectAsStateWithLifecycle()
+    val pushPromptDismissed by app.push.promptDismissed.collectAsStateWithLifecycle()
+    val pendingOpen by app.pendingOpen.collectAsStateWithLifecycle()
+    val enableNotifications = rememberNotificationEnabler(app.push) { app.push.refreshStatus(); app.registerPush(force = true) }
     // Termo ou Política aberto a partir das telas de entrada ou do aceite (nas configurações, a navegação é da residência).
     var legalDocument by rememberSaveable { mutableStateOf<String?>(null) }
     val openLegal: (String) -> Unit = { legal.load(); legalDocument = it }
@@ -102,6 +110,13 @@ fun App(app: AppViewModel) {
         if (ready && user != null && user?.mustChangePassword == false) residence.refresh()
         onStopOrDispose { residence.stop() }
     }
+    // Push: registra com a sessão completa e reconfere a cada volta ao app (a pessoa pode ter mudado a
+    // permissão ou o canal do alarme nas configurações do Android). Sem mudança, não chama a API.
+    LifecycleStartEffect(ready, user?.id, user?.mustChangePassword, user?.mustAcceptTerms) {
+        app.push.refreshStatus()
+        if (ready && user != null && user?.mustChangePassword == false && user?.mustAcceptTerms == false) app.registerPush()
+        onStopOrDispose {}
+    }
     NovaResidenceTheme { Box(Modifier.fillMaxSize()) {
         // A tela de baixo continua composta (o formulário não perde o que foi digitado), mas fica fora da
         // acessibilidade e não recebe toques enquanto o documento está aberto.
@@ -127,7 +142,22 @@ fun App(app: AppViewModel) {
                 exhaust.start(unit?.quadra, unit?.lote, allowed)
                 onStopOrDispose { exhaust.stop() }
             }
-            // Comunicados: consultados ao voltar para a área logada (sem push; ver AGENTS.md).
+            // Aviso recebido com o app aberto: a tela correspondente reconsulta o estado na hora.
+            LaunchedEffect(user?.id) {
+                app.graph.pushEvents.collect { push ->
+                    when (push.target) {
+                        PushTarget.Fire -> fire.refresh()
+                        PushTarget.Exhaust -> exhaust.refresh()
+                        PushTarget.Message -> {
+                            messages.refreshLatest()
+                            // Com a lista aberta a notificação não aparece; o comunicado novo entra nela na hora.
+                            if (app.graph.visibleScreen == PushTarget.Message) messages.loadList()
+                        }
+                        PushTarget.Home -> Unit
+                    }
+                }
+            }
+            // Comunicados: consultados ao voltar para a área logada; um push de comunicado novo reconsulta.
             LifecycleStartEffect(user?.id, services) {
                 messages.start(services)
                 onStopOrDispose {}
@@ -151,7 +181,19 @@ fun App(app: AppViewModel) {
                 unreadMessages = messageState.unreadCount,
                 homeMessages = { open -> MessageCarousel(messageState) { open(it.id) } },
                 messagesContent = { initial, back -> MessagesFeature(messageState, initial, back, messages::loadList, messages::markRead) },
-                fireContent = { _, _, fullScreen -> FireFeature(fireState, fire::refresh, fire::loadHistory, fullScreen) },
+                fireContent = { _, _, fullScreen ->
+                    FireFeature(fireState, fire::refresh, fire::loadHistory, fullScreen, pushStatus == PushStatus.Ready, enableNotifications)
+                },
+                notificationPrompt = if (pushStatus == PushStatus.PermissionNeeded && !pushPromptDismissed) {
+                    { NotificationPrompt(enableNotifications, app.push::dismissPrompt) }
+                } else null,
+                notificationsContent = { back ->
+                    val notificationState by notifications.state.collectAsStateWithLifecycle()
+                    NotificationScreen(notificationState, pushStatus, user?.role in StaffRoles, notifications::load, notifications::set,
+                        notifications::sendTest, enableNotifications, { app.registerPush(force = true) }, back)
+                },
+                pendingOpen = pendingOpen, consumeOpen = { app.pendingOpen.value = null },
+                visibleScreen = { app.graph.visibleScreen = it },
                 legalContent = { terms, back ->
                     LaunchedEffect(Unit) { legal.load() }
                     LegalDocumentScreen(legalState, if (terms) TermsDocument else PrivacyDocument, back) { legal.load(refresh = true) }
@@ -171,3 +213,5 @@ fun App(app: AppViewModel) {
         }
     } }
 }
+
+private val StaffRoles = setOf("porteiro", "sindico", "admin")

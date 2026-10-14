@@ -43,11 +43,14 @@ app/src/main/java/<package>/
 │   ├── residence/        # link status, units, blocked state
 │   ├── exhaust/          # BBQ exhaust fans
 │   ├── fire/             # fire panel (CIE), read-only for residents
+│   ├── notification/     # push preferences screen (Settings → Notificações)
 │   └── gate/             # gates (TAG), staff only
 ├── core/                 # Genuinely shared infrastructure
 │   ├── network/          # HTTP client, envelope parsing, auth interceptor
+│   ├── push/             # FCM service, channels, device registration, permission
 │   ├── session/          # token storage and refresh
 │   └── ui/               # design system, shared components
+├── NovaApplication.kt    # process graph (session, API client, push) — the FCM service runs without an Activity
 └── App.kt
 ```
 
@@ -438,7 +441,7 @@ O morador só pode ligar o exaustor dentro da área do condomínio.
 ## Home, mensagens e configurações (telas 08a–08d e 09–17)
 
 - O menu inferior tem três abas: **Início · Alarme · Exaustor**. Configurações abre pelo ícone de perfil no cabeçalho da home; o sino abre Mensagens (17).
-- Comunicados (08d, 17 e 18) ficam em `feature/message` e usam `/messages` (seção "Condo messages" abaixo): carrossel da home vindo pronto de `GET /messages/carousel` (TTL, fixados e prioridade decididos pela API), contador de não lidas no sino, lista com filtro "Todas/Não lidas" agrupada por dia e detalhe. Abrir o detalhe chama `POST /messages/{id}/read`. Consulta ao entrar na área logada (sem push nem polling); só para equipe ou morador com unidade liberada.
+- Comunicados (08d, 17 e 18) ficam em `feature/message` e usam `/messages` (seção "Condo messages" abaixo): carrossel da home vindo pronto de `GET /messages/carousel` (TTL, fixados e prioridade decididos pela API), contador de não lidas no sino, lista com filtro "Todas/Não lidas" agrupada por dia e detalhe. Abrir o detalhe chama `POST /messages/{id}/read`. Consulta ao entrar na área logada e quando chega o push `message.published` (sem polling); só para equipe ou morador com unidade liberada.
 - A unidade padrão foi removida do Figma e do app (30/09/2026). A unidade ativa é escolhida na tela 10 ("Selecionar unidade") com um toque; a seleção vale durante a sessão enquanto vinculada. No acesso seguinte vale a regra inicial (`selectResidenceUnit`). O seletor continua mostrando unidades bloqueadas com os motivos do contrato.
 - Configurações (09) exibe "Código Freedom" = `person.sequencia`. É o código do morador no cadastro do condomínio e ajuda no atendimento; exceção consciente à regra de não exibir identificadores internos.
 - Privacidade (12): Termos (13) e Política (14) exibem a página vigente publicada pela API (`feature/legal`, seção "Terms of Use and Privacy Policy"). Dados pessoais (15) mostra nome, CPF mascarado (`person.cpfMasked`; a API nunca envia o CPF completo, e a linha some quando vem nulo), e-mail e unidade ativa; "dados complementares" não existem no contrato e não são exibidos.
@@ -449,7 +452,7 @@ O morador só pode ligar o exaustor dentro da área do condomínio.
 
 ## Condo messages (comunicados)
 
-Reading: staff, or a resident with an unblocked unit (403 otherwise). Publishing and archiving: `sindico`/`admin` (not used by the app). No push for messages — residents only get push for fire alarms.
+Reading: staff, or a resident with an unblocked unit (403 otherwise). Publishing and archiving: `sindico`/`admin` (not used by the app). A message published with `notify: true` (default) sends the `message.published` push when it becomes visible (see "Push notifications").
 
 | Method | Path | Body / query | Returns |
 |---|---|---|---|
@@ -481,14 +484,13 @@ Every log/event item carries `event` (`category`, `label`, `kind`, `severity`) a
 - `FireRepository` usa somente `GET /cie/panel`, `/cie/alarms/active`, `/cie/events/active` e `/cie/logs`. Nunca adicionar comandos sem pedido explícito: a central é equipamento de segurança real.
 - Estado: `alarms.isTriggered` → Alarme (28 e home 08c, prevalece sobre tudo); painel sem `online`/`connected` → sem comunicação; `falha`/`supervisao` > 0 → Atenção (27); senão Normal (26). Dispositivos apenas bloqueados não geram atenção para o morador.
 - `/cie/events/active` só é consultado quando os contadores indicam atenção, para mostrar o "Local do aviso"; se falhar, o estado de atenção continua exibido sem o local.
-- Consulta a cada 10 s enquanto a área logada estiver visível (home mostra o estado); para em `onStop`; respeita `Retry-After`. Sem push nativo, o texto do Figma "Você será avisado se o estado da central mudar" foi substituído por "O estado é atualizado enquanto o aplicativo estiver aberto".
-- **Quando o push nativo (FCM) existir**, a faixa da tela 26 passa a depender do estado real do aviso, conferido a cada retorno à tela (o morador pode desligar notificações a qualquer momento):
+- Consulta a cada 10 s enquanto a área logada estiver visível (home mostra o estado); para em `onStop`; respeita `Retry-After`.
+- A faixa da tela 26 depende do estado real do push (`PushStatus`), conferido a cada retorno ao app (o morador pode desligar notificações a qualquer momento):
 
   | Situação | Texto da faixa |
   |---|---|
-  | Token FCM registrado na API **e** notificações permitidas (`NotificationManagerCompat.areNotificationsEnabled()` e canal de alertas da central não bloqueado; no Android 13+ exige `POST_NOTIFICATIONS`) | "Você será avisado se o estado da central mudar." (texto do Figma) |
-  | Notificações negadas ou desligadas | "O estado é atualizado enquanto o aplicativo estiver aberto." + ação "Ativar notificações" |
-  | Push ainda não implementado | "O estado é atualizado enquanto o aplicativo estiver aberto." |
+  | Aparelho registrado na API **e** notificações permitidas (`POST_NOTIFICATIONS` no Android 13+, `areNotificationsEnabled()` e canal `cie_alarm` não bloqueado) | "Você será avisado se o estado da central mudar." (texto do Figma) |
+  | Notificações negadas, canal do alarme bloqueado ou aparelho ainda não registrado | "O estado é atualizado enquanto o aplicativo estiver aberto." + ação "Ativar notificações" |
 
   **Quem recebe o quê (decidido em 13/10/2026).** A prioridade vem da gravidade do evento (`event.severity`), nunca da localização do usuário: localização em segundo plano exige revisão especial da Play e o erro de GPS dentro do prédio poderia rebaixar um alarme real.
 
@@ -499,10 +501,39 @@ Every log/event item carries `event` (`category`, `label`, `kind`, `severity`) a
 
   Quem é equipe e também morador recebe como equipe. A API decide os destinatários pelo papel; o app apenas exibe.
 
-  Alertas de incêndio usam mensagem FCM de prioridade alta e canal próprio com som. A entrega não é garantida em tempo real (economia de bateria, otimizações da Samsung), então nenhum texto promete aviso imediato. Até lá, não usar a frase do Figma: hoje a API só tem Web Push (VAPID) para o painel web.
+  Alertas de incêndio usam mensagem FCM de prioridade alta e canal próprio com som. A entrega não é garantida em tempo real (economia de bateria, otimizações da Samsung), então nenhum texto promete aviso imediato. Implementação: seção "Push notifications".
 - A faixa da tela 27 diz "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável." em vez de "A equipe responsável está verificando a ocorrência.", porque a API não informa se há verificação em andamento.
 - Histórico (29): últimos 30 dias, até 4 páginas de 50 eventos seguindo `nextCursor`, agrupados por dia e filtrados no app (Alarmes; Falhas = falha + supervisão; Operação = operação + bloqueio). Detalhe (30a–30c) usa só campos retornados; "Dados técnicos" mostra o registro como veio da API.
 - Rótulos usam `display`/`event` quando presentes. Servidores sem esses campos caem no fallback: nomes do painel em caixa alta e com `\u0000` são normalizados por `cieName()`/`floorLabel()` ("TORRE B" → "Torre B", "8 ANDAR B T-B" → "8º andar").
+
+## Push notifications (FCM)
+
+Native push uses **only** `/notifications/*` (decided on 13/10/2026). `/push/*` is the web panel's Web Push (VAPID) and is never used by the app.
+
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| PUT | `/notifications/devices/android` | `{ installationId, token, appVersion?, osVersion?, deviceModel?, notificationsEnabled, alarmChannelEnabled? }` | `{ platform, installationId, notificationsEnabled, alarmChannelEnabled, registeredAt }` (30/h per account) |
+| DELETE | `/notifications/devices/android/{installationId}` | — | `null` (idempotent) |
+| PUT / DELETE | `/notifications/devices/ios…` | same | `null` — reserved for the iOS app, nothing stored |
+| GET / PUT | `/notifications/preferences` | `{ exhaustExpiring?, exhaustOff?, messages?, cieStaffAlerts? }` | `{ exhaustExpiring, exhaustExpiringMinutes, exhaustOff, messages, cieStaffAlerts }` |
+| POST | `/notifications/test` | — | `{ targets, sent, failed }` (3 per 10 min; 503 when push is disabled on the server) |
+
+- **App side** (`core/push`): `NovaApplication` holds the process graph because `NovaMessagingService` runs with the app closed. `installationId` is a UUID kept in `push_preferences`; the FCM token is never stored in clear (only a hash to detect changes) and never logged.
+- **Registration** (`PushRegistration`): after login with `mustChangePassword` and `mustAcceptTerms` resolved, on each return to the app, in `onNewToken` and after the permission flow. The API is only called when account, token, permission, alarm channel or app version changed, or after 24 h.
+- **Logout**: `AuthRepository.logout` calls `DELETE …/{installationId}` with the captured access token **before** `/auth/logout`, then the app deletes the FCM token (if the DELETE fails, the server invalidates the old token on the next send). Account deletion: the API removes the devices; the app deletes the FCM token. A push received without a local session is dropped and the FCM token deleted.
+- **Payload**: data-only message, all values strings: `type`, `title`, `body`, `channel`, `target` (`fire` | `exhaust` | `message` | `home`), `sentAt`, `dispatchId`, plus `exhaustId` or `messageId`/`category`. The app shows the server texts as they come and never interprets them; the tap opens `target` (message detail by `messageId`) only if the account can still see it.
+- **Channels** (ids fixed by the API; `PushChannels`): `cie_alarm` (high, alarm sound with `USAGE_ALARM`; a channel's sound cannot change after creation — use a new id), `cie_status` and `cie_info` (staff, created on their first push), `exhaust` (high), `messages`, `general`. No full-screen intent (Play restricts it to calling and alarm-clock apps).
+
+| `type` | Who receives (the API decides) | Channel |
+|---|---|---|
+| `cie.alarm` | staff + residents with an unblocked unit; one per alarm episode; high priority | `cie_alarm` |
+| `cie.alarm.cleared`, `cie.failure`, `cie.supervision`, `cie.restarting`, `cie.offline` · `cie.blocked`, `cie.normalized` | staff only | `cie_status` · `cie_info` |
+| `exhaust.expiring` (X min before the auto-off; X fixed on the server, default 15), `exhaust.off`, `exhaust.off.unconfirmed` | **only the owner of the current cycle**: the account of the last turn-on/restart through the app. Earlier accounts stop receiving once someone else restarts; a timer changed in the v2 web panel notifies nobody; turning it off yourself sends nothing | `exhaust` |
+| `message.published` | staff + residents with an unblocked unit, when a message with `notify` becomes visible | `messages` |
+| `test` | the account that asked | `general` |
+
+- **Preferences** (Settings → Notificações, `feature/notification`): exhaust warning, exhaust off, messages and, for staff, panel alerts. The fire alarm is not a preference: its control is the Android channel.
+- **Permission** (Android 13+): asked from the home card "Ative as notificações", the screen 26 action or the Notifications screen; once the system stops showing the dialog, those actions open the app's notification settings (or the `cie_alarm` channel when only it is blocked).
 
 ## Gates (TAG) — staff only
 

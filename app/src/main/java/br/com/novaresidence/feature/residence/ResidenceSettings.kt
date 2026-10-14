@@ -39,7 +39,7 @@ private val RadioOutline = Color(0xFF6B7280)
 internal fun ResidenceSettings(
     page: ResidencePage, state: ResidenceState, user: AuthUser, navigate: (ResidencePage) -> Unit,
     back: () -> Unit, select: (Int) -> Unit, logout: () -> Unit, busy: Boolean, saveLanguage: () -> Unit,
-    deleteAccount: () -> Unit, deleteError: String?,
+    deleteAccount: () -> Unit, deleteError: String?, notifications: Boolean = false,
 ) {
     val previousSave = remember(page) { state.languageSaves }
     LaunchedEffect(state.languageSaves) {
@@ -64,7 +64,7 @@ internal fun ResidenceSettings(
                     ResidencePage.Privacy -> Privacy(navigate)
                     ResidencePage.PersonalData -> PersonalData(state, user, navigate)
                     ResidencePage.DeleteAccount -> DeleteAccount(user, back, deleteAccount, busy, deleteError)
-                    else -> Settings(state, user, navigate, logout, busy)
+                    else -> Settings(state, user, navigate, logout, busy, notifications)
                 }
             }
         }
@@ -73,7 +73,9 @@ internal fun ResidenceSettings(
 
 /** Configurações (Figma 09). */
 @Composable
-private fun ColumnScope.Settings(state: ResidenceState, user: AuthUser, navigate: (ResidencePage) -> Unit, logout: () -> Unit, busy: Boolean) {
+private fun ColumnScope.Settings(
+    state: ResidenceState, user: AuthUser, navigate: (ResidencePage) -> Unit, logout: () -> Unit, busy: Boolean, notifications: Boolean,
+) {
     val units = state.residence?.units.orEmpty()
     val person = state.residence?.person
     Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp), verticalArrangement = Arrangement.spacedBy(28.dp)) {
@@ -92,6 +94,10 @@ private fun ColumnScope.Settings(state: ResidenceState, user: AuthUser, navigate
             HorizontalDivider(color = NovaOutline)
             SettingsRow("Idioma", "Português (Brasil)") { navigate(ResidencePage.SelectLanguage) }
             HorizontalDivider(color = NovaOutline)
+            if (notifications) {
+                SettingsRow("Notificações", "Alarme de incêndio, exaustor e comunicados") { navigate(ResidencePage.Notifications) }
+                HorizontalDivider(color = NovaOutline)
+            }
             SettingsRow("Privacidade", "Política, termos e dados pessoais") { navigate(ResidencePage.Privacy) }
         }
     }

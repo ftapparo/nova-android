@@ -98,6 +98,25 @@ class AuthRepositoryTest {
         assertNull(session.user.value)
     }
 
+    @Test fun `logout removes the push device with the captured token before revoking and deletion forgets it`() = runBlocking {
+        val calls = mutableListOf<String>()
+        val transport = ApiTransport(server.url("/").toString())
+        val hooked = AuthRepository(ApiClient(transport, session), beforeSignOut = { token ->
+            calls += "device:$token"
+            assertNull(session.user.value)
+        }, afterAccountDeleted = { calls += "forget" })
+        session.replace(testSession(), session.generation())
+        server.enqueue(MockResponse().setBody("""{"success":true,"data":null,"meta":{}}"""))
+        hooked.logout()
+        assertEquals(listOf("device:${testSession().accessToken}"), calls)
+        assertEquals("/v3/api/auth/logout", server.takeRequest().path)
+
+        session.replace(testSession(), session.generation())
+        server.enqueue(MockResponse().setBody("""{"success":true,"data":null,"meta":{}}"""))
+        hooked.deleteAccount()
+        assertEquals("forget", calls.last())
+    }
+
     @Test fun `validation accepts login passwords below signup minimum and preserves password whitespace`() {
         assertTrue(validateAuthForm("resident@example.com", "abc").isEmpty())
         assertEquals(setOf("newPassword"), validateAuthForm("resident@example.com", "abc", true).keys)

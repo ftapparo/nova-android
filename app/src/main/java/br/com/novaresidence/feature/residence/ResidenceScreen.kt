@@ -35,7 +35,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.LifecycleStartEffect
 import br.com.novaresidence.R
+import br.com.novaresidence.core.push.PushOpen
+import br.com.novaresidence.core.push.PushTarget
 import br.com.novaresidence.core.session.AuthUser
 import br.com.novaresidence.core.ui.*
 
@@ -47,12 +50,12 @@ data class ServiceStatus(val text: String, val highlight: String? = null, val to
 /** Conteúdo de uma aba de serviço; [fullScreen] oculta o menu inferior (histórico e detalhe da central). */
 typealias ServiceContent = @Composable (unit: ResidenceUnit?, selectUnit: () -> Unit, fullScreen: (Boolean) -> Unit) -> Unit
 
-internal enum class ResidencePage { Home, Fire, Exhaust, Messages, Settings, SelectUnit, SelectLanguage, Privacy, Terms, PrivacyPolicy, PersonalData, DeleteAccount }
+internal enum class ResidencePage { Home, Fire, Exhaust, Messages, Settings, SelectUnit, SelectLanguage, Notifications, Privacy, Terms, PrivacyPolicy, PersonalData, DeleteAccount }
 
 private val Tabs = setOf(ResidencePage.Home, ResidencePage.Fire, ResidencePage.Exhaust)
 
 // Configurações e seus filhos usam conteúdo branco sob a barra cinza (Figma 09–16).
-private val WhitePages = setOf(ResidencePage.Settings, ResidencePage.SelectUnit, ResidencePage.SelectLanguage, ResidencePage.Privacy,
+private val WhitePages = setOf(ResidencePage.Settings, ResidencePage.SelectUnit, ResidencePage.SelectLanguage, ResidencePage.Notifications, ResidencePage.Privacy,
     ResidencePage.Terms, ResidencePage.PrivacyPolicy, ResidencePage.PersonalData, ResidencePage.DeleteAccount)
 
 private val PageStackSaver = listSaver<List<ResidencePage>, String>({ it.map(ResidencePage::name) }, { it.map(ResidencePage::valueOf) })
@@ -72,6 +75,14 @@ fun ResidenceScreen(
     legalContent: (@Composable (terms: Boolean, back: () -> Unit) -> Unit)? = null,
     /** Excluir conta (16); [deleteError] é a falha da última tentativa. */
     deleteAccount: () -> Unit = {}, deleteError: String? = null,
+    /** Cartão da home que pede a permissão de notificação; nulo quando não se aplica. */
+    notificationPrompt: (@Composable () -> Unit)? = null,
+    /** Notificações (aberta pelas Configurações). */
+    notificationsContent: (@Composable (back: () -> Unit) -> Unit)? = null,
+    /** Destino de uma notificação tocada; [consumeOpen] avisa que já foi aplicado. */
+    pendingOpen: PushOpen? = null, consumeOpen: () -> Unit = {},
+    /** Tela aberta com o app em primeiro plano (nula ao sair): o push dessa tela não vira notificação. */
+    visibleScreen: (PushTarget?) -> Unit = {},
     exhaustContent: ServiceContent? = null,
 ) {
     // Abas reiniciam a pilha; as demais telas empilham sobre a atual e voltam na ordem inversa.
@@ -96,6 +107,27 @@ fun ResidenceScreen(
     var pendingMessage by rememberSaveable { mutableStateOf<Long?>(null) }
     val openMessages: (Long?) -> Unit = { pendingMessage = it; navigate(ResidencePage.Messages) }
     val setFullScreen: (Boolean) -> Unit = { fullScreen = it }
+    LifecycleStartEffect(page) {
+        visibleScreen(when (page) {
+            ResidencePage.Home -> PushTarget.Home
+            ResidencePage.Fire -> PushTarget.Fire
+            ResidencePage.Exhaust -> PushTarget.Exhaust
+            ResidencePage.Messages -> PushTarget.Message
+            else -> null
+        })
+        onStopOrDispose { visibleScreen(null) }
+    }
+    // Só abre o destino que esta conta pode ver; sem acesso (ex.: unidade bloqueada depois do aviso), fica na home.
+    LaunchedEffect(pendingOpen) {
+        val open = pendingOpen ?: return@LaunchedEffect
+        when (open.target) {
+            PushTarget.Fire -> if (canOpenFire) navigate(ResidencePage.Fire)
+            PushTarget.Exhaust -> if (canOpenExhaust) navigate(ResidencePage.Exhaust)
+            PushTarget.Message -> if (services && messagesContent != null) openMessages(open.messageId)
+            PushTarget.Home -> navigate(ResidencePage.Home)
+        }
+        consumeOpen()
+    }
     val navVisible = page in Tabs && !fullScreen
     val top = when {
         page == ResidencePage.Home -> NovaHeader
@@ -107,12 +139,14 @@ fun ResidenceScreen(
         Box(Modifier.weight(1f).fillMaxWidth().windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))) {
             when (page) {
                 ResidencePage.Home -> Home(state, user, unit, services, canOpenFire, canOpenExhaust, fireStatus, exhaustStatus, refresh, navigate,
-                    unreadMessages, homeMessages?.let { content -> { content { id -> openMessages(id) } } }) { openMessages(null) }
+                    unreadMessages, homeMessages?.let { content -> { content { id -> openMessages(id) } } }, notificationPrompt) { openMessages(null) }
                 ResidencePage.Fire -> fireContent?.invoke(unit, selectUnit, setFullScreen)
                 ResidencePage.Exhaust -> exhaustContent?.invoke(unit, selectUnit, setFullScreen)
                 ResidencePage.Messages -> messagesContent?.invoke(pendingMessage, back)
                 ResidencePage.Terms, ResidencePage.PrivacyPolicy -> legalContent?.invoke(page == ResidencePage.Terms, back)
-                else -> ResidenceSettings(page, state, user, navigate, back, select, logout, busy, saveLanguage, deleteAccount, deleteError)
+                ResidencePage.Notifications -> notificationsContent?.invoke(back)
+                else -> ResidenceSettings(page, state, user, navigate, back, select, logout, busy, saveLanguage, deleteAccount, deleteError,
+                    notifications = notificationsContent != null)
             }
         }
         if (navVisible) NavigationBarFigma {
@@ -166,7 +200,7 @@ private fun NavItem(selected: Boolean, label: String, icon: Int, selectedIcon: I
 private fun Home(
     state: ResidenceState, user: AuthUser, unit: ResidenceUnit?, services: Boolean, canOpenFire: Boolean, canOpenExhaust: Boolean,
     fireStatus: ServiceStatus?, exhaustStatus: ServiceStatus?, refresh: () -> Unit, navigate: (ResidencePage) -> Unit,
-    unreadMessages: Int, messages: (@Composable () -> Unit)?, openMessages: () -> Unit,
+    unreadMessages: Int, messages: (@Composable () -> Unit)?, notificationPrompt: (@Composable () -> Unit)?, openMessages: () -> Unit,
 ) {
     val residence = state.residence
     Column(Modifier.fillMaxSize().background(NovaHeader)) {
@@ -202,6 +236,8 @@ private fun Home(
                     enabled = !state.loading && state.retrySeconds == 0L, style = NovaButtonStyle.Secondary,
                 )
             }
+            // O alarme de incêndio com o app fechado depende da permissão; o pedido fica na home até ser aceito ou dispensado.
+            if (services && notificationPrompt != null) Box(Modifier.padding(top = 24.dp)) { notificationPrompt() }
             if (services) Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 Text("Serviços do condomínio", Modifier.semantics { heading() }, style = NovaType.SectionTitle, color = NovaOnSurface)
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

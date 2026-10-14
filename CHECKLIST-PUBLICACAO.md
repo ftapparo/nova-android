@@ -17,7 +17,8 @@ Legenda: `[x]` feito · `[~]` parcial ou a conferir · `[ ]` falta.
 - [x] Barra dos botões do Android preta
 - [~] Comunicados na home (08d/08e): só o estado vazio — opcional na 1ª versão (exige rota na API)
 - [x] **Exclusão de conta no app** — Configurações → Privacidade → Solicitar exclusão da conta (13/10/2026)
-- [ ] Push nativo para alarme com o app fechado — opcional na 1ª versão (exige FCM na API)
+- [~] Push nativo (alarme, exaustor e comunicados) implementado no app e na API — falta o projeto Firebase (`google-services.json`) e a validação no J4
+- [ ] Política de privacidade e "Segurança dos dados" citando o token do aparelho usado para as notificações
 
 ## API (v3)
 

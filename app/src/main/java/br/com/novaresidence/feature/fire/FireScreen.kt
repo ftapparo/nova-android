@@ -40,9 +40,15 @@ import kotlinx.coroutines.delay
 
 private enum class FirePage { Status, History, Event }
 
-/** Central de incêndio (Figma 26–30c), somente leitura. [fullScreen] oculta o menu inferior no histórico e no detalhe. */
+/**
+ * Central de incêndio (Figma 26–30c), somente leitura. [fullScreen] oculta o menu inferior no histórico e no detalhe.
+ * [notificationsReady]: aparelho registrado e notificações do alarme permitidas; senão a tela 26 oferece [enableNotifications].
+ */
 @Composable
-fun FireFeature(state: FireState, refresh: () -> Unit, loadHistory: () -> Unit, fullScreen: (Boolean) -> Unit = {}) {
+fun FireFeature(
+    state: FireState, refresh: () -> Unit, loadHistory: () -> Unit, fullScreen: (Boolean) -> Unit = {},
+    notificationsReady: Boolean = false, enableNotifications: (() -> Unit)? = null,
+) {
     var page by rememberSaveable { mutableStateOf(FirePage.Status) }
     var eventKey by rememberSaveable { mutableStateOf<String?>(null) }
     var eventOrigin by rememberSaveable { mutableStateOf(FirePage.History) }
@@ -53,7 +59,7 @@ fun FireFeature(state: FireState, refresh: () -> Unit, loadHistory: () -> Unit, 
     when {
         page == FirePage.Event && event != null -> FireEventScreen(event) { page = eventOrigin }
         page != FirePage.Status -> FireHistoryScreen(state, { page = FirePage.Status }, loadHistory) { open(it, FirePage.History) }
-        else -> FireStatusScreen(state, refresh, { loadHistory(); page = FirePage.History }) { open(it, FirePage.Status) }
+        else -> FireStatusScreen(state, refresh, { loadHistory(); page = FirePage.History }, notificationsReady, enableNotifications) { open(it, FirePage.Status) }
     }
 }
 
@@ -63,7 +69,10 @@ private data class StatusLook(
 )
 
 @Composable
-private fun FireStatusScreen(state: FireState, refresh: () -> Unit, openHistory: () -> Unit, openEvent: (CieLog) -> Unit) {
+private fun FireStatusScreen(
+    state: FireState, refresh: () -> Unit, openHistory: () -> Unit, notificationsReady: Boolean, enableNotifications: (() -> Unit)?,
+    openEvent: (CieLog) -> Unit,
+) {
     val status = state.status
     Column(Modifier.fillMaxSize().background(NovaServiceBackground)) {
         NovaTopBar("Central de Incêndio", background = NovaServiceBackground, color = NovaInk)
@@ -74,7 +83,7 @@ private fun FireStatusScreen(state: FireState, refresh: () -> Unit, openHistory:
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Column(Modifier.widthIn(max = 480.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     if (status == FireStatus.Alarm) AlarmContent(state, (available - 560.dp).coerceIn(96.dp, 159.dp), openEvent)
-                    else StatusContent(state, (available - 420.dp).coerceIn(120.dp, 200.dp), refresh, openHistory)
+                    else StatusContent(state, (available - 420.dp).coerceIn(120.dp, 200.dp), refresh, openHistory, notificationsReady, enableNotifications)
                 }
             }
         }
@@ -82,12 +91,17 @@ private fun FireStatusScreen(state: FireState, refresh: () -> Unit, openHistory:
 }
 
 @Composable
-private fun StatusContent(state: FireState, illustration: Dp, refresh: () -> Unit, openHistory: () -> Unit) {
+private fun StatusContent(
+    state: FireState, illustration: Dp, refresh: () -> Unit, openHistory: () -> Unit,
+    notificationsReady: Boolean, enableNotifications: (() -> Unit)?,
+) {
     val status = state.status
     val look = when (status) {
         FireStatus.Normal -> StatusLook(R.drawable.nova_fire_normal, false, "Central online", NovaSuccess, NovaSuccessContainer,
-            // Sem push nativo, o app só acompanha a central enquanto está aberto; não prometemos aviso fora dele.
-            "Sistema normal", "Nenhum alarme de incêndio ativo.", "O estado é atualizado enquanto o aplicativo estiver aberto.")
+            // Só promete aviso com o aparelho registrado e o alarme permitido (AGENTS.md, tela 26); a pessoa pode
+            // desligar as notificações a qualquer momento, por isso o estado é reconferido a cada volta ao app.
+            "Sistema normal", "Nenhum alarme de incêndio ativo.",
+            if (notificationsReady) "Você será avisado se o estado da central mudar." else "O estado é atualizado enquanto o aplicativo estiver aberto.")
         FireStatus.Attention -> StatusLook(R.drawable.nova_fire_attention, false, "Em verificação", NovaWarning, NovaWarningContainer,
             "Atenção", "Existe um aviso que requer verificação.", "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável.")
         FireStatus.Offline -> StatusLook(R.drawable.nova_fire_normal, true, "Sem comunicação", NovaOffline, NovaOfflineContainer,
@@ -111,6 +125,7 @@ private fun StatusContent(state: FireState, illustration: Dp, refresh: () -> Uni
             }
         }
         look.info?.let { NovaInfoStrip(it, accent = look.color, container = look.container, centered = false) }
+        if (status == FireStatus.Normal && !notificationsReady && enableNotifications != null) NovaTextLink("Ativar notificações", enableNotifications)
         if (status == FireStatus.Unavailable) NovaButton("Tentar novamente", refresh, enabled = state.retrySeconds == 0L, height = 52.dp)
         NovaButton("Ver histórico de eventos", openHistory, style = NovaButtonStyle.Outlined, height = 52.dp)
         Footnotes(state)

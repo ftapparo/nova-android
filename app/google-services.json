@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "628782431663",
+    "project_id": "nova-residence-login",
+    "storage_bucket": "nova-residence-login.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628782431663:android:99f73bcb9417bf0a0fc35a",
+        "android_client_info": {
+          "package_name": "br.com.novaresidence"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "628782431663-jcdpiqiph63a50kk21iin4b0dfk32gga.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNp4gBE9Ip_q_q4FOS5bGEZVd7Tc7LWA0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "628782431663-jcdpiqiph63a50kk21iin4b0dfk32gga.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

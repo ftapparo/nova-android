@@ -48,7 +48,9 @@ class ApiTransport(
 ) {
     private val apiUrl = baseUrl.trimEnd('/') + "/v3/api/"
 
-    suspend fun request(path: String, body: JsonObject? = null, token: String? = null, post: Boolean = false, delete: Boolean = false): JsonElement =
+    suspend fun request(
+        path: String, body: JsonObject? = null, token: String? = null, post: Boolean = false, delete: Boolean = false, put: Boolean = false,
+    ): JsonElement =
         withContext(Dispatchers.IO) {
             val request = Request.Builder().url(apiUrl + path.trimStart('/')).apply {
                 header("Accept", "application/json")
@@ -58,6 +60,8 @@ class ApiTransport(
                     post(body?.toString()?.toRequestBody("application/json".toMediaType()) ?: ByteArray(0).toRequestBody())
                 } else if (delete) {
                     delete(body?.toString()?.toRequestBody("application/json".toMediaType()))
+                } else if (put) {
+                    put((body ?: JsonObject(emptyMap())).toString().toRequestBody("application/json".toMediaType()))
                 }
             }.build()
             try {
@@ -108,6 +112,8 @@ class ApiTransport(
         request(path, token = token).let { data -> withContext(Dispatchers.Default) { decode<T>(data) } }
     suspend inline fun <reified T> post(path: String, body: JsonObject? = null, token: String? = null): T =
         request(path, body, token, post = true).let { data -> withContext(Dispatchers.Default) { decode<T>(data) } }
+    suspend inline fun <reified T> put(path: String, body: JsonObject, token: String? = null): T =
+        request(path, body, token, put = true).let { data -> withContext(Dispatchers.Default) { decode<T>(data) } }
 
     inline fun <reified T> decode(data: JsonElement): T = try {
         NovaJson.decodeFromJsonElement<T>(data)
@@ -122,4 +128,5 @@ class ApiClient(val transport: ApiTransport, val session: SessionCoordinator) {
     suspend inline fun <reified T> get(path: String): T = session.authorize { transport.get<T>(path, it) }
     suspend inline fun <reified T> post(path: String, body: JsonObject? = null): T =
         session.authorize { transport.post<T>(path, body, it) }
+    suspend inline fun <reified T> put(path: String, body: JsonObject): T = session.authorize { transport.put<T>(path, body, it) }
 }

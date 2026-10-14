@@ -6,7 +6,15 @@ import br.com.novaresidence.core.session.SessionData
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-class AuthRepository(private val api: ApiClient) {
+/**
+ * [beforeSignOut] recebe o access token antes do logout na API (remove o aparelho do push; ver AppGraph) e
+ * [afterAccountDeleted] roda depois da exclusão confirmada. Nenhum dos dois pode impedir a saída.
+ */
+class AuthRepository(
+    private val api: ApiClient,
+    private val beforeSignOut: suspend (accessToken: String) -> Unit = {},
+    private val afterAccountDeleted: () -> Unit = {},
+) {
     private suspend fun authenticate(path: String, vararg fields: Pair<String, String?>) {
         val generation = api.session.generation()
         val session = api.transport.post<SessionData>(path, buildJsonObject { fields.forEach { (key, value) -> if (value != null) put(key, value) } })
@@ -38,7 +46,10 @@ class AuthRepository(private val api: ApiClient) {
         val generation = api.session.generation()
         return api.get<AuthUser>("auth/me").also { api.session.updateUser(it, generation) }
     }
-    suspend fun logout() = api.session.logout { api.transport.request("auth/logout", token = it, post = true) }
+    suspend fun logout() = api.session.logout {
+        beforeSignOut(it)
+        api.transport.request("auth/logout", token = it, post = true)
+    }
 
     /**
      * Exclui a própria conta (`DELETE /auth/me`). Só limpa a sessão local depois da confirmação da API:
@@ -47,6 +58,7 @@ class AuthRepository(private val api: ApiClient) {
     suspend fun deleteAccount() {
         api.session.authorize { api.transport.request("auth/me", buildJsonObject { put("confirm", true) }, it, delete = true) }
         api.session.clear()
+        afterAccountDeleted()
     }
 }
 

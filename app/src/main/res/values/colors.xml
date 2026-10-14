@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="nova_launch_background">#2B0F44</color>
+    <!-- Cor de destaque das notificações (mesmos valores de NovaPrimary e NovaAlarm em core/ui). -->
+    <color name="nova_primary">#4C1D95</color>
+    <color name="nova_alarm">#C23030</color>
 </resources>
