@@ -48,7 +48,8 @@ Legenda: `[x]` feito · `[~]` parcial ou a conferir · `[ ]` falta.
 - [ ] Permissões: localização só em primeiro plano (`ACCESS_FINE_LOCATION`/`ACCESS_COARSE_LOCATION`), sem `ACCESS_BACKGROUND_LOCATION`, então não há declaração de localização em segundo plano; confirmar no Play Console que nenhuma declaração extra foi pedida
 - [ ] Classificação de conteúdo e público-alvo: público **18 anos ou mais**; app utilitário, sem violência, conteúdo sexual, apostas, compras ou interação entre usuários
 - [ ] Ficha da loja: descrição, capturas de tela do celular e imagem de destaque 1024×500
-- [ ] Conta de teste para a revisão do Google: conta dedicada com unidade ativa, nunca a pessoal
+- [~] Conta de teste para a revisão do Google: `app.test@novaresidence.com.br` (senha só no Play Console), vinculada à pessoa fictícia 23002 "CONTA TESTE" do ERP, unidade XYZ-100, Termo aceito; validada pela API em 14/10/2026. O exaustor dela é **simulado** na API (`EXHAUST_DEMO_UNITS=XYZ-100`): funciona como o real, sem relé e sem verificação de área. Falta o deploy da API com o simulado e preencher "Detalhes do login" no Play Console. Se o revisor excluir a conta, recriar e vincular de novo antes de outra revisão.
+  - Instruções aos revisores (Play Console → Acesso ao app): "Use 'Entrar' com o e-mail e a senha acima (não use o login com Google). A conta é de um morador de teste. Aba Alarme: estado da central de incêndio, somente leitura. Aba Exaustor: o exaustor desta unidade de teste é simulado — pode ligar, reiniciar e desligar à vontade; ao ligar, o app pede a localização (permita; a unidade de teste aceita o comando de qualquer lugar). Comunicados: ícone de sino. Notificações: Configurações → Notificações → 'Enviar notificação de teste'. Não há autenticação de dois fatores."
 - [ ] Teste interno: enviar o `.aab`, instalar pela loja e validar o login com Google
 - [ ] Publicação em produção (revisão leva de dias a uma semana)
 
