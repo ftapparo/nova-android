@@ -3,6 +3,27 @@
 Arquivo de referência: [Nova Residence no Figma](https://www.figma.com/design/kixzSbydhXP4k7qTSKWJbK/Sem-t%C3%ADtulo?node-id=0-1).
 Estrutura, propriedades, textos, componentes e assets foram consultados pelo MCP do Figma. As capturas locais ficam em `artifacts/`, fora do Git.
 
+## Sincronização app → Figma — 13/10/2026
+
+Revisão executada pelo MCP a partir das pendências do `STATUS-PROJETO.md` e dos textos e tokens implementados no app:
+
+| Tela | Nó Figma | Atualização |
+|---|---|---|
+| 02 — Boas-vindas | `4:29391` | Aviso de concordância com Termo e Política, com links; margem de 28 dp. |
+| 04 — Cadastro | `4:29564` | Mesmo aviso antes de Continuar; alinhamento do formulário à margem de 28 dp. |
+| 04b — Aceite do Termo | `309:1089` | Nova tela com orientação, documento rolável, links, Aceitar e continuar e Sair; sem voltar. |
+| 13 — Termo de Uso | `233:897` | Conteúdo oficial v1.0 do repositório da API, data de vigência e link para PDF; removido texto provisório. |
+| 14 — Política de Privacidade | `233:954` | Conteúdo oficial v1.0, data e link para PDF; removido texto provisório. |
+| 15 — Dados pessoais | `233:1011` | Nome, CPF mascarado de exemplo, e-mail e unidade ativa, na ordem do app; removidos dados complementares. |
+| 16 — Excluir conta | `234:881` | Texto sobre exclusão imediata e necessidade de nova conta e vínculo. |
+| 16b — Excluir conta, equipe | `310:842` | Novo estado com botão desabilitado e explicação de remoção pela administração. |
+| 26 — Central normal | `257:856` | Texto de atualização enquanto o app está aberto, sem promessa de push ainda não implementado. |
+| 27 — Central em atenção | `257:939` | Faixa sobre ocorrência registrada e verificação necessária; correções de “um aviso” e “Local do aviso”. |
+
+Avisos legais usam instâncias do componente `Nova / LegalLinksText` (`307:825`). Textos e documentos são editáveis, com Auto Layout e fonte Roboto; documentos longos têm viewport com rolagem vertical. As cores de estado verde, amarelo e offline foram sincronizadas com `NovaTheme.kt` (#237A4B, #8A6A00 e #5B6473), junto dos textos secundários em superfícies tingidas identificadas na revisão. O token `amber/700` também foi atualizado.
+
+Validação: leitura da estrutura, fontes e imagens pelo MCP, seguida de capturas dos frames a 1×; corrigidos reflow dos parágrafos e padding duplicado do cadastro. Imagens foram preservadas apenas para marca, ícone Google e ilustrações existentes, sem rasterizar interfaces. Esta revisão não inclui nova captura do aparelho nem comparação lado a lado com o app em execução; as capturas locais disponíveis são anteriores às mudanças de 13/10. Lint, testes e build não foram executados, pois não houve alteração de código Android. Estados futuros de localização, push e operação dos 24 exaustores permanecem pendentes.
+
 ## Telas revisadas
 
 | Tela | Nó Figma | Implementação |

@@ -25,6 +25,7 @@
 
 ### Alterado
 
+- Figma sincronizado com o app (13/10/2026): avisos do Termo nas boas-vindas e no cadastro, nova tela de aceite (04b), Termo e Política v1.0 (13, 14), dados pessoais com CPF mascarado (15), exclusão de conta incluindo o estado da equipe (16, 16b), textos das faixas da central (26, 27) e cores de contraste dos tokens do app. Registro em `docs/revisao-figma-e-integracao.md`.
 - Revisão das telas contra o Figma de 12–13/10/2026 no Galaxy J4: menu inferior Início · Alarme · Exaustor com ícone preenchido no item selecionado; configurações pelo ícone de perfil e mensagens pelo sino; cabeçalho com a pílula da unidade; margem de 28 dp; cadastro com senha única; exaustor com cartão unidade/equipamento e ilustração por estado; cor primária #4C1D95 e splash #2B0F44.
 - Desempenho em aparelhos lentos: ilustrações em WebP por densidade (~3,6 MB → ~1 MB) e pré-carregadas, JSON decodificado fora da thread da interface e histórico da central montando só os itens visíveis.
 - Menu inferior refeito a partir do novo componente do Figma: item selecionado em quadrado roxo com ícone branco, barra de 72 dp com borda e sombra superiores.

@@ -51,7 +51,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Termo de Uso (13) e Política de Privacidade (14) v1.0: página vigente publicada pela API, em WebView restrito, com o texto na escala do corpo do app (14 sp) | 13/10 |
 | ✅ | Validado em produção: `GET /legal`, páginas `/termos-de-uso`, `/politica-de-privacidade` e `/excluir-conta` e PDF com o hash do catálogo; Termo aberto no J4 | 13/10 |
 | ✅ | Aviso "Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade" nas boas-vindas e no cadastro; cadastro envia a versão aceita | 13/10 |
-| ✅ | Tela de aceite do Termo para conta antiga ou versão nova (`mustAcceptTerms`) — sem tela no Figma | 13/10 |
+| ✅ | Tela de aceite do Termo para conta antiga ou versão nova (`mustAcceptTerms`) — Figma atualizado, tela 04b (`309:1089`) | 13/10 |
 | ✅ | Aceite gravado em produção: login com Google após o deploy registrou o Termo 1.0 em `legal_acceptance` (canal `google`) | 13/10 |
 | ✅ | Tela de aceite validada em produção com conta de teste: aparece sem aceite registrado e "Aceitar e continuar" grava o aceite pelo canal `app` | 13/10 |
 | ✅ | Dados pessoais (15): nome, CPF mascarado, e-mail e unidade ativa; "dados complementares" omitidos (não estão na API) | 12/10 · CPF 13/10 |
@@ -63,7 +63,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Leitor do Termo e da Política sem cache no app: o endereço não muda entre versões, e a tela de aceite poderia mostrar o texto anterior por até 1 h | 13/10 |
 | ⏳ | API: `Cache-Control: no-cache` nas páginas e no PDF sem versão (o PDF com versão fica imutável) — falta deploy | 13/10 |
 | ✅ | Tela de aceite com título neutro "Aceite do Termo de Uso" (antes "Termo de Uso atualizado", errado para quem nunca aceitou) | 13/10 |
-| ❓ | Telas novas sem Figma (aviso nas boas-vindas e no cadastro, aceite do Termo): desenhar ou aceitar como estão | — |
+| ✅ | Figma: avisos do Termo nas boas-vindas e cadastro, tela de aceite, documentos v1.0, dados pessoais e exclusão (incluindo equipe) sincronizados com o app | 13/10 |
 
 ### 3.1 Tradução (inglês e espanhol) — a planejar
 
@@ -94,8 +94,8 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Correção "Torre B · Torre B" encontrada com dados reais | 12/10 |
 | ✅ | Validado com a API real (normal, histórico, detalhe) | 12/10 |
 | 🟡 | Alarme real ou simulado com a equipe ainda não validado | — |
-| ⏳ | Texto da tela 26 ("Você será avisado…") depende do push; regra registrada no AGENTS.md | 13/10 |
-| ❓ | Texto da faixa da tela 27: manter, usar o do Figma ou ajustar | — |
+| ✅ | Figma 26 sincronizado com o texto atual: "O estado é atualizado enquanto o aplicativo estiver aberto."; texto de notificação continua dependendo do push | 13/10 |
+| ✅ | Figma 27 sincronizado: "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável." | 13/10 |
 
 ## 6. Núcleo, desempenho e qualidade
 
@@ -108,7 +108,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Desempenho: imagens e JSON processados fora da thread da interface, histórico montando só os itens visíveis | 12/10 |
 | ✅ | Ilustrações em WebP por densidade (~3,6 MB → ~1 MB; ~170 KB no J4) | 12/10 |
 | ✅ | 46 testes unitários e 9 testes de tela aprovados no J4 | 13/10 |
-| 🟡 | Contraste: amarelo, verde e cinzas mais escuros que o Figma; precisa de aceite no Figma | 12–13/10 |
+| ✅ | Contraste: amarelo, verde e cinzas escurecidos no Figma conforme os tokens do app e o DESIGN_GUIDE | 13/10 |
 | ❌ | Otimização R8 e Baseline Profile (velocidade na primeira abertura de cada tela) | — |
 | ❌ | Push nativo (FCM) para alertas da central — ver seção 7.1 | — |
 | ❌ | WebSocket `/v3/ws` em tempo real (hoje: consulta periódica a cada 5–10 s com o app aberto) | — |
@@ -175,12 +175,12 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 1. 🟡 Commit do trabalho de 12–13/10 feito, com entradas novas no `CHANGELOG.md`; as entradas antigas ainda citam a numeração anterior das telas.
 2. ⏳ Deploy do `Cache-Control: no-cache` das páginas legais na API (`f858bb1` já está em produção).
 3. ✅ Cadastro, tela de aceite, estado sem unidade e exclusão validados em produção com conta de teste (13/10). A conta para a revisão da Play ainda precisa ser criada e vinculada a uma unidade.
-4. ❓ Desenhar no Figma o aviso do Termo (boas-vindas e cadastro) e a tela de aceite, ou aceitar como estão.
+4. ✅ Avisos do Termo e tela de aceite desenhados no Figma pelo MCP (13/10).
 5. ❌ Trocar a senha pessoal usada nos testes (também consta do checklist de publicação).
-6. ❓ Decidir o texto da faixa da tela 27.
+6. ✅ Faixa da tela 27 sincronizada no Figma com o texto implementado no app (13/10).
 7. ❓ Decidir se o push de alertas da central (seção 7.1) é obrigatório na 1ª versão.
 8. ❓ Informar as coordenadas do condomínio e se a equipe fica isenta da verificação de localização (seção 7.2).
-9. ❓ Aceitar no Figma as cores ajustadas para contraste, ou voltar às cores exatas do Figma.
+9. ✅ Cores ajustadas para contraste refletidas no Figma (13/10).
 10. 🟡 Validar um alarme da central com a equipe.
 
 **Próximo bloco sugerido:** ícone, R8, chave e `.aab` assinado → OAuth de release → teste interno na Play. O push de alertas da central (seção 7.1) entra antes da publicação se for decidido que é obrigatório na 1ª versão.
