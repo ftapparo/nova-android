@@ -32,14 +32,18 @@ class LegalRepositoryTest {
          "htmlUrl":"https://novaresidence.com.br/politica-de-privacidade","pdfUrl":"https://novaresidence.com.br/politica-de-privacidade/pdf"}
     ],"meta":{}}"""
 
-    @Test fun `catalog is public, kept in memory and gives the current terms version`() = runBlocking {
+    @Test fun `catalog is public and kept in memory, but the terms version is always current`() = runBlocking {
         server.enqueue(MockResponse().setBody(catalog))
-        assertEquals("1.0", legal.termsVersion())
+        assertEquals(2, legal.documents().size)
         assertEquals(2, legal.documents().size)
         val request = server.takeRequest()
         assertEquals("/v3/api/legal", request.path)
         assertNull(request.getHeader("Authorization"))
         assertEquals(1, server.requestCount)
+        // Versão nova publicada com o app aberto: o cadastro precisa mandar a vigente.
+        server.enqueue(MockResponse().setBody(catalog.replace("\"version\":\"1.0\"", "\"version\":\"1.1\"")))
+        assertEquals("1.1", legal.termsVersion())
+        assertEquals(2, server.requestCount)
     }
 
     @Test fun `acceptance sends the version shown and surfaces a newer version as conflict`() = runBlocking {

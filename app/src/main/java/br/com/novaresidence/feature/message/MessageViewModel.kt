@@ -32,7 +32,7 @@ class MessageViewModel(private val repository: MessageRepository) : ViewModel() 
         if (!allowed || latestJob?.isActive == true) return
         latestJob = viewModelScope.launch {
             try {
-                val result = repository.list(limit = HOME_LIMIT)
+                val result = repository.carousel()
                 mutableState.update { it.copy(latest = result.items, unreadCount = result.unreadCount, latestError = null) }
             } catch (error: ApiException) {
                 mutableState.update { it.copy(latestError = error.userMessage()) }
@@ -72,6 +72,8 @@ class MessageViewModel(private val repository: MessageRepository) : ViewModel() 
                         unreadCount = (state.unreadCount - 1).coerceAtLeast(0),
                     )
                 }
+                // Comunicado com TTL 0 sai do carrossel quando é lido; a API decide, o app só reconsulta.
+                refreshLatest()
             } catch (error: ApiException) {
                 // Não impede a leitura: o comunicado continua como não lido e será marcado na próxima abertura.
                 mutableState.update { it.copy(listError = error.userMessage()) }
@@ -79,9 +81,5 @@ class MessageViewModel(private val repository: MessageRepository) : ViewModel() 
                 mutableState.update { it.copy(listError = error.userMessage) }
             } catch (error: CancellationException) { throw error }
         }
-    }
-
-    private companion object {
-        const val HOME_LIMIT = 5
     }
 }

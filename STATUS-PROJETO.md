@@ -4,7 +4,7 @@ Atualizado em **13/10/2026**.
 
 Legenda: ✅ feito · 🟡 parcial · ⏳ depende de terceiros ou de outra etapa · ❌ não feito · ❓ aguarda decisão
 
-> **Situação em 13/10/2026:** todo o trabalho do app está commitado (`3b61c5c` sessão, `6a24a74` revisão das telas e comunicados, `96ffafb` Termo, Política e exclusão de conta). A API com comunicados, Termo/Política, exclusão de conta e o ajuste visual das páginas legais (`f858bb1`) está em produção (migrações 003 e 004 aplicadas). Falta o deploy do `Cache-Control: no-cache` das páginas legais. O repositório do app não tem remoto configurado.
+> **Situação em 13/10/2026:** API em produção com comunicados e carrossel (migrações 003 a 005), Termo e Política 1.1, exclusão de conta e páginas legais sem cache. No app, o carrossel e a versão do Termo sempre atual estão commitados; o push nativo está em desenvolvimento. O repositório do app não tem remoto configurado.
 
 Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.md](DESIGN_GUIDE.md), [CHECKLIST-PUBLICACAO.md](CHECKLIST-PUBLICACAO.md), [docs/revisao-figma-e-integracao.md](docs/revisao-figma-e-integracao.md).
 
@@ -37,8 +37,10 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | API: rotas `/messages` em `src/v3` (listar, detalhe, marcar lida, publicar, arquivar) + migração 003, validadas no Postgres existente dentro de transação desfeita | 13/10 |
 | ✅ | Deploy da API e migração `003_condo_messages.sql` aplicada; a home carrega os informativos no J4 ("Nenhuma mensagem nova") | 13/10 |
 | ✅ | Seção "Informativos do condomínio" só para quem lê comunicados (equipe ou morador com unidade liberada); some na conta pendente, sem unidade ou bloqueada | 13/10 |
-| ❌ | Validar com um comunicado real publicado (carrossel, sino, detalhe e marcação de lido) | — |
-| ❌ | Tela de publicação no painel web (FRONT); a API já aceita `POST /messages` | — |
+| ✅ | Validado em produção com 3 comunicados de teste (ids 2–4, inseridos no banco, vencem em 16/10): carrossel, contador do sino (3 → 2), lista agrupada em Hoje/Ontem com ícone por categoria, filtro Não lidas, detalhe e leitura gravada em `condo_message_read` | 13/10 |
+| ✅ | Carrossel com permanência e prioridade (decidido em 13/10): TTL padrão de 24 h ajustável pelo síndico; TTL 0 sai ao ser lido; fixado fica até desafixar (sempre TTL 0); ordem por prioridade da categoria (urgente > aviso > manutenção > comunicado), fixados primeiro dentro dela. API: `GET /messages/carousel`, campos no `POST /messages`, `PATCH /messages/:id` e migração 005, validados no Postgres em transação desfeita. App: home usa a rota nova e reconsulta o carrossel depois de marcar como lido | 13/10 |
+| ✅ | Carrossel validado em produção no J4 (migração 005 aplicada): fixado aparece pela prioridade da categoria mesmo depois de 24 h; TTL 0 lido sai; desafixado e lido sai; TTL 0 não lido aparece com o sino em 1 e sai do carrossel assim que é aberto, sem reabrir o app | 13/10 |
+| ⏳ | Publicação de comunicados: fica no novo frontend web, desenvolvido à parte (fora do escopo do app); a API já aceita `POST /messages` | — |
 
 ## 3. Configurações (09–16)
 
@@ -49,6 +51,8 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Idioma: Português; inglês e espanhol desabilitados até haver tradução (tradução: seção 3.1) | 30/09 |
 | ✅ | Menu de privacidade (12) | 12/10 |
 | ✅ | Termo de Uso (13) e Política de Privacidade (14) v1.0: página vigente publicada pela API, em WebView restrito, com o texto na escala do corpo do app (14 sp) | 13/10 |
+| ✅ | App pronto para versões novas do Termo: a versão nunca é fixa no código e é consultada em `GET /legal` na hora do cadastro, do Google e da tela de aceite | 13/10 |
+| ✅ | Termo e Política **1.1** em produção: conta que aceitou a 1.0 viu a tela de aceite da 1.1 no J4 e o aceite foi gravado pelo canal `app` | 13/10 |
 | ✅ | Validado em produção: `GET /legal`, páginas `/termos-de-uso`, `/politica-de-privacidade` e `/excluir-conta` e PDF com o hash do catálogo; Termo aberto no J4 | 13/10 |
 | ✅ | Aviso "Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade" nas boas-vindas e no cadastro; cadastro envia a versão aceita | 13/10 |
 | ✅ | Tela de aceite do Termo para conta antiga ou versão nova (`mustAcceptTerms`) — Figma atualizado, tela 04b (`309:1089`) | 13/10 |
@@ -61,7 +65,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Validado em produção com conta de teste: cadastro (aceite pelo canal `signup`), estado pendente sem unidade (home, configurações e dados pessoais), exclusão com "Sua conta foi excluída." e login recusado depois; vínculo apagado e aceite mantido, como prevê a Política | 13/10 |
 | ✅ | Páginas legais sem linha dupla no início e sem quebras no meio da frase (`f858bb1`), em produção e conferidas no J4 | 13/10 |
 | ✅ | Leitor do Termo e da Política sem cache no app: o endereço não muda entre versões, e a tela de aceite poderia mostrar o texto anterior por até 1 h | 13/10 |
-| ⏳ | API: `Cache-Control: no-cache` nas páginas e no PDF sem versão (o PDF com versão fica imutável) — falta deploy | 13/10 |
+| ✅ | API em produção com `Cache-Control: no-cache` nas páginas e no PDF sem versão; PDFs com versão (`/1.0/pdf`, `/1.1/pdf`) imutáveis | 13/10 |
 | ✅ | Tela de aceite com título neutro "Aceite do Termo de Uso" (antes "Termo de Uso atualizado", errado para quem nunca aceitou) | 13/10 |
 | ✅ | Figma: avisos do Termo nas boas-vindas e cadastro, tela de aceite, documentos v1.0, dados pessoais e exclusão (incluindo equipe) sincronizados com o app | 13/10 |
 
@@ -173,7 +177,7 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 ## 9. Pendências imediatas (sem depender de terceiros)
 
 1. 🟡 Commit do trabalho de 12–13/10 feito, com entradas novas no `CHANGELOG.md`; as entradas antigas ainda citam a numeração anterior das telas.
-2. ⏳ Deploy do `Cache-Control: no-cache` das páginas legais na API (`f858bb1` já está em produção).
+2. ✅ Deploy da API (no-cache, carrossel com migração 005, Termo 1.1) feito e validado no J4 (13/10). App commitado.
 3. ✅ Cadastro, tela de aceite, estado sem unidade e exclusão validados em produção com conta de teste (13/10). A conta para a revisão da Play ainda precisa ser criada e vinculada a uma unidade.
 4. ✅ Avisos do Termo e tela de aceite desenhados no Figma pelo MCP (13/10).
 5. ❌ Trocar a senha pessoal usada nos testes (também consta do checklist de publicação).

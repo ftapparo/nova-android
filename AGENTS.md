@@ -333,7 +333,7 @@ Rate limits (all answer 429 with `Retry-After`): login 20 per IP and 5 wrong pas
 ### Terms of Use and Privacy Policy
 
 - `GET /legal` (public, no token): current documents — `document` (`termo-de-uso` | `politica-de-privacidade`), `title`, `version`, `effectiveDate`, `sha256` of the official PDF, `htmlUrl`, `pdfUrl`. The public pages live outside `/v3/api` (`/termos-de-uso`, `/politica-de-privacidade`, `/<doc>/pdf`), so store links do not change with the API version. The PDF is the official document; the HTML page is for reading on the phone.
-- The app (`feature/legal`) shows the HTML page in a restricted WebView (no JavaScript, no file access, no cache — the unversioned URL changes content with each new version and the acceptance screen records the current one; other links and the PDF open outside the app). The server also sends `Cache-Control: no-cache` for the pages and the unversioned PDF; `/<doc>/<version>/pdf` is immutable. The welcome (Google can create the account) and signup screens say "Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade" with links; signup sends the current version, Google sends it when the catalog loaded (otherwise the account comes back with `mustAcceptTerms`).
+- The app (`feature/legal`) shows the HTML page in a restricted WebView (no JavaScript, no file access, no cache — the unversioned URL changes content with each new version and the acceptance screen records the current one; other links and the PDF open outside the app). The server also sends `Cache-Control: no-cache` for the pages and the unversioned PDF; `/<doc>/<version>/pdf` is immutable. The welcome (Google can create the account) and signup screens say "Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade" with links; signup sends the current version, Google sends it when the catalog loaded (otherwise the account comes back with `mustAcceptTerms`). The version is never hard-coded and is fetched from `GET /legal` at the moment of signup, Google sign-in and the acceptance screen (the in-memory catalog may be days old when a new version is published).
 - `user.mustAcceptTerms: true` (older account or new Terms version) → acceptance screen before the logged-in area, `POST /legal/terms/accept` `{ version }`, then `GET /auth/me`. 409 = a newer version was published: reload `GET /legal` and show it. The API does not block other routes without acceptance.
 - Public account-deletion page (Google Play requirement): `/excluir-conta` on the same host.
 
@@ -438,7 +438,7 @@ O morador só pode ligar o exaustor dentro da área do condomínio.
 ## Home, mensagens e configurações (telas 08a–08d e 09–17)
 
 - O menu inferior tem três abas: **Início · Alarme · Exaustor**. Configurações abre pelo ícone de perfil no cabeçalho da home; o sino abre Mensagens (17).
-- Comunicados (08d, 17 e 18) ficam em `feature/message` e usam `/messages` (seção "Condo messages" abaixo): carrossel dos 5 mais recentes na home, contador de não lidas no sino, lista com filtro "Todas/Não lidas" agrupada por dia e detalhe. Abrir o detalhe chama `POST /messages/{id}/read`. Consulta ao entrar na área logada (sem push nem polling); só para equipe ou morador com unidade liberada.
+- Comunicados (08d, 17 e 18) ficam em `feature/message` e usam `/messages` (seção "Condo messages" abaixo): carrossel da home vindo pronto de `GET /messages/carousel` (TTL, fixados e prioridade decididos pela API), contador de não lidas no sino, lista com filtro "Todas/Não lidas" agrupada por dia e detalhe. Abrir o detalhe chama `POST /messages/{id}/read`. Consulta ao entrar na área logada (sem push nem polling); só para equipe ou morador com unidade liberada.
 - A unidade padrão foi removida do Figma e do app (30/09/2026). A unidade ativa é escolhida na tela 10 ("Selecionar unidade") com um toque; a seleção vale durante a sessão enquanto vinculada. No acesso seguinte vale a regra inicial (`selectResidenceUnit`). O seletor continua mostrando unidades bloqueadas com os motivos do contrato.
 - Configurações (09) exibe "Código Freedom" = `person.sequencia`. É o código do morador no cadastro do condomínio e ajuda no atendimento; exceção consciente à regra de não exibir identificadores internos.
 - Privacidade (12): Termos (13) e Política (14) exibem a página vigente publicada pela API (`feature/legal`, seção "Terms of Use and Privacy Policy"). Dados pessoais (15) mostra nome, CPF mascarado (`person.cpfMasked`; a API nunca envia o CPF completo, e a linha some quando vem nulo), e-mail e unidade ativa; "dados complementares" não existem no contrato e não são exibidos.
@@ -454,15 +454,21 @@ Reading: staff, or a resident with an unblocked unit (403 otherwise). Publishing
 | Method | Path | Body / query | Returns |
 |---|---|---|---|
 | GET | `/messages` | `?filter=all\|unread&limit=20&offset=0` (limit ≤ 50) | `{ items: CondoMessage[], unreadCount }` + `meta.pagination` |
+| GET | `/messages/carousel` | — | `{ items: CondoMessage[], unreadCount }` — home carousel of this account (≤ 5, already filtered and ordered) |
 | GET | `/messages/{id}` | — | `CondoMessage` |
 | POST | `/messages/{id}/read` | — | `CondoMessage` with `read: true` (idempotent) |
 
 ```json
-{ "id": 12, "category": "manutencao", "label": "Manutenção programada", "title": "…", "body": "…", "publishedAt": "2026-10-13T13:30:00.000Z", "expiresAt": null, "read": false }
+{ "id": 12, "category": "manutencao", "label": "Manutenção programada", "title": "…", "body": "…", "publishedAt": "2026-10-13T13:30:00.000Z", "expiresAt": null, "carouselTtlHours": 24, "pinned": false, "read": false }
 ```
 
 - `category`: `manutencao` | `comunicado` | `aviso` | `urgente` (icon and color in the app). `label` is the tag on the card/detail; `null` → category name.
 - Only visible messages come back (published, not archived, not expired), newest first. `unreadCount` ignores filter and page (bell badge).
+- Home carousel (decided on 13/10/2026; the app only displays what `/messages/carousel` returns and never applies these rules itself):
+  - `carouselTtlHours` (default 24, set by the síndico): hours in the carousel from `publishedAt`. `0` = leaves the carousel of each account once that account reads it — after `POST /messages/{id}/read` the app reloads the carousel.
+  - `pinned`: stays until the síndico unpins it; always TTL 0, so after unpinning it leaves for those who read it and, for the others, when they read it.
+  - Order: category priority first (`urgente` > `aviso` > `manutencao` > `comunicado`), pinned first within the category, then newest. Up to 5 items.
+  - The list (17) is not affected: it keeps every visible message until `expiresAt` or archiving. Pin/TTL are set by staff (`POST /messages`, `PATCH /messages/{id}`) in the new web frontend, not in the app.
 
 ## Fire Panel (CIE) — read-only
 

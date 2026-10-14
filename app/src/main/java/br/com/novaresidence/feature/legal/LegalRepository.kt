@@ -19,7 +19,11 @@ class LegalRepository(private val api: ApiClient) {
         cached?.takeUnless { refresh } ?: api.transport.get<List<LegalDocument>>("legal").also { cached = it }
     }
 
-    suspend fun termsVersion(): String = documents().firstOrNull { it.document == TermsDocument }?.version
+    /**
+     * Versão vigente do Termo, sempre consultada na hora: o processo do app pode durar dias, e uma versão
+     * publicada nesse meio-tempo faria o cadastro mandar a anterior (a API recusa com 400).
+     */
+    suspend fun termsVersion(): String = documents(refresh = true).firstOrNull { it.document == TermsDocument }?.version
         ?: throw ApiException(ApiErrorKind.InvalidResponse)
 
     /** Aceite da versão mostrada; 409 = o Termo mudou e a versão nova precisa ser lida antes. */

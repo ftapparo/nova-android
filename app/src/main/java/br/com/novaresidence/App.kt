@@ -111,7 +111,8 @@ fun App(app: AppViewModel) {
             if (user?.mustChangePassword == true) authState.copy(page = AuthPage.ChangePassword) else authState, auth, openLegal,
         )
         else if (user?.mustAcceptTerms == true) {
-            LaunchedEffect(Unit) { legal.load() }
+            // Recarrega o catálogo: o aceite costuma vir de uma versão nova publicada com o app aberto.
+            LaunchedEffect(Unit) { legal.load(refresh = true) }
             TermsAcceptanceScreen(legalState, { legal.acceptTerms { app.auth.me() } }, auth::logout, openLegal) { legal.load(refresh = true) }
         }
         else if (residenceState.loading && residenceState.residence == null && residenceState.error == null) NovaSplash()

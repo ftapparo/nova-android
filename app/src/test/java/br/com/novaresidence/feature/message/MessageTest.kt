@@ -49,14 +49,14 @@ class MessageTest {
         assertNotNull(base.publishedInstant)
     }
 
-    @Test fun `home consulta os ultimos comunicados e o contador de nao lidos`() = runBlocking {
+    @Test fun `home consulta o carrossel da API e o contador de nao lidos`() = runBlocking {
         server.enqueue(response("""{"items":[${message(2)},${message(1, read = true, label = "Manutenção programada")}],"unreadCount":1}"""))
         val model = MessageViewModel(repository)
         withContext(main) { model.start(true) }
         val state = withTimeout(5000) { model.state.first { it.latest.isNotEmpty() } }
         assertEquals(1, state.unreadCount)
         assertEquals("Manutenção programada", state.latest[1].badgeLabel())
-        assertEquals("/v3/api/messages?filter=all&limit=5", server.takeRequest().path)
+        assertEquals("/v3/api/messages/carousel", server.takeRequest().path)
     }
 
     @Test fun `conta sem acesso aos servicos nao consulta comunicados`() = runBlocking {
@@ -70,6 +70,7 @@ class MessageTest {
         server.enqueue(response("""{"items":[${message(2)},${message(1, read = true)}],"unreadCount":1}"""))
         server.enqueue(response("""{"items":[${message(2)}],"unreadCount":1}"""))
         server.enqueue(response(message(2, read = true)))
+        server.enqueue(response("""{"items":[${message(2, read = true)},${message(1, read = true)}],"unreadCount":0}"""))
         val model = MessageViewModel(repository)
         withContext(main) { model.start(true) }
         withTimeout(5000) { model.state.first { it.latest.isNotEmpty() } }
@@ -84,5 +85,21 @@ class MessageTest {
         val read = server.takeRequest()
         assertEquals("POST", read.method)
         assertEquals("/v3/api/messages/2/read", read.path)
+        assertEquals("/v3/api/messages/carousel", server.takeRequest(5, TimeUnit.SECONDS)!!.path)
+    }
+
+    @Test fun `comunicado lido sai do carrossel quando a API o retira`() = runBlocking {
+        server.enqueue(response("""{"items":[${message(3, category = "urgente")},${message(2)}],"unreadCount":2}"""))
+        server.enqueue(response(message(3, read = true, category = "urgente")))
+        // TTL 0: depois da leitura a API não devolve mais o 3 no carrossel desta conta.
+        server.enqueue(response("""{"items":[${message(2)}],"unreadCount":1}"""))
+        val model = MessageViewModel(repository)
+        withContext(main) { model.start(true) }
+        val first = withTimeout(5000) { model.state.first { it.latest.size == 2 } }
+        assertEquals(listOf(3L, 2L), first.latest.map { it.id })
+        withContext(main) { model.markRead(first.latest.first()) }
+        val state = withTimeout(5000) { model.state.first { it.latest.size == 1 } }
+        assertEquals(listOf(2L), state.latest.map { it.id })
+        assertEquals(1, state.unreadCount)
     }
 }

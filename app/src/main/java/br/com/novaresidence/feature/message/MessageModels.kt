@@ -35,7 +35,7 @@ fun CondoMessage.categoryLabel(): String = when (category) {
 fun CondoMessage.badgeLabel(): String = label?.takeIf { it.isNotBlank() } ?: categoryLabel()
 
 data class MessageState(
-    /** Últimos comunicados para o carrossel da home (08d). */
+    /** Carrossel da home (08d), na ordem da API. */
     val latest: List<CondoMessage> = emptyList(),
     val unreadCount: Int = 0,
     val latestError: String? = null,

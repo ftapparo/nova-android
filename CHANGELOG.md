@@ -4,6 +4,7 @@
 
 ### Adicionado
 
+- Carrossel de comunicados da home vindo pronto de `GET /messages/carousel`: a API decide permanência (TTL padrão de 24 h, TTL 0 sai ao ser lido, fixados) e ordem por prioridade da categoria. Depois de marcar um comunicado como lido, o app reconsulta o carrossel, para o de TTL 0 sair na hora.
 - Termo de Uso (13) e Política de Privacidade (14) v1.0: página vigente publicada pela API (`GET /legal`), em WebView restrito (sem JavaScript; links e PDF abrem fora do app) e com o texto na escala do corpo do app. Aviso "Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade" nas boas-vindas e no cadastro; o cadastro envia a versão aceita e o Google a envia quando o catálogo carrega. Tela de aceite para conta antiga ou versão nova do Termo (`mustAcceptTerms`).
 - Exclusão da própria conta (16) com `DELETE /auth/me`: a sessão só é apagada depois da confirmação da API; em falha, a pessoa continua conectada e vê o erro. Equipe vê o botão desabilitado (contas removidas pela administração).
 - CPF mascarado nos dados pessoais (15), vindo de `person.cpfMasked`; o CPF completo não chega ao app.
@@ -42,6 +43,7 @@
 
 ### Corrigido
 
+- Versão do Termo de Uso consultada na hora do cadastro, do login com Google e da tela de aceite: o catálogo em memória podia estar desatualizado quando uma versão nova é publicada com o app aberto, e o cadastro mandaria a anterior (recusada pela API).
 - Termo de Uso e Política de Privacidade abertos sem cache: o endereço da página não muda entre versões, e a tela de aceite podia mostrar por até 1 h o texto anterior enquanto registrava a versão vigente.
 - Tela de aceite com o título "Aceite do Termo de Uso", que vale para quem nunca aceitou e para versão nova (antes "Termo de Uso atualizado").
 - "Informativos do condomínio" só aparece para quem pode ler comunicados (equipe ou morador com unidade liberada); antes a conta pendente via um cartão vazio.
