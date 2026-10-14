@@ -4,14 +4,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.novaresidence.core.network.ApiErrorKind
 import br.com.novaresidence.core.network.ApiException
+import br.com.novaresidence.core.network.NovaJson
+import br.com.novaresidence.core.realtime.RealtimeEvent
 import br.com.novaresidence.core.session.SessionStorageException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.SerializationException
 
 class ExhaustViewModel(private val repository: ExhaustRepository, private val accessChanged: () -> Unit = {}) : ViewModel() {
     private val mutableState = MutableStateFlow(ExhaustState())
@@ -23,6 +28,10 @@ class ExhaustViewModel(private val repository: ExhaustRepository, private val ac
     private var generation = 0L
     private var retryAt = 0L
     private var refreshing = false
+    /** Evento chegou durante uma consulta: a resposta em curso pode ser anterior a ele. */
+    private var refreshAgain = false
+    private var live = false
+    private val wake = Channel<Unit>(Channel.CONFLATED)
 
     fun start(tower: String?, apartment: String?, allowed: Boolean) {
         stop()
@@ -40,7 +49,13 @@ class ExhaustViewModel(private val repository: ExhaustRepository, private val ac
         polling = viewModelScope.launch {
             while (generation == current) {
                 refreshNow(current)
-                delay(if (state.value.phase in setOf(ExhaustPhase.Starting, ExhaustPhase.Finishing)) 2000 else 5000)
+                val transition = state.value.phase in setOf(ExhaustPhase.Starting, ExhaustPhase.Finishing)
+                // Com o socket de tempo real, a mudança chega por evento e a consulta vira rede de segurança.
+                val interval = when {
+                    live -> if (transition) 5_000L else 30_000L
+                    else -> if (transition) 2_000L else 5_000L
+                }
+                withTimeoutOrNull(interval) { wake.receive() }
             }
         }
     }
@@ -51,6 +66,7 @@ class ExhaustViewModel(private val repository: ExhaustRepository, private val ac
         polling = null; command = null; clock = null
         target = null
         refreshing = false
+        refreshAgain = false
         mutableState.value = ExhaustState(loading = false)
     }
 
@@ -66,7 +82,8 @@ class ExhaustViewModel(private val repository: ExhaustRepository, private val ac
 
     private suspend fun refreshNow(current: Long) {
         val unit = target ?: return
-        if (refreshing || state.value.sending || remainingCooldown() > 0) return
+        if (refreshing) { refreshAgain = true; return }
+        if (state.value.sending || remainingCooldown() > 0) return
         refreshing = true
         val firstLoad = state.value.exhaust == null
         if (firstLoad) mutableState.update { it.copy(loading = true) }
@@ -86,11 +103,32 @@ class ExhaustViewModel(private val repository: ExhaustRepository, private val ac
             if (current == generation) {
                 refreshing = false
                 mutableState.update { it.copy(loading = false) }
+                if (refreshAgain) { refreshAgain = false; refresh() }
             }
         }
     }
 
     fun refresh() { viewModelScope.launch { refreshNow(generation) } }
+
+    /** Socket de tempo real conectado ou não; ao cair, a consulta volta ao ritmo normal na hora. */
+    fun setLive(value: Boolean) {
+        if (live == value) return
+        live = value
+        wake.trySend(Unit)
+    }
+
+    /** Eventos do `/v3/ws`: reconsulta quando muda o exaustor da unidade ativa. Nunca envia comando. */
+    fun onRealtime(event: RealtimeEvent) {
+        val unit = target ?: return
+        when (event.name) {
+            RealtimeEvent.Connected -> refresh()
+            "exhaust.changed" -> {
+                val changed = try { NovaJson.decodeFromJsonElement(Exhaust.serializer(), event.data) }
+                    catch (_: SerializationException) { return } catch (_: IllegalArgumentException) { return }
+                if (listOf(changed).forUnit(unit.first, unit.second) != null) refresh()
+            }
+        }
+    }
 
     fun activate() {
         if (!state.value.canActivate) return

@@ -2,6 +2,12 @@ package br.com.novaresidence.feature.fire
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.longOrNull
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -193,3 +199,19 @@ fun CieLog.instant(): Instant? = occurredInstant
 /** "04/10/2026 · 18:56:19" no fuso do aparelho. */
 fun Instant.fullTime(zone: ZoneId = ZoneId.systemDefault()): String =
     atZone(zone).format(FullTime)
+
+/**
+ * Assinatura de um `cie.status.updated` do WebSocket, que chega a cada ~1 s com o snapshot bruto do nova-cie.
+ * Junta só o que muda o estado da tela (conexão, reinício e contadores), para a tela reconsultar o REST apenas
+ * quando algo mudou; `dataHora` e `lastUpdated` mudam a cada envio e ficam de fora. Nulo = payload sem estado.
+ */
+fun cieSignature(data: JsonElement, nowMillis: Long = System.currentTimeMillis()): String? {
+    val snapshot = data as? JsonObject ?: return null
+    val counters = (snapshot["status"] as? JsonObject)?.get("status") as? JsonObject
+    val connected = (snapshot["connected"] as? JsonPrimitive)?.booleanOrNull
+    if (counters == null && connected == null) return null
+    val restarting = ((snapshot["restartingUntil"] as? JsonPrimitive)?.longOrNull ?: 0L) > nowMillis
+    val values = listOf("alarme", "falha", "supervisao", "bloqueio")
+        .joinToString(",") { (counters?.get(it) as? JsonPrimitive)?.intOrNull?.toString() ?: "-" }
+    return "$connected|$restarting|$values"
+}

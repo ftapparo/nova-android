@@ -116,7 +116,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Contraste: amarelo, verde e cinzas escurecidos no Figma conforme os tokens do app e o DESIGN_GUIDE | 13/10 |
 | ❌ | Otimização R8 e Baseline Profile (velocidade na primeira abertura de cada tela) | — |
 | 🟡 | Push nativo (FCM): central, exaustor e comunicados — implementado e validado no J4 (teste, comunicado e exaustor desligado); falta o alarme real (seção 7.1) | 13/10 · 14/10 |
-| ❌ | WebSocket `/v3/ws` em tempo real (hoje: consulta periódica a cada 5–10 s com o app aberto) | — |
+| 🟡 | WebSocket `/v3/ws` em tempo real com o app aberto: eventos da central e do exaustor disparam a reconsulta na hora; consulta periódica vira rede de segurança (60 s / 30 s). Reconexão com ticket novo, 4001 e backoff; 8 testes unitários. Validado no J4 (14/10): com a tela do exaustor aberta, o desligamento pelo painel v2 apareceu como "Desligando" e depois "Desligado" sem esperar a consulta de 30 s; ligar pelo app passou de "Ligando" a "Ligado" em menos de 1 s. Falta medir o volume do `cie.status.updated` | 14/10 |
 
 ## 7. Dependências na API (`src/v3`)
 
@@ -149,7 +149,8 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção "Push notifications". Mecani
 | ✅ | Corrigido na API: alerta falso "Central de incêndio sem comunicação" 5 min após cada deploy (`c625664`) e texto do exaustor "Torre A, final 4" no lugar de "A4", que se confundia com o apartamento A-4 (`138f310`) |
 | ✅ | Corrigido na API (`cf58d48`): ligar e desligar o exaustor em poucos segundos não gerava o "Exaustor desligado" (o laço de 20 s não via o exaustor ligado); agora o aviso sai ~1 s depois do desligamento — **falta redeploy** |
 | ✅ | **Notificação por tela aberta (14/10):** o aviso não aparece quando a tela dele está aberta (exaustor, central, mensagens, início) e a tela se atualiza na hora; em outra tela ou com o app fechado, aparece. O alarme de incêndio aparece sempre. Validado no J4 com comunicados 9 (Mensagens aberta: entrou na lista sem notificação) e 10 (Início aberta: notificação) e com o exaustor (tela do exaustor aberta: sem notificação; outra tela: "O exaustor da Torre A, final 4, foi desligado.") |
-| ❌ | **Validar no J4:** "faltam 15 minutos" do exaustor, alarme com o app fechado e tela bloqueada (com a equipe) e cartão de permissão num Android 13+ |
+| ✅ | **J4 (14/10):** "faltam 15 minutos" chegou a quem ligou; com o app fechado, o "desligado" pelo painel v2 chegou e o toque abriu o exaustor já atualizado |
+| ❌ | **Validar no J4:** alarme com o app fechado e tela bloqueada (com a equipe) e cartão de permissão num Android 13+ |
 | ✅ | **Figma (14/10):** cartão da home (08e), tela Notificações para morador/equipe e estados de permissão, canal bloqueado e registro pendente (09a–09e); central com ação "Ativar notificações" (26b) |
 | ❌ | **Publicação:** declarar o token do aparelho na Política de Privacidade e na "Segurança dos dados" (IDs do dispositivo) |
 | ⚠️ | **Limite:** a entrega não é garantida em tempo real (economia de bateria, otimizações Samsung); nenhum texto promete aviso imediato |

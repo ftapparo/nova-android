@@ -48,6 +48,7 @@ app/src/main/java/<package>/
 ├── core/                 # Genuinely shared infrastructure
 │   ├── network/          # HTTP client, envelope parsing, auth interceptor
 │   ├── push/             # FCM service, channels, device registration, permission
+│   ├── realtime/         # WebSocket /v3/ws client (foreground only)
 │   ├── session/          # token storage and refresh
 │   └── ui/               # design system, shared components
 ├── NovaApplication.kt    # process graph (session, API client, push) — the FCM service runs without an Activity
@@ -416,7 +417,7 @@ O morador só pode ligar o exaustor dentro da área do condomínio.
 - **Estados de tela a desenhar no Figma:** permissão negada, localização desligada, fora da área e precisão insuficiente.
 - **Privacidade:** a localização só valida o comando; não é armazenada como trajeto nem registrada em log. Declarar na política de privacidade e no formulário "Segurança dos dados" da Play.
 - **Pendente:** coordenadas ou polígono do condomínio e se a equipe (`porteiro`, `sindico`, `admin`) fica isenta.
-- As consultas ocorrem enquanto a área logada está visível (home e tela do exaustor, pois a home mostra o estado — Figma 08b): a cada 5 segundos, ou 2 segundos durante transições. Respeitar `Retry-After`; nenhuma falha causa repetição automática do acionamento. O evento WebSocket `exhaust.changed` pode substituir essa consulta numa etapa futura.
+- As consultas ocorrem enquanto a área logada está visível (home e tela do exaustor, pois a home mostra o estado — Figma 08b). Com o WebSocket conectado, `exhaust.changed` do exaustor da unidade ativa dispara a reconsulta na hora e o laço fica em 30 s (5 s em transição); sem ele, 5 s (2 s em transição). Respeitar `Retry-After`; nenhuma falha causa repetição automática do acionamento.
 - A seleção do equipamento intersecta torre/final da unidade ativa com a lista autorizada de `/exhausts`. Não fabricar equipamentos ou permissões ausentes dessa lista.
 - Quando a resposta for inconclusiva, usar os textos aprovados “Não foi possível confirmar a ativação” e “Atualize o estado antes de tentar novamente”, sem afirmar proteção ou encerramento físico não confirmados.
 
@@ -484,7 +485,7 @@ Every log/event item carries `event` (`category`, `label`, `kind`, `severity`) a
 - `FireRepository` usa somente `GET /cie/panel`, `/cie/alarms/active`, `/cie/events/active` e `/cie/logs`. Nunca adicionar comandos sem pedido explícito: a central é equipamento de segurança real.
 - Estado: `alarms.isTriggered` → Alarme (28 e home 08c, prevalece sobre tudo); painel sem `online`/`connected` → sem comunicação; `falha`/`supervisao` > 0 → Atenção (27); senão Normal (26). Dispositivos apenas bloqueados não geram atenção para o morador.
 - `/cie/events/active` só é consultado quando os contadores indicam atenção, para mostrar o "Local do aviso"; se falhar, o estado de atenção continua exibido sem o local.
-- Consulta a cada 10 s enquanto a área logada estiver visível (home mostra o estado); para em `onStop`; respeita `Retry-After`.
+- Consulta enquanto a área logada estiver visível (home mostra o estado); para em `onStop`; respeita `Retry-After`. Com o WebSocket conectado, mudanças da central disparam a reconsulta na hora e o laço fica em 60 s; sem ele, 10 s.
 - A faixa da tela 26 depende do estado real do push (`PushStatus`), conferido a cada retorno ao app (o morador pode desligar notificações a qualquer momento):
 
   | Situação | Texto da faixa |
@@ -505,6 +506,18 @@ Every log/event item carries `event` (`category`, `label`, `kind`, `severity`) a
 - A faixa da tela 27 diz "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável." em vez de "A equipe responsável está verificando a ocorrência.", porque a API não informa se há verificação em andamento.
 - Histórico (29): últimos 30 dias, até 4 páginas de 50 eventos seguindo `nextCursor`, agrupados por dia e filtrados no app (Alarmes; Falhas = falha + supervisão; Operação = operação + bloqueio). Detalhe (30a–30c) usa só campos retornados; "Dados técnicos" mostra o registro como veio da API.
 - Rótulos usam `display`/`event` quando presentes. Servidores sem esses campos caem no fallback: nomes do painel em caixa alta e com `\u0000` são normalizados por `cieName()`/`floorLabel()` ("TORRE B" → "Torre B", "8 ANDAR B T-B" → "8º andar").
+
+## Real-time (WebSocket `/v3/ws`)
+
+Foreground only, in `core/realtime/RealtimeClient.kt`; the push covers the app closed. Contract in `APP-GUIDE.md` §6.
+
+- Started while the logged-in area is visible for accounts with services (staff, or resident with an unblocked unit — others get 403); stopped in `onStop`. One socket at a time (the API allows 3 per account).
+- Connect: `POST /ws/ticket` (single use, 30 s) → `wss://<host>/v3/ws?ticket=…`. Close 4001 (access token expired) → new ticket and reconnect at once; handshake 403 → stop; 401 → one immediate retry; anything else → backoff 1, 2, 4… 30 s. Own OkHttp client with `readTimeout(0)` and a 20 s ping.
+- **Events only trigger a REST reload**; the app never builds state from WebSocket payloads. After every (re)connect the client emits `realtime.connected` and the screens reload.
+  - Fire panel: `cie.active.updated`, `cie.connection.changed`, `upstream.connection.changed` (`service: "cie"`) and `cie.status.updated` only when `cieSignature` changes (connection, restart and counters; the payload arrives every ~1 s and its clock fields change every time). At most one reload every 2 s.
+  - Exhaust: `exhaust.changed` of the active unit's exhaust. The socket never sends commands.
+  - Everything else (gates, tags, devices, command log) is ignored: the app has no such screens.
+- While connected, polling becomes a safety net (fire 60 s; exhaust 30 s, 5 s in transition); when the socket drops, the loops return to their normal pace at once.
 
 ## Push notifications (FCM)
 

@@ -10,6 +10,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import br.com.novaresidence.core.realtime.RealtimeEvent
+import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -178,5 +180,21 @@ class ExhaustTest {
         withContext(main) { value.start("A", "124", false); value.activate() }
         assertEquals(ExhaustPhase.Unavailable, value.state.value.phase)
         assertEquals(0, server.requestCount)
+    }
+
+    @Test fun `tempo real reconsulta so o exaustor da unidade e nunca envia comando`() = runBlocking {
+        val value = start()
+        val other = """{"id":"B4","tower":"B","final":4,"on":true,"expiresAt":null,"processStatus":"executado","moduleOnline":true}"""
+        withContext(main) { value.onRealtime(RealtimeEvent("exhaust.changed", Json.parseToJsonElement(other))) }
+        withContext(main) { value.onRealtime(RealtimeEvent("gate.state.changed")) }
+        delay(300)
+        assertEquals(1, server.requestCount)
+
+        server.enqueue(response("[${jsonOff.replace("\"on\":false", "\"on\":true")}]"))
+        withContext(main) { value.onRealtime(RealtimeEvent("exhaust.changed", Json.parseToJsonElement(jsonOff))) }
+        withTimeout(5000) { value.state.first { it.exhaust?.on == true } }
+        val request = server.takeRequest()
+        assertEquals("GET", request.method)
+        assertEquals("/v3/api/exhausts", request.path)
     }
 }

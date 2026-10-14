@@ -18,6 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import br.com.novaresidence.core.push.*
+import br.com.novaresidence.core.realtime.RealtimeClient
 import br.com.novaresidence.core.session.*
 import br.com.novaresidence.core.ui.*
 import br.com.novaresidence.feature.auth.*
@@ -50,6 +51,8 @@ class AppViewModel(application: NovaApplication) : ViewModel() {
         private set
     /** Destino de uma notificação tocada, aplicado quando a área logada estiver disponível. */
     val pendingOpen = MutableStateFlow<PushOpen?>(null)
+    /** Tempo real (`/v3/ws`) só com a área logada visível; o push cuida do app fechado. */
+    val realtime = RealtimeClient(api, BuildConfig.V3_BASE_URL.replaceFirst("https://", "wss://").replaceFirst("http://", "ws://"), viewModelScope)
 
     init {
         viewModelScope.launch {
@@ -156,6 +159,24 @@ fun App(app: AppViewModel) {
                         PushTarget.Home -> Unit
                     }
                 }
+            }
+            // Tempo real: um socket enquanto a área logada estiver visível, para quem tem serviços (equipe ou
+            // morador com unidade liberada; os demais seriam recusados com 403). Os eventos só disparam
+            // reconsultas; com o socket conectado, as consultas periódicas ficam mais espaçadas.
+            LifecycleStartEffect(user?.id, services) {
+                if (services) app.realtime.start()
+                onStopOrDispose { app.realtime.stop() }
+            }
+            LaunchedEffect(user?.id) {
+                app.realtime.events.collect { event ->
+                    fire.onRealtime(event)
+                    exhaust.onRealtime(event)
+                }
+            }
+            val realtimeConnected by app.realtime.connected.collectAsStateWithLifecycle()
+            LaunchedEffect(realtimeConnected) {
+                fire.setLive(realtimeConnected)
+                exhaust.setLive(realtimeConnected)
             }
             // Comunicados: consultados ao voltar para a área logada; um push de comunicado novo reconsulta.
             LifecycleStartEffect(user?.id, services) {

@@ -13,6 +13,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import br.com.novaresidence.core.realtime.RealtimeEvent
+import kotlinx.serialization.json.Json
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -164,5 +167,45 @@ class FireTest {
         assertEquals(FireStatus.Attention, state.status)
         assertEquals("Torre A · 12º andar", state.activeEvents.single().placeLine())
         assertEquals(3, server.requestCount)
+    }
+
+    @Test fun `tempo real reconsulta so quando o estado da central muda e segura rajadas`() = runBlocking {
+        val panels = AtomicInteger()
+        server.dispatcher = object : okhttp3.mockwebserver.Dispatcher() {
+            override fun dispatch(request: okhttp3.mockwebserver.RecordedRequest) = when (request.path) {
+                "/v3/api/cie/panel" -> { panels.incrementAndGet(); response("""{"online":true,"connected":true,"lastUpdated":1}""") }
+                else -> response("""{"isTriggered":false,"counters":{"alarme":0,"falha":0,"supervisao":0,"bloqueio":0},"latestAlarmLogs":[]}""")
+            }
+        }
+        fun status(alarme: Int, clock: String) = RealtimeEvent("cie.status.updated", Json.parseToJsonElement(
+            """{"connected":true,"restartingUntil":null,"dataHora":"$clock","status":{"status":{"alarme":$alarme,"falha":0,"supervisao":0,"bloqueio":0}}}"""))
+        val value = FireViewModel(repository, realtimeThrottleMs = 300)
+        model = value
+        withContext(main) { value.start(true) }
+        withTimeout(5000) { value.state.first { !it.loading && it.alarms != null } }
+        assertEquals(1, panels.get())
+
+        withContext(main) { value.setLive(true) }
+        withTimeout(5000) { while (panels.get() < 2) delay(20) }
+        withContext(main) { value.onRealtime(RealtimeEvent(RealtimeEvent.Connected)) }
+        withTimeout(5000) { while (panels.get() < 3) delay(20) }
+
+        // Primeiro status só vira base; o mesmo estado com outro relógio não reconsulta.
+        withContext(main) {
+            value.onRealtime(status(0, "10:00:00"))
+            value.onRealtime(status(0, "10:00:01"))
+            value.onRealtime(RealtimeEvent("cie.log.received"))
+        }
+        delay(700)
+        assertEquals(3, panels.get())
+
+        // Alarme e saída do alarme em sequência: uma reconsulta só, depois do intervalo mínimo.
+        withContext(main) {
+            value.onRealtime(status(1, "10:00:02"))
+            value.onRealtime(status(0, "10:00:03"))
+        }
+        withTimeout(5000) { while (panels.get() < 4) delay(20) }
+        delay(700)
+        assertEquals(4, panels.get())
     }
 }
