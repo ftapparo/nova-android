@@ -4,7 +4,7 @@ Atualizado em **14/10/2026**.
 
 Legenda: ✅ feito · 🟡 parcial · ⏳ depende de terceiros ou de outra etapa · ❌ não feito · ❓ aguarda decisão
 
-> **Situação em 13/10/2026:** API em produção com comunicados e carrossel (migrações 003 a 005), Termo e Política 1.1, exclusão de conta e páginas legais sem cache. No app, o carrossel e a versão do Termo sempre atual estão commitados; o push nativo está em desenvolvimento. O repositório do app não tem remoto configurado.
+> **Situação em 14/10/2026:** API em produção com push nativo (migração 006), tempo real, localização do exaustor, exaustor simulado da conta de revisão e Política 1.2. App com push, WebSocket e localização commitados e validados no J4. Play Console: declarações de Conteúdo do app concluídas (Segurança dos dados, público 18+, classificação, acesso com conta de teste); falta o build de release e o teste interno. O repositório do app não tem remoto configurado.
 
 Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.md](DESIGN_GUIDE.md), [CHECKLIST-PUBLICACAO.md](CHECKLIST-PUBLICACAO.md), [docs/revisao-figma-e-integracao.md](docs/revisao-figma-e-integracao.md).
 
@@ -147,12 +147,12 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção "Push notifications". Mecani
 | ✅ | **J4 (14/10):** aparelho registrado em `notification_device`, preferências gravadas na API, notificação de teste recebida, toque na notificação abrindo a aba Alarme, tela 26 com "Você será avisado se o estado da central mudar." |
 | ✅ | **J4 (14/10):** comunicado de teste (id 7, inserido no banco e arquivado depois) chegou 8 s após a publicação com o app em segundo plano e o toque abriu o detalhe, marcando como lido; "Exaustor desligado" chegou a quem ligou pelo app quando o exaustor foi desligado pelo painel v2 |
 | ✅ | Corrigido na API: alerta falso "Central de incêndio sem comunicação" 5 min após cada deploy (`c625664`) e texto do exaustor "Torre A, final 4" no lugar de "A4", que se confundia com o apartamento A-4 (`138f310`) |
-| ✅ | Corrigido na API (`cf58d48`): ligar e desligar o exaustor em poucos segundos não gerava o "Exaustor desligado" (o laço de 20 s não via o exaustor ligado); agora o aviso sai ~1 s depois do desligamento — **falta redeploy** |
+| ✅ | Corrigido na API (`cf58d48`): ligar e desligar o exaustor em poucos segundos não gerava o "Exaustor desligado" (o laço de 20 s não via o exaustor ligado); agora o aviso sai ~1 s depois do desligamento; em produção |
 | ✅ | **Notificação por tela aberta (14/10):** o aviso não aparece quando a tela dele está aberta (exaustor, central, mensagens, início) e a tela se atualiza na hora; em outra tela ou com o app fechado, aparece. O alarme de incêndio aparece sempre. Validado no J4 com comunicados 9 (Mensagens aberta: entrou na lista sem notificação) e 10 (Início aberta: notificação) e com o exaustor (tela do exaustor aberta: sem notificação; outra tela: "O exaustor da Torre A, final 4, foi desligado.") |
 | ✅ | **J4 (14/10):** "faltam 15 minutos" chegou a quem ligou; com o app fechado, o "desligado" pelo painel v2 chegou e o toque abriu o exaustor já atualizado |
 | ❌ | **Validar no J4:** alarme com o app fechado e tela bloqueada (com a equipe) e cartão de permissão num Android 13+ |
 | ✅ | **Figma (14/10):** cartão da home (08e), tela Notificações para morador/equipe e estados de permissão, canal bloqueado e registro pendente (09a–09e); central com ação "Ativar notificações" (26b) |
-| 🟡 | **Publicação:** Política de Privacidade 1.2 (token, identificador de instalação, modelo e versões, conteúdo dos avisos e retenção) pronta na API, falta o deploy; formulário "Segurança dos dados" salvo como rascunho no Play Console (14/10) conforme [docs/seguranca-dos-dados.md](docs/seguranca-dos-dados.md); para concluir, falta a etapa Público-alvo (18 anos ou mais) |
+| ✅ | **Publicação:** Política de Privacidade 1.2 (token, identificador de instalação, modelo e versões, conteúdo dos avisos e retenção) em produção; "Segurança dos dados" salva no Play Console (14/10) conforme [docs/seguranca-dos-dados.md](docs/seguranca-dos-dados.md) |
 | ⚠️ | **Limite:** a entrega não é garantida em tempo real (economia de bateria, otimizações Samsung); nenhum texto promete aviso imediato |
 
 ## 7.2 Localização para ligar o exaustor — decidido em 13/10, implementado em 14/10
@@ -170,7 +170,7 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 | ✅ | **API** (14/10, commit `64645ab`, em produção): `location` no `POST /exhausts/{id}/on`, `exhaust.geofence.ts`, 403 com títulos estáveis ("Localização necessária", "Localização simulada", "Localização imprecisa", "Fora da área do condomínio"), recusas contando no limite de 10/min, só o resultado em log; `openapi.json`, `APP-GUIDE.md` e `CHANGELOG.md` atualizados; `tsc` limpo |
 | ✅ | **App** (14/10): permissão, leitura com `play-services-location`, localização simulada enviada como `mock`, avisos com ação na tela do exaustor e envio no comando; 5 testes unitários novos, teste de tela dos estados |
 | ✅ | **Figma** (14/10): 25c–25i — localização necessária, não permitida, aproximada, desligada, fora do condomínio, imprecisa e simulada |
-| 🟡 | **Publicação:** Política 1.2 já cobre (§3.8, §8-A); "Local exato" incluído em [docs/seguranca-dos-dados.md](docs/seguranca-dos-dados.md), falta atualizar o rascunho no Play Console |
+| ✅ | **Publicação:** Política 1.2 já cobre (§3.8, §8-A); "Local exato" (efêmero) declarado na Segurança dos dados do Play Console (14/10) |
 | ✅ | **Produção (14/10, deploy `64645ab`):** com conta de morador (A-124 → A4), `curl` recebeu os 4 títulos — sem localização, simulada, precisão de 500 m e ponto a ~5 km — sem acionar o relé; variáveis da área configuradas (403, não 503) |
 | ✅ | **J4 (14/10, Android 8.1, conta como morador):** "Ligar exaustor" sem permissão → "Localização necessária" sem enviar nada; negar → aviso some; negar com "Não perguntar novamente" → "Localização não permitida" com "Abrir configurações" (abre os dados do app); localização desligada → "Localização desligada" e "Ativar localização" abre o diálogo do Play Services, que religa; com permissão, dentro do condomínio, o A4 ligou em ~1 s e "Reiniciar tempo" voltou o prazo de 02:59:26 para 03:00:13. A4 desligado pela API em seguida |
 | ✅ | **J4 (14/10):** localização simulada pelo provedor do Google (`setMockMode`) → "Localização simulada" (25i), recusada pela API sem acionar o relé. Simulação só no GPS do Android não chega ao app: o provedor do Google usou a posição real |
@@ -188,17 +188,19 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 | ❌ | Ícone do app com a marca (hoje é o padrão do template) |
 | ❌ | R8 ativado e release testado no J4 |
 | ✅ | URLs públicas para a Play: `https://novaresidence.com.br/politica-de-privacidade` e `https://novaresidence.com.br/excluir-conta` |
-| ❌ | D-U-N-S, conta de organização, "Segurança dos dados", classificação, ficha da loja, conta de teste para a revisão, teste interno e produção |
+| ✅ | Play Console — Conteúdo do app (14/10): Segurança dos dados (com local exato), público-alvo 18+, classificação de conteúdo, sem anúncios e acesso ao app com a conta de teste (instruções em inglês, credenciais fora dos testes automáticos) |
+| ✅ | Conta de revisão `app.test@novaresidence.com.br` (14/10): pessoa fictícia 23002 do ERP, unidade XYZ-100, Termo aceito, exaustor **simulado** na API (`EXHAUST_DEMO_UNITS`, commit `9b9de89`, sem relé e sem verificação de área); validada no J4 (ligar, contador, reiniciar, avisos "faltam" e "desligado") |
+| ❌ | Ficha da loja (descrição, capturas, imagem de destaque), teste interno e produção |
 
 ## 9. Pendências imediatas (sem depender de terceiros)
 
 1. 🟡 Commit do trabalho de 12–13/10 feito, com entradas novas no `CHANGELOG.md`; as entradas antigas ainda citam a numeração anterior das telas.
 2. ✅ Deploy da API (no-cache, carrossel com migração 005, Termo 1.1) feito e validado no J4 (13/10). App commitado.
-3. ✅ Cadastro, tela de aceite, estado sem unidade e exclusão validados em produção com conta de teste (13/10). A conta para a revisão da Play ainda precisa ser criada e vinculada a uma unidade.
+3. ✅ Cadastro, tela de aceite, estado sem unidade e exclusão validados em produção com conta de teste (13/10). A conta para a revisão da Play foi criada e vinculada em 14/10 (seção 8).
 4. ✅ Avisos do Termo e tela de aceite desenhados no Figma pelo MCP (13/10).
 5. ❌ Trocar a senha pessoal usada nos testes (também consta do checklist de publicação).
 6. ✅ Faixa da tela 27 sincronizada no Figma com o texto implementado no app (13/10).
-7. 🟡 Push nativo funcionando no J4 (seção 7.1): redeploy da correção `cf58d48` e validar o alarme com a equipe; telas do Figma atualizadas em 14/10.
+7. 🟡 Push nativo funcionando no J4 (seção 7.1), correções em produção; falta validar o alarme com a equipe.
 8. 🟡 Verificação de localização do exaustor (seção 7.2): implementada e validada em produção e no J4 em 14/10 (centro -20.836533, -49.368565, raio 100 m); falta devolver o papel admin à conta usada no teste.
 9. ✅ Cores ajustadas para contraste refletidas no Figma (13/10).
 10. 🟡 Validar um alarme da central com a equipe.
