@@ -1,5 +1,6 @@
 package br.com.novaresidence.feature.exhaust
 
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,34 +32,36 @@ import androidx.compose.ui.unit.sp
 import br.com.novaresidence.R
 import br.com.novaresidence.core.ui.*
 
-private data class StateCopy(val image: Int, val title: String, val description: String, val info: String?)
+private data class StateCopy(val image: Int, val title: UiText, val description: UiText, val info: UiText?)
 
-private const val AutoOff = "Desligamento automático ao final do tempo programado."
-private const val LocationPrivacy = "A localização é usada só no momento do comando e não é guardada."
+private val AutoOff = uiText(R.string.exhaust_auto_off)
+private val LocationPrivacy = uiText(R.string.exhaust_location_privacy)
 
 /** Aviso de localização (Figma 25c–25i); o botão resolve no aparelho ([action]) ou repete o toque ([retry]). */
-private data class LocationCopy(val title: String, val description: String, val info: String, val action: String? = null, val retry: Boolean = false)
+private data class LocationCopy(val title: UiText, val description: UiText, val info: UiText, val action: UiText? = null, val retry: Boolean = false)
 
 private fun locationCopy(issue: LocationIssue, permissionBlocked: Boolean): LocationCopy = when (issue) {
-    LocationIssue.Permission -> if (permissionBlocked) LocationCopy("Localização não permitida",
-        "Permita o acesso à localização nas configurações do aparelho.", LocationPrivacy, "Abrir configurações")
-        else LocationCopy("Localização necessária", "Para ligar o exaustor, o app confere se você está no condomínio.", LocationPrivacy, "Permitir localização")
-    LocationIssue.Approximate -> LocationCopy("Localização precisa necessária",
-        "A localização aproximada não basta para confirmar que você está no condomínio.", LocationPrivacy,
-        if (permissionBlocked) "Abrir configurações" else "Permitir localização precisa")
-    LocationIssue.Disabled -> LocationCopy("Localização desligada", "Ative a localização do aparelho para ligar o exaustor.", LocationPrivacy, "Ativar localização")
-    LocationIssue.Outside -> LocationCopy("Fora do condomínio", "Você precisa estar no condomínio para ligar o exaustor.",
-        "A localização do aparelho pode ter erro dentro de prédios; tente perto de uma janela.")
-    LocationIssue.Inaccurate, LocationIssue.Unavailable -> LocationCopy("Localização imprecisa",
-        "Não foi possível confirmar sua localização com precisão.", "Tente perto de uma janela ou em área aberta do condomínio.", retry = true)
-    LocationIssue.Mock -> LocationCopy("Localização simulada", "Desative o aplicativo de localização simulada para ligar o exaustor.",
-        "Por segurança, o comando não é aceito com localização simulada.", retry = true)
+    LocationIssue.Permission -> if (permissionBlocked) LocationCopy(uiText(R.string.exhaust_location_denied_title),
+        uiText(R.string.exhaust_location_denied), LocationPrivacy, uiText(R.string.exhaust_open_settings))
+        else LocationCopy(uiText(R.string.exhaust_location_needed_title), uiText(R.string.exhaust_location_needed), LocationPrivacy,
+            uiText(R.string.exhaust_allow_location))
+    LocationIssue.Approximate -> LocationCopy(uiText(R.string.exhaust_location_precise_title),
+        uiText(R.string.exhaust_location_precise), LocationPrivacy,
+        uiText(if (permissionBlocked) R.string.exhaust_open_settings else R.string.exhaust_allow_precise_location))
+    LocationIssue.Disabled -> LocationCopy(uiText(R.string.exhaust_location_off_title), uiText(R.string.exhaust_location_off), LocationPrivacy,
+        uiText(R.string.exhaust_enable_location))
+    LocationIssue.Outside -> LocationCopy(uiText(R.string.exhaust_outside_title), uiText(R.string.exhaust_outside),
+        uiText(R.string.exhaust_outside_info))
+    LocationIssue.Inaccurate, LocationIssue.Unavailable -> LocationCopy(uiText(R.string.exhaust_inaccurate_title),
+        uiText(R.string.exhaust_inaccurate), uiText(R.string.exhaust_inaccurate_info), retry = true)
+    LocationIssue.Mock -> LocationCopy(uiText(R.string.exhaust_mock_title), uiText(R.string.exhaust_mock),
+        uiText(R.string.exhaust_mock_info), retry = true)
 }
 
 /** Exaustor da unidade ativa (Figma 19–24). [unitLabel] segue o formato "Apto. 124 · Torre A". */
 @Composable
 fun ExhaustScreen(
-    state: ExhaustState, unitLabel: String?, blockedMessage: String?,
+    state: ExhaustState, unitLabel: UiText?, blockedMessage: UiText?,
     activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit, selectUnit: () -> Unit,
     permissionBlocked: Boolean = false, locationAction: (LocationIssue) -> Unit = {},
 ) {
@@ -67,28 +70,28 @@ fun ExhaustScreen(
     val location = state.location?.takeIf { phase == ExhaustPhase.Off || phase == ExhaustPhase.Running }
         ?.let { it to locationCopy(it, permissionBlocked) }
     val phaseCopy = when (phase) {
-        ExhaustPhase.Off -> StateCopy(R.drawable.nova_exhaust_off, "Desligado", "Pronto para utilização.", AutoOff)
-        ExhaustPhase.Starting -> StateCopy(R.drawable.nova_exhaust_off, "Ligando", "Aguarde o exaustor ser acionado.", AutoOff)
-        ExhaustPhase.Running -> StateCopy(R.drawable.nova_exhaust_on, "Ligado",
-            state.remainingClock()?.let { "Tempo restante · $it" } ?: "Sem desligamento programado.", AutoOff)
-        ExhaustPhase.Finishing -> StateCopy(R.drawable.nova_exhaust_off, "Desligando", "Aguarde alguns instantes.", AutoOff)
-        ExhaustPhase.Offline -> StateCopy(R.drawable.nova_exhaust_offline, "Offline", "Não foi possível se comunicar com o exaustor.",
-            "O equipamento não pode ser utilizado enquanto estiver offline.")
-        ExhaustPhase.Maintenance -> StateCopy(R.drawable.nova_exhaust_maintenance, "Em manutenção", "O exaustor está temporariamente indisponível para utilização.",
-            "O uso será liberado após a conclusão da manutenção.")
+        ExhaustPhase.Off -> StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_off_title), uiText(R.string.exhaust_off), AutoOff)
+        ExhaustPhase.Starting -> StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_starting_title), uiText(R.string.exhaust_starting), AutoOff)
+        ExhaustPhase.Running -> StateCopy(R.drawable.nova_exhaust_on, uiText(R.string.exhaust_running_title),
+            state.remainingClock()?.let { uiText(R.string.exhaust_remaining_clock, it) } ?: uiText(R.string.exhaust_no_auto_off), AutoOff)
+        ExhaustPhase.Finishing -> StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_finishing_title), uiText(R.string.exhaust_finishing), AutoOff)
+        ExhaustPhase.Offline -> StateCopy(R.drawable.nova_exhaust_offline, uiText(R.string.exhaust_offline_title), uiText(R.string.exhaust_offline),
+            uiText(R.string.exhaust_offline_info))
+        ExhaustPhase.Maintenance -> StateCopy(R.drawable.nova_exhaust_maintenance, uiText(R.string.exhaust_maintenance_title), uiText(R.string.exhaust_maintenance),
+            uiText(R.string.exhaust_maintenance_info))
         // Resultado inconclusivo (falha de rede ou resposta de erro) mantém os textos aprovados: não afirmamos que falhou.
-        ExhaustPhase.Error -> if (state.error != null) StateCopy(R.drawable.nova_exhaust_off, "Não foi possível confirmar a ativação",
-            "Atualize o estado antes de tentar novamente.", "Se o problema continuar, informe a administração do condomínio.")
-            else StateCopy(R.drawable.nova_exhaust_off, "Falha na ativação", "Não foi possível ligar o exaustor. Tente novamente.",
-            "Se o problema continuar, informe a administração do condomínio.")
-        ExhaustPhase.Loading -> StateCopy(R.drawable.nova_exhaust_off, "Consultando", "Aguarde enquanto consultamos o estado do equipamento.", null)
-        ExhaustPhase.Unavailable -> StateCopy(R.drawable.nova_exhaust_offline, "Indisponível",
-            blockedMessage ?: if (unitLabel == null) "Selecione uma unidade vinculada para consultar seu exaustor." else "Nenhum exaustor disponível para esta unidade.",
-            "O estado exibido é exclusivo do equipamento da sua unidade.")
+        ExhaustPhase.Error -> if (state.error != null) StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_uncertain_title),
+            uiText(R.string.exhaust_uncertain), uiText(R.string.exhaust_error_info))
+            else StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_failed_title), uiText(R.string.exhaust_failed),
+            uiText(R.string.exhaust_error_info))
+        ExhaustPhase.Loading -> StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_loading_title), uiText(R.string.exhaust_loading), null)
+        ExhaustPhase.Unavailable -> StateCopy(R.drawable.nova_exhaust_offline, uiText(R.string.exhaust_unavailable_title),
+            blockedMessage ?: uiText(if (unitLabel == null) R.string.exhaust_select_unit else R.string.exhaust_none_for_unit),
+            uiText(R.string.exhaust_unavailable_info))
     }
     val copy = location?.second?.let { StateCopy(phaseCopy.image, it.title, it.description, it.info) } ?: phaseCopy
     Column(Modifier.fillMaxSize().background(NovaServiceBackground)) {
-        NovaTopBar("Exaustor")
+        NovaTopBar(stringResource(R.string.exhaust_title))
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             // Em telas mais baixas que o frame (ex.: J4 com botões), a ilustração encolhe antes de esconder ação e aviso (DESIGN_GUIDE §6).
             val illustration = (maxHeight - 452.dp).coerceIn(150.dp, 247.dp)
@@ -99,15 +102,15 @@ fun ExhaustScreen(
                     Column(Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 18.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         NovaIllustration(copy.image, Modifier.height(illustration).aspectRatio(329f / 247f, matchHeightConstraintsFirst = true))
-                        Text(copy.title, Modifier.fillMaxWidth().semantics { heading(); liveRegion = LiveRegionMode.Polite }, style = NovaType.Hero, color = NovaInk, textAlign = TextAlign.Center)
-                        Text(copy.description, Modifier.fillMaxWidth(), color = NovaOnSurfaceVariant, textAlign = TextAlign.Center,
+                        Text(copy.title.text(), Modifier.fillMaxWidth().semantics { heading(); liveRegion = LiveRegionMode.Polite }, style = NovaType.Hero, color = NovaInk, textAlign = TextAlign.Center)
+                        Text(copy.description.text(), Modifier.fillMaxWidth(), color = NovaOnSurfaceVariant, textAlign = TextAlign.Center,
                             style = if (phase == ExhaustPhase.Running) NovaType.HeroSupporting.copy(fontWeight = FontWeight.Medium) else NovaType.HeroSupporting)
-                        if (phase == ExhaustPhase.Error) state.error?.let { Text(it, Modifier.fillMaxWidth(), style = NovaType.Body, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
-                        if (state.retrySeconds > 0) Text("Tente novamente em ${state.retrySeconds}s", style = NovaType.Body, color = NovaOnSurfaceVariant)
+                        if (phase == ExhaustPhase.Error) state.error?.let { Text(it.text(), Modifier.fillMaxWidth(), style = NovaType.Body, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
+                        if (state.retrySeconds > 0) Text(stringResource(R.string.auth_retry_in, state.retrySeconds), style = NovaType.Body, color = NovaOnSurfaceVariant)
                         Column(Modifier.fillMaxWidth().padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                             Action(phase, state, blockedMessage, activate, restart, refresh, location, locationAction)
-                            copy.info?.let { NovaInfoStrip(it) }
-                            state.requestId?.let { Text("Referência para suporte: $it", Modifier.fillMaxWidth(), style = NovaType.Caption, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
+                            copy.info?.let { NovaInfoStrip(it.text()) }
+                            state.requestId?.let { Text(stringResource(R.string.common_support_reference, it), Modifier.fillMaxWidth(), style = NovaType.Caption, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
                         }
                     }
                 }
@@ -118,17 +121,17 @@ fun ExhaustScreen(
 
 @Composable
 private fun Action(
-    phase: ExhaustPhase, state: ExhaustState, blockedMessage: String?, activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit,
+    phase: ExhaustPhase, state: ExhaustState, blockedMessage: UiText?, activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit,
     location: Pair<LocationIssue, LocationCopy>?, locationAction: (LocationIssue) -> Unit,
 ) {
     val power = NovaType.Button.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
     val running = phase == ExhaustPhase.Running
     val action = location?.second?.action
     when {
-        state.locating -> NovaButton("Verificando localização...", {}, enabled = false, icon = if (running) null else R.drawable.nova_power,
+        state.locating -> NovaButton(stringResource(R.string.exhaust_checking_location), {}, enabled = false, icon = if (running) null else R.drawable.nova_power,
             style = if (running) NovaButtonStyle.Outlined else NovaButtonStyle.Primary, height = 52.dp, textStyle = power)
-        location != null && action != null -> NovaButton(action, { locationAction(location.first) }, enabled = blockedMessage == null, height = 52.dp)
-        location != null && location.second.retry -> NovaButton("Tentar novamente", if (running) restart else activate,
+        location != null && action != null -> NovaButton(action.text(), { locationAction(location.first) }, enabled = blockedMessage == null, height = 52.dp)
+        location != null && location.second.retry -> NovaButton(stringResource(R.string.exhaust_try_again), if (running) restart else activate,
             enabled = (if (running) state.canRestart else state.canActivate) && blockedMessage == null, height = 52.dp)
         else -> PhaseAction(phase, state, blockedMessage, activate, restart, refresh, power)
     }
@@ -136,19 +139,19 @@ private fun Action(
 
 @Composable
 private fun PhaseAction(
-    phase: ExhaustPhase, state: ExhaustState, blockedMessage: String?, activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit,
+    phase: ExhaustPhase, state: ExhaustState, blockedMessage: UiText?, activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit,
     power: TextStyle,
 ) {
     when (phase) {
-        ExhaustPhase.Off -> NovaButton("Ligar exaustor", activate, enabled = state.canActivate && blockedMessage == null,
+        ExhaustPhase.Off -> NovaButton(stringResource(R.string.exhaust_turn_on), activate, enabled = state.canActivate && blockedMessage == null,
             icon = R.drawable.nova_power, height = 52.dp, textStyle = power)
-        ExhaustPhase.Starting -> NovaButton("Ligando...", {}, enabled = false, icon = R.drawable.nova_power, height = 52.dp, textStyle = power)
-        ExhaustPhase.Finishing -> NovaButton("Desligando...", {}, enabled = false, icon = R.drawable.nova_power, height = 52.dp, textStyle = power)
-        ExhaustPhase.Running -> NovaButton(if (state.restarting) "Reiniciando..." else "Reiniciar tempo", restart,
+        ExhaustPhase.Starting -> NovaButton(stringResource(R.string.exhaust_turning_on), {}, enabled = false, icon = R.drawable.nova_power, height = 52.dp, textStyle = power)
+        ExhaustPhase.Finishing -> NovaButton(stringResource(R.string.exhaust_turning_off), {}, enabled = false, icon = R.drawable.nova_power, height = 52.dp, textStyle = power)
+        ExhaustPhase.Running -> NovaButton(stringResource(if (state.restarting) R.string.exhaust_restarting else R.string.exhaust_restart), restart,
             enabled = state.canRestart && blockedMessage == null, style = NovaButtonStyle.Outlined, height = 52.dp)
-        ExhaustPhase.Error -> NovaButton("Tentar novamente", if (state.canActivate) activate else refresh,
+        ExhaustPhase.Error -> NovaButton(stringResource(R.string.exhaust_try_again), if (state.canActivate) activate else refresh,
             enabled = !state.sending && !state.loading && state.retrySeconds == 0L, height = 52.dp)
-        ExhaustPhase.Unavailable -> NovaButton("Atualizar", refresh, enabled = !state.loading && state.retrySeconds == 0L,
+        ExhaustPhase.Unavailable -> NovaButton(stringResource(R.string.exhaust_refresh), refresh, enabled = !state.loading && state.retrySeconds == 0L,
             style = NovaButtonStyle.Secondary, height = 52.dp)
         else -> Unit
     }
@@ -156,29 +159,30 @@ private fun PhaseAction(
 
 /** Cartão "Unidade ativa · Equipamento" (Figma 19); o toque abre a seleção de unidade. */
 @Composable
-private fun ContextCard(unitLabel: String?, state: ExhaustState, selectUnit: () -> Unit) {
+private fun ContextCard(unitLabel: UiText?, state: ExhaustState, selectUnit: () -> Unit) {
     val shape = RoundedCornerShape(18.dp)
     val exhaust = state.exhaust
     val (label, color, container) = when {
-        exhaust == null -> if (state.loading) Triple("Consultando", NovaPrimary, NovaPrimarySoft) else Triple("Indisponível", NovaOffline, NovaOfflineContainer)
-        !exhaust.moduleOnline -> Triple("Offline", NovaOffline, NovaOfflineContainer)
-        exhaust.maintenance -> Triple("Manutenção", NovaWarning, NovaWarningContainer)
-        else -> Triple("Disponível", NovaSuccess, NovaSuccessContainer)
+        exhaust == null -> if (state.loading) Triple(R.string.exhaust_badge_loading, NovaPrimary, NovaPrimarySoft)
+            else Triple(R.string.exhaust_badge_unavailable, NovaOffline, NovaOfflineContainer)
+        !exhaust.moduleOnline -> Triple(R.string.exhaust_badge_offline, NovaOffline, NovaOfflineContainer)
+        exhaust.maintenance -> Triple(R.string.exhaust_badge_maintenance, NovaWarning, NovaWarningContainer)
+        else -> Triple(R.string.exhaust_badge_available, NovaSuccess, NovaSuccessContainer)
     }
     Row(Modifier.fillMaxWidth().clip(shape).background(Color.White).border(1.dp, NovaOutline, shape)
-        .clickable(role = Role.Button, onClickLabel = "Selecionar unidade", onClick = selectUnit).heightIn(min = 116.dp).padding(16.dp),
+        .clickable(role = Role.Button, onClickLabel = stringResource(R.string.home_select_unit), onClick = selectUnit).heightIn(min = 116.dp).padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(48.dp).background(NovaPrimaryTint, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
             Icon(painterResource(R.drawable.nova_units), null, Modifier.size(28.dp), tint = NovaPrimary)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Unidade ativa", style = NovaType.Supporting, color = NovaOnSurfaceVariant)
-            Text(unitLabel ?: "Nenhuma unidade", style = NovaType.HeroSupporting.copy(fontWeight = FontWeight.Bold), color = NovaInk)
+            Text(stringResource(R.string.exhaust_active_unit), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
+            Text(unitLabel?.text() ?: stringResource(R.string.home_no_unit), style = NovaType.HeroSupporting.copy(fontWeight = FontWeight.Bold), color = NovaInk)
         }
         VerticalDivider(Modifier.height(60.dp), color = NovaOutline)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Equipamento", style = NovaType.Supporting, color = NovaOnSurfaceVariant)
-            NovaStatusBadge(label, color, container, height = 22.dp)
+            Text(stringResource(R.string.exhaust_equipment), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
+            NovaStatusBadge(stringResource(label), color, container, height = 22.dp)
         }
     }
 }

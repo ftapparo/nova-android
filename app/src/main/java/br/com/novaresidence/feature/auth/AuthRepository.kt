@@ -1,5 +1,8 @@
 package br.com.novaresidence.feature.auth
 
+import br.com.novaresidence.core.ui.uiText
+import br.com.novaresidence.core.ui.UiText
+import br.com.novaresidence.R
 import br.com.novaresidence.core.network.ApiClient
 import br.com.novaresidence.core.session.AuthUser
 import br.com.novaresidence.core.session.SessionData
@@ -67,10 +70,10 @@ fun validateAuthForm(
     password: String? = null,
     newPassword: Boolean = false,
     code: String? = null,
-): Map<String, String> = buildMap {
-    if (email != null && !Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$").matches(email.trim())) put("email", "Informe um e-mail válido.")
+): Map<String, UiText> = buildMap {
+    if (email != null && !Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$").matches(email.trim())) put("email", uiText(R.string.auth_invalid_email))
     if (password != null && (password.isEmpty() || (newPassword && password.length < 8))) {
-        put(if (newPassword) "newPassword" else "password", if (newPassword) "Use pelo menos 8 caracteres." else "Informe sua senha.")
+        put(if (newPassword) "newPassword" else "password", uiText(if (newPassword) R.string.auth_password_hint else R.string.auth_enter_password))
     }
-    if (code != null && !Regex("^[0-9]{6}$").matches(code)) put("code", "Informe o código de 6 dígitos.")
+    if (code != null && !Regex("^[0-9]{6}$").matches(code)) put("code", uiText(R.string.auth_enter_code))
 }

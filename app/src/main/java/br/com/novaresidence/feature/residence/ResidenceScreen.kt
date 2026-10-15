@@ -1,5 +1,7 @@
 package br.com.novaresidence.feature.residence
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,7 +47,7 @@ import br.com.novaresidence.core.ui.*
 enum class ServiceTone { Neutral, Running, Alarm }
 
 /** Estado de um serviço na home (Figma 08a–08c): [highlight] é a linha em destaque, [text] a de apoio. */
-data class ServiceStatus(val text: String, val highlight: String? = null, val tone: ServiceTone = ServiceTone.Neutral)
+data class ServiceStatus(val text: UiText, val highlight: UiText? = null, val tone: ServiceTone = ServiceTone.Neutral)
 
 /** Conteúdo de uma aba de serviço; [fullScreen] oculta o menu inferior (histórico e detalhe da central). */
 typealias ServiceContent = @Composable (unit: ResidenceUnit?, selectUnit: () -> Unit, fullScreen: (Boolean) -> Unit) -> Unit
@@ -63,7 +65,7 @@ private val PageStackSaver = listSaver<List<ResidencePage>, String>({ it.map(Res
 @Composable
 fun ResidenceScreen(
     state: ResidenceState, user: AuthUser, select: (Int) -> Unit, refresh: () -> Unit,
-    logout: () -> Unit, busy: Boolean, saveLanguage: () -> Unit = {},
+    logout: () -> Unit, busy: Boolean, saveLanguage: (AppLanguage) -> Unit = {},
     exhaustStatus: ServiceStatus? = null, fireStatus: ServiceStatus? = null,
     unreadMessages: Int = 0,
     /** Carrossel de comunicados da home (08d); recebe a ação de abrir um comunicado. */
@@ -74,7 +76,7 @@ fun ResidenceScreen(
     /** Termo de Uso ([terms] = true) ou Política de Privacidade (13 e 14), publicados pela API. */
     legalContent: (@Composable (terms: Boolean, back: () -> Unit) -> Unit)? = null,
     /** Excluir conta (16); [deleteError] é a falha da última tentativa. */
-    deleteAccount: () -> Unit = {}, deleteError: String? = null,
+    deleteAccount: () -> Unit = {}, deleteError: UiText? = null,
     /** Cartão da home que pede a permissão de notificação; nulo quando não se aplica. */
     notificationPrompt: (@Composable () -> Unit)? = null,
     /** Notificações (aberta pelas Configurações). */
@@ -150,9 +152,9 @@ fun ResidenceScreen(
             }
         }
         if (navVisible) NavigationBarFigma {
-            NavItem(page == ResidencePage.Home, "Início", R.drawable.nova_home, R.drawable.nova_home_selected) { navigate(ResidencePage.Home) }
-            NavItem(page == ResidencePage.Fire, "Alarme", R.drawable.nova_alarm_nav, R.drawable.nova_alarm_selected, enabled = canOpenFire) { navigate(ResidencePage.Fire) }
-            NavItem(page == ResidencePage.Exhaust, "Exaustor", R.drawable.nova_exhaust_nav, R.drawable.nova_exhaust_selected, enabled = canOpenExhaust) { navigate(ResidencePage.Exhaust) }
+            NavItem(page == ResidencePage.Home, stringResource(R.string.nav_home), R.drawable.nova_home, R.drawable.nova_home_selected) { navigate(ResidencePage.Home) }
+            NavItem(page == ResidencePage.Fire, stringResource(R.string.nav_alarm), R.drawable.nova_alarm_nav, R.drawable.nova_alarm_selected, enabled = canOpenFire) { navigate(ResidencePage.Fire) }
+            NavItem(page == ResidencePage.Exhaust, stringResource(R.string.nav_exhaust), R.drawable.nova_exhaust_nav, R.drawable.nova_exhaust_selected, enabled = canOpenExhaust) { navigate(ResidencePage.Exhaust) }
         }
         Spacer(Modifier.fillMaxWidth().background(if (navVisible || page in WhitePages) Color.White else NovaBackground)
             .windowInsetsBottomHeight(WindowInsets.navigationBars))
@@ -210,48 +212,48 @@ private fun Home(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(Modifier.weight(1f, fill = false).padding(end = 16.dp).widthIn(min = 194.dp).height(40.dp)
                     .clip(CircleShape).background(NovaHeaderControl)
-                    .clickable(enabled = !residence?.units.isNullOrEmpty(), role = Role.Button, onClickLabel = "Selecionar unidade") { navigate(ResidencePage.SelectUnit) }
+                    .clickable(enabled = !residence?.units.isNullOrEmpty(), role = Role.Button, onClickLabel = stringResource(R.string.home_select_unit)) { navigate(ResidencePage.SelectUnit) }
                     .padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(painterResource(R.drawable.nova_units), null, Modifier.size(24.dp), tint = Color.White)
-                    Text(unit?.homeLabel() ?: "Nenhuma unidade", style = NovaType.BodyEmphasis, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(unit?.homeLabel()?.text() ?: stringResource(R.string.home_no_unit), style = NovaType.BodyEmphasis, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Row(Modifier.offset(x = 4.dp), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
-                    HeaderButton(R.drawable.nova_bell, if (unreadMessages > 0) "Mensagens, $unreadMessages não lidas" else "Mensagens", 42,
+                    HeaderButton(R.drawable.nova_bell, if (unreadMessages > 0) pluralStringResource(R.plurals.home_messages_unread, unreadMessages, unreadMessages) else stringResource(R.string.home_messages), 42,
                         badge = unreadMessages, click = openMessages)
-                    HeaderButton(R.drawable.nova_profile_nav, "Configurações", 40) { navigate(ResidencePage.Settings) }
+                    HeaderButton(R.drawable.nova_profile_nav, stringResource(R.string.home_settings), 40) { navigate(ResidencePage.Settings) }
                 }
             }
             val firstName = residence?.person?.nome?.takeIf { it.isNotBlank() }?.personName()?.substringBefore(' ')
-            Text(if (firstName != null) "Olá, $firstName!" else "Olá!", Modifier.semantics { heading() }, style = NovaType.HeadlineHome, color = Color.White)
+            Text(if (firstName != null) stringResource(R.string.home_hello_name, firstName) else stringResource(R.string.home_hello), Modifier.semantics { heading() }, style = NovaType.HeadlineHome, color = Color.White)
         }
         Column(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(NovaBackground)
             .verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, top = 16.dp, bottom = 16.dp)) {
             val notices = listOfNotNull(state.error, residence?.notice(), unit?.blockedMessage())
             if (notices.isNotEmpty() || residence?.status != "ativo") Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                state.error?.let { NovaNotice(it, state.requestId) }
-                residence?.notice()?.let { NovaNotice(it) }
-                unit?.blockedMessage()?.let { NovaNotice(it) }
+                state.error?.let { NovaNotice(it.text(), state.requestId) }
+                residence?.notice()?.let { NovaNotice(it.text()) }
+                unit?.blockedMessage()?.let { NovaNotice(it.text()) }
                 if (state.error != null || residence?.status != "ativo") NovaButton(
-                    if (state.retrySeconds > 0) "Tente novamente em ${state.retrySeconds}s" else "Atualizar cadastro", refresh,
+                    if (state.retrySeconds > 0) stringResource(R.string.home_retry_in, state.retrySeconds) else stringResource(R.string.home_refresh_registration), refresh,
                     enabled = !state.loading && state.retrySeconds == 0L, style = NovaButtonStyle.Secondary,
                 )
             }
             // O alarme de incêndio com o app fechado depende da permissão; o pedido fica na home até ser aceito ou dispensado.
             if (services && notificationPrompt != null) Box(Modifier.padding(top = 24.dp)) { notificationPrompt() }
             if (services) Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                Text("Serviços do condomínio", Modifier.semantics { heading() }, style = NovaType.SectionTitle, color = NovaOnSurface)
+                Text(stringResource(R.string.home_services), Modifier.semantics { heading() }, style = NovaType.SectionTitle, color = NovaOnSurface)
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ServiceCard("Central de Incêndio", R.drawable.nova_alarm_nav, fireStatus ?: ServiceStatus("Consultando a central…"), canOpenFire) { navigate(ResidencePage.Fire) }
-                    ServiceCard("Exaustor", R.drawable.nova_exhaust_nav, exhaustStatus ?: ServiceStatus("Consultando equipamento…"), canOpenExhaust) { navigate(ResidencePage.Exhaust) }
+                    ServiceCard(stringResource(R.string.home_fire_panel), R.drawable.nova_alarm_nav, fireStatus ?: ServiceStatus(uiText(R.string.home_fire_loading)), canOpenFire) { navigate(ResidencePage.Fire) }
+                    ServiceCard(stringResource(R.string.home_exhaust), R.drawable.nova_exhaust_nav, exhaustStatus ?: ServiceStatus(uiText(R.string.home_exhaust_loading)), canOpenExhaust) { navigate(ResidencePage.Exhaust) }
                 }
             }
             // Comunicados (Figma 08a/08d): o carrossel vem da feature de mensagens. Só equipe e morador com
             // unidade liberada leem comunicados (a API responde 403 aos demais), então a seção some sem acesso.
             if (services) Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Informativos do condomínio", Modifier.semantics { heading() }, style = NovaType.SectionTitle, color = NovaOnSurface)
+                Text(stringResource(R.string.home_news), Modifier.semantics { heading() }, style = NovaType.SectionTitle, color = NovaOnSurface)
                 if (messages != null) messages()
                 else Box(Modifier.fillMaxWidth().border(1.dp, NovaOutline, RoundedCornerShape(16.dp)).heightIn(min = 68.dp).padding(16.dp), contentAlignment = Alignment.CenterStart) {
-                    Text("Nenhuma mensagem nova", style = NovaType.Body, color = NovaOnSurfaceVariant)
+                    Text(stringResource(R.string.home_no_messages), style = NovaType.Body, color = NovaOnSurfaceVariant)
                 }
             }
         }
@@ -290,8 +292,8 @@ private fun ServiceCard(title: String, icon: Int, status: ServiceStatus, enabled
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = NovaType.ItemTitle, color = NovaOnSurface)
-            status.highlight?.let { Text(it, style = NovaType.Highlight.copy(lineHeight = NovaType.ItemTitle.lineHeight), color = if (status.tone == ServiceTone.Running) NovaSuccess else NovaOnSurface) }
-            Text(status.text, style = if (status.highlight != null) NovaType.Body else NovaType.Supporting, color = NovaOnSurfaceVariant)
+            status.highlight?.let { Text(it.text(), style = NovaType.Highlight.copy(lineHeight = NovaType.ItemTitle.lineHeight), color = if (status.tone == ServiceTone.Running) NovaSuccess else NovaOnSurface) }
+            Text(status.text.text(), style = if (status.highlight != null) NovaType.Body else NovaType.Supporting, color = NovaOnSurfaceVariant)
         }
         if (enabled) Icon(painterResource(R.drawable.nova_chevron_forward), null, Modifier.size(20.dp), tint = Color(0xFF1D1B20))
     }

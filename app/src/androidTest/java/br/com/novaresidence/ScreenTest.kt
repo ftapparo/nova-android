@@ -11,6 +11,7 @@ import br.com.novaresidence.core.network.*
 import br.com.novaresidence.core.session.*
 import br.com.novaresidence.core.ui.NovaResidenceTheme
 import br.com.novaresidence.core.ui.NovaSplash
+import br.com.novaresidence.core.ui.uiText
 import br.com.novaresidence.feature.auth.*
 import br.com.novaresidence.feature.residence.*
 import br.com.novaresidence.feature.exhaust.*
@@ -104,7 +105,7 @@ class ScreenTest {
         compose.runOnIdle { model.navigate(AuthPage.ChangePassword) }
         compose.onNodeWithText("Senha atual").assertIsDisplayed()
         capture("password_change")
-        compose.runOnIdle { model.navigate(AuthPage.Error); model.showMessage("E-mail ou senha incorretos.") }
+        compose.runOnIdle { model.navigate(AuthPage.Error); model.showMessage(uiText(R.string.error_unauthorized)) }
         compose.onNodeWithText("Confira seus dados de acesso e sua senha ou recupere seu acesso.").assertIsDisplayed()
         capture("07_auth_error")
     }
@@ -117,7 +118,7 @@ class ScreenTest {
         compose.runOnIdle { state = state.copy(page = AuthPage.Login) }
         compose.onNodeWithText("Entrar").assertIsNotEnabled()
         capture("login_loading")
-        compose.runOnIdle { state = state.copy(busy = false, retrySeconds = 42, error = "Muitas tentativas. Aguarde para tentar novamente.") }
+        compose.runOnIdle { state = state.copy(busy = false, retrySeconds = 42, error = uiText(R.string.error_rate_limited)) }
         compose.onNodeWithText("Entrar").assertIsNotEnabled()
         compose.onNodeWithText("Tente novamente em 42s").performScrollTo().assertIsDisplayed()
         capture("login_rate_limit")
@@ -133,7 +134,7 @@ class ScreenTest {
         val second = first.copy(sequencia = 2, quadra = "A", label = "A-84", blocked = true, blockedReason = "nao-morador")
         var state by mutableStateOf(ResidenceState(Residence("ativo", false, ResidencePerson(91, "Morador de teste"), listOf(first, second)), 1))
         compose.setContent { NovaResidenceTheme { ResidenceScreen(state, user, { state = state.copy(selectedUnit = it) }, {}, {}, false,
-            exhaustStatus = ServiceStatus("Disponível para utilização."),
+            exhaustStatus = ServiceStatus(uiText(R.string.exhaust_home_off)),
             messagesContent = { initial, back -> MessagesFeature(MessageState(list = emptyList()), initial, back, {}, {}) }) } }
         compose.onNodeWithText("Olá, Morador!").assertIsDisplayed()
         compose.onNodeWithText("Apto. 84 - Torre B").assertIsDisplayed()
@@ -164,7 +165,7 @@ class ScreenTest {
         capture("home_pending")
         compose.runOnIdle { state = ResidenceState(Residence("sem-unidade", true, null, emptyList())) }
         capture("home_no_unit")
-        compose.runOnIdle { state = ResidenceState(error = "Não foi possível conectar. Verifique sua conexão e tente novamente.") }
+        compose.runOnIdle { state = ResidenceState(error = uiText(R.string.error_network)) }
         capture("home_error")
     }
 
@@ -342,7 +343,7 @@ class ScreenTest {
         var state by mutableStateOf(ResidenceState(Residence("ativo", false, ResidencePerson(91, "Morador de teste", "•••.456.789-••"), listOf(first, second)), 1))
         var deletions = 0
         // Sem WebView nem rede: o documento aparece no estado de falha, com o título e a ação de tentar de novo.
-        val offline = LegalState(error = "Não foi possível carregar o documento.")
+        val offline = LegalState(error = uiText(R.string.legal_load_failed))
         compose.setContent { NovaResidenceTheme {
             ResidenceScreen(state, AuthUser("test", "resident@example.com", "morador", false), { state = state.copy(selectedUnit = it) }, {}, {}, false,
                 legalContent = { terms, back -> LegalDocumentScreen(offline, if (terms) TermsDocument else PrivacyDocument, back) {} },
@@ -500,8 +501,8 @@ class ScreenTest {
             val unit = ResidenceUnit(1, "A", "124", "A-124", true, false, true, false, null)
             ResidenceScreen(ResidenceState(Residence("ativo", false, ResidencePerson(91, "Morador de teste"), listOf(unit)), 1),
                 AuthUser("test", null, "morador", false), {}, {}, {}, false,
-                fireStatus = ServiceStatus("Nenhum alarme de incêndio ativo."),
-                exhaustStatus = ServiceStatus("Disponível para utilização."),
+                fireStatus = ServiceStatus(uiText(R.string.fire_home_normal)),
+                exhaustStatus = ServiceStatus(uiText(R.string.exhaust_home_off)),
                 notificationPrompt = if (!dismissed) ({ NotificationPrompt({ requests++ }, { dismissed = true }) }) else null)
         } }
         compose.onNodeWithText("Ative as notificações").assertIsDisplayed()

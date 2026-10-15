@@ -4,7 +4,10 @@ import br.com.novaresidence.TestSessionStore
 import br.com.novaresidence.core.network.ApiClient
 import br.com.novaresidence.core.network.ApiTransport
 import br.com.novaresidence.core.session.SessionCoordinator
+import br.com.novaresidence.R
+import br.com.novaresidence.core.ui.asUiText
 import br.com.novaresidence.core.ui.clockTime
+import br.com.novaresidence.core.ui.uiText
 import br.com.novaresidence.core.ui.dayLabel
 import br.com.novaresidence.testSession
 import kotlinx.coroutines.*
@@ -23,8 +26,11 @@ import org.junit.Test
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Locale
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
+private val PtBr = Locale.forLanguageTag("pt-BR")
+
 class FireTest {
     private val main = newSingleThreadContext("fire-test")
     private val server = MockWebServer()
@@ -60,7 +66,7 @@ class FireTest {
         assertEquals(FireStatus.Offline, FireState(panel.copy(connected = false), CieAlarms(false), loading = false).status)
         val alarm = FireState(panel.copy(connected = false), CieAlarms(true, CieCounters(alarme = 1), listOf(log("alarme"))), loading = false)
         assertEquals("o alarme prevalece sobre a falta de comunicação", FireStatus.Alarm, alarm.status)
-        assertEquals("Torre B - Andar 8", alarm.homeAlarmPlace())
+        assertEquals(uiText(R.string.fire_home_place, "Torre B", uiText(R.string.fire_home_floor, 8)), alarm.homeAlarmPlace())
         assertNull(FireState(panel, CieAlarms(false), loading = false).homeAlarmPlace())
         val active = log("alarme", device = "16 ANDAR B T-B")
         assertEquals("o alarme ativo agora prevalece sobre o histórico", "16º andar",
@@ -76,7 +82,7 @@ class FireTest {
         assertEquals("Torre B · 8º andar", log("alarme").placeLine())
         assertEquals("Torre B - 8º andar", log("alarme").placeLine(" - "))
         val operation = CieLog("op", "operacao", 1, deviceTypeLabel = "Ausente", occurredAt = "2026-09-21T18:48:10.000Z")
-        assertEquals("Evento operacional", operation.historyTitle())
+        assertEquals(uiText(R.string.fire_history_operational), operation.historyTitle())
         assertNull(operation.deviceType())
         assertNull(log("alarme", device = "\u0000\u0000").floorLabel())
     }
@@ -89,19 +95,19 @@ class FireTest {
                 place = CiePlace(towerLabel = "Torre A", floor = 0, floorLabel = "Térreo"), loop = 1, address = 181, zoneName = "TORRE A"),
         )
         assertEquals("Térreo", interpreted.floorLabel())
-        assertEquals("Torre A · Térreo", interpreted.historyTitle())
+        assertEquals("Torre A · Térreo".asUiText(), interpreted.historyTitle())
         assertEquals("L1D181", interpreted.loopAddress())
-        assertEquals("Dispositivo em falha", interpreted.detailTitle())
-        assertEquals("Falha", interpreted.categoryLabel())
+        assertEquals(uiText(R.string.fire_detail_failure), interpreted.detailTitle())
+        assertEquals(uiText(R.string.fire_category_failure), interpreted.categoryLabel())
         assertEquals("TORRE A", interpreted.zoneNameRaw())
         val rule = CieLog("op:2", "operacao", 1744, occurredAt = "2026-10-04T21:56:19Z", display = CieDisplay(rule = CieRule(3, "TORRE B\u0000")))
-        assertEquals("o nome da regra identifica operações sem local", "TORRE B", rule.historyTitle())
+        assertEquals("o nome da regra identifica operações sem local", "TORRE B".asUiText(), rule.historyTitle())
         val ruleWithZone = rule.copy(zoneName = "TORRE B", deviceName = "TORRE B", display = CieDisplay(deviceName = "TORRE B", rule = CieRule(3, "TORRE B")))
         assertNull("sem place da API, o nome da zona não vira local", ruleWithZone.placeLine())
-        assertEquals("TORRE B", ruleWithZone.historyTitle())
+        assertEquals("TORRE B".asUiText(), ruleWithZone.historyTitle())
         val system = CieLog("op:3", "operacao", 1743, loop = 0, address = 0, occurredAt = "2026-10-04T21:57:37Z",
             event = CieEventInfo(category = "operacao", label = "Sistema Iniciado"), display = CieDisplay(loop = 0, address = 0))
-        assertEquals("Sistema Iniciado", system.historyTitle())
+        assertEquals("Sistema Iniciado".asUiText(), system.historyTitle())
         val area = CieLog("f:3", "falha", 3, occurredAt = "2026-10-04T21:56:19Z", display = CieDisplay(place = CiePlace(area = "Elevador", areaDetail = "1")))
         assertEquals("Elevador 1", area.placeLine())
     }
@@ -109,10 +115,11 @@ class FireTest {
     @Test fun `historico agrupa por hoje, ontem e data curta no fuso do aparelho`() {
         val zone = ZoneId.of("America/Sao_Paulo")
         val today = LocalDate.of(2026, 9, 21)
-        assertEquals("Hoje", Instant.parse("2026-09-21T18:48:10Z").dayLabel(zone, today))
-        assertEquals("Ontem", Instant.parse("2026-09-21T00:18:00Z").dayLabel(zone, today))
-        assertEquals("18 set", Instant.parse("2026-09-18T05:14:00Z").dayLabel(zone, today))
-        assertEquals("21/09/2026 · 15:48:10", Instant.parse("2026-09-21T18:48:10Z").fullTime(zone))
+        assertEquals(uiText(R.string.date_today), Instant.parse("2026-09-21T18:48:10Z").dayLabel(zone, today))
+        assertEquals(uiText(R.string.date_yesterday), Instant.parse("2026-09-21T00:18:00Z").dayLabel(zone, today))
+        assertEquals("18 set".asUiText(), Instant.parse("2026-09-18T05:14:00Z").dayLabel(zone, today, PtBr))
+        assertEquals("21/09/2026 · 15:48:10", Instant.parse("2026-09-21T18:48:10Z").fullTime(zone, PtBr))
+        assertEquals("09/21/2026 · 15:48:10", Instant.parse("2026-09-21T18:48:10Z").fullTime(zone, Locale.ENGLISH))
         assertEquals("15:48", Instant.parse("2026-09-21T18:48:10Z").clockTime(zone))
     }
 

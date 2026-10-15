@@ -1,5 +1,8 @@
 package br.com.novaresidence.feature.exhaust
 
+import br.com.novaresidence.core.ui.uiText
+import br.com.novaresidence.core.ui.asUiText
+import br.com.novaresidence.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.novaresidence.core.network.ApiErrorKind
@@ -82,7 +85,7 @@ class ExhaustViewModel(
     private fun report(error: ApiException, uncertain: Boolean = false) {
         if (error.retryAfterSeconds > 0) retryAt = System.nanoTime() + error.retryAfterSeconds * 1_000_000_000
         // O 409 do exaustor (ex.: manutenção) não é o conflito de cadastro da mensagem genérica; o detail é seguro para exibir.
-        val message = if (error.kind == ApiErrorKind.Conflict) error.detail ?: "O equipamento recusou o comando." else error.userMessage()
+        val message = if (error.kind == ApiErrorKind.Conflict) error.detail?.asUiText() ?: uiText(R.string.exhaust_rejected) else error.userMessage()
         mutableState.update { it.copy(error = message, requestId = error.requestId,
             retrySeconds = remainingCooldown(), activationUncertain = uncertain || it.activationUncertain) }
     }

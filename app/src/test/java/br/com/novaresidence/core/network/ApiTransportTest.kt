@@ -24,6 +24,19 @@ class ApiTransportTest {
         val request = server.takeRequest()
         assertEquals("/v3/api/auth/me", request.path)
         assertEquals("Bearer token", request.getHeader("Authorization"))
+        assertEquals("pt-BR", request.getHeader("Accept-Language"))
+    }
+
+    @Test fun `every request carries the current app language`() = runBlocking {
+        var language = "en"
+        val localized = ApiTransport(server.url("/").toString(), language = { language })
+        server.enqueue(MockResponse().setBody("""{"success":true,"data":null,"meta":{}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"data":null,"meta":{}}"""))
+        localized.request("auth/logout", token = "token", post = true)
+        language = "es"
+        localized.request("auth/logout", token = "token", post = true)
+        assertEquals("en", server.takeRequest().getHeader("Accept-Language"))
+        assertEquals("es", server.takeRequest().getHeader("Accept-Language"))
     }
 
     @Test fun `error types override changing detail text and carry retry and request reference`() = runBlocking {

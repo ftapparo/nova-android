@@ -1,5 +1,8 @@
 package br.com.novaresidence.core.session
 
+import br.com.novaresidence.core.ui.uiText
+import br.com.novaresidence.core.ui.UiText
+import br.com.novaresidence.R
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -38,7 +41,7 @@ class EncryptedSessionStore(context: Context) : SessionStore {
         } catch (_: Exception) {
             // A restored file or invalidated Keystore key cannot restore an authenticated session.
             file.delete()
-            throw SessionStorageException("Sua sessão não pôde ser restaurada. Entre novamente.")
+            throw SessionStorageException(uiText(R.string.session_restore_failed))
         }
     }
 
@@ -56,11 +59,11 @@ class EncryptedSessionStore(context: Context) : SessionStore {
                 throw error
             }
         } catch (_: Exception) {
-            throw SessionStorageException("Não foi possível salvar sua sessão com segurança. Tente novamente.")
+            throw SessionStorageException(uiText(R.string.session_save_failed))
         }
     }
 
     override fun clear() = file.delete()
 }
 
-class SessionStorageException(val userMessage: String) : Exception(userMessage)
+class SessionStorageException(val userMessage: UiText) : Exception("session storage")

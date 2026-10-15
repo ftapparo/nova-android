@@ -1,5 +1,7 @@
 package br.com.novaresidence.feature.residence
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -38,20 +42,26 @@ private val RadioOutline = Color(0xFF6B7280)
 @Composable
 internal fun ResidenceSettings(
     page: ResidencePage, state: ResidenceState, user: AuthUser, navigate: (ResidencePage) -> Unit,
-    back: () -> Unit, select: (Int) -> Unit, logout: () -> Unit, busy: Boolean, saveLanguage: () -> Unit,
-    deleteAccount: () -> Unit, deleteError: String?, notifications: Boolean = false,
+    back: () -> Unit, select: (Int) -> Unit, logout: () -> Unit, busy: Boolean, saveLanguage: (AppLanguage) -> Unit,
+    deleteAccount: () -> Unit, deleteError: UiText?, notifications: Boolean = false,
 ) {
     val previousSave = remember(page) { state.languageSaves }
+    val previousLanguage = remember(page) { state.language }
+    val context = LocalContext.current
     LaunchedEffect(state.languageSaves) {
-        if (page == ResidencePage.SelectLanguage && state.languageSaves > previousSave) back()
+        if (page == ResidencePage.SelectLanguage && state.languageSaves > previousSave) {
+            back()
+            // O idioma é aplicado em attachBaseContext: recriar a Activity troca todos os textos de uma vez.
+            if (state.language != previousLanguage) context.findActivity()?.recreate()
+        }
     }
     val title = when (page) {
-        ResidencePage.SelectUnit -> "Selecionar unidade"
-        ResidencePage.SelectLanguage -> "Selecionar idioma"
-        ResidencePage.Privacy -> "Privacidade"
-        ResidencePage.PersonalData -> "Dados pessoais"
-        ResidencePage.DeleteAccount -> "Excluir conta"
-        else -> "Configurações"
+        ResidencePage.SelectUnit -> stringResource(R.string.settings_title_select_unit)
+        ResidencePage.SelectLanguage -> stringResource(R.string.settings_title_select_language)
+        ResidencePage.Privacy -> stringResource(R.string.settings_title_privacy)
+        ResidencePage.PersonalData -> stringResource(R.string.settings_title_personal_data)
+        ResidencePage.DeleteAccount -> stringResource(R.string.settings_title_delete_account)
+        else -> stringResource(R.string.settings_title)
     }
     Column(Modifier.fillMaxSize().background(Color.White)) {
         NovaTopBar(title, back)
@@ -80,32 +90,32 @@ private fun ColumnScope.Settings(
     val person = state.residence?.person
     Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp), verticalArrangement = Arrangement.spacedBy(28.dp)) {
         Column {
-            SectionTitle("Conta")
+            SectionTitle(stringResource(R.string.settings_account))
             Column(Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(person?.nome?.takeIf { it.isNotBlank() }?.personName() ?: "Conta Nova Residence", style = NovaType.ItemTitle, color = NovaOnSurface)
+                Text(person?.nome?.takeIf { it.isNotBlank() }?.personName() ?: stringResource(R.string.settings_account_fallback), style = NovaType.ItemTitle, color = NovaOnSurface)
                 user.email?.let { Text(it, style = NovaType.Body, color = NovaOnSurfaceVariant) }
-                person?.let { Text("Código Freedom: ${it.sequencia}", style = NovaType.Body, color = NovaOnSurfaceVariant) }
+                person?.let { Text(stringResource(R.string.settings_freedom_code, it.sequencia), style = NovaType.Body, color = NovaOnSurfaceVariant) }
             }
         }
         Column {
-            SectionTitle("Configurações")
-            SettingsRow("Minhas unidades", if (units.size == 1) "1 unidade vinculada" else "${units.size} unidades vinculadas",
+            SectionTitle(stringResource(R.string.settings_title))
+            SettingsRow(stringResource(R.string.settings_my_units), pluralStringResource(R.plurals.settings_units_linked, units.size, units.size),
                 click = if (units.isEmpty()) null else ({ navigate(ResidencePage.SelectUnit) }))
             HorizontalDivider(color = NovaOutline)
-            SettingsRow("Idioma", "Português (Brasil)") { navigate(ResidencePage.SelectLanguage) }
+            SettingsRow(stringResource(R.string.settings_language), state.language.displayName()) { navigate(ResidencePage.SelectLanguage) }
             HorizontalDivider(color = NovaOutline)
             if (notifications) {
-                SettingsRow("Notificações", "Alarme de incêndio, exaustor e comunicados") { navigate(ResidencePage.Notifications) }
+                SettingsRow(stringResource(R.string.settings_notifications), stringResource(R.string.settings_notifications_detail)) { navigate(ResidencePage.Notifications) }
                 HorizontalDivider(color = NovaOutline)
             }
-            SettingsRow("Privacidade", "Política, termos e dados pessoais") { navigate(ResidencePage.Privacy) }
+            SettingsRow(stringResource(R.string.settings_privacy), stringResource(R.string.settings_privacy_detail)) { navigate(ResidencePage.Privacy) }
         }
     }
     Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        NovaTextLink("Desconectar", logout, Modifier.width(160.dp), enabled = !busy, color = NovaError,
+        NovaTextLink(stringResource(R.string.settings_sign_out), logout, Modifier.width(160.dp), enabled = !busy, color = NovaError,
             style = NovaType.ItemTitle, alignment = Alignment.CenterStart, underline = true)
         if (busy) NovaLoading()
-        Text("Versão do app ${BuildConfig.VERSION_NAME}", style = NovaType.Supporting, color = NovaOnSurfaceVariant)
+        Text(stringResource(R.string.settings_app_version, BuildConfig.VERSION_NAME), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
     }
 }
 
@@ -114,57 +124,57 @@ private fun ColumnScope.Settings(
 private fun SelectUnit(state: ResidenceState, select: (Int) -> Unit) {
     val units = state.residence?.units.orEmpty()
     Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp)) {
-        Guidance("Selecione a unidade que deseja usar no aplicativo.")
+        Guidance(stringResource(R.string.settings_select_unit_guidance))
         Spacer(Modifier.height(36.dp))
         Column(Modifier.selectableGroup()) {
             units.forEachIndexed { index, entry ->
                 if (index > 0) HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
                 val selected = entry.sequencia == state.selectedUnit
-                Choice(entry.selectorLabel(), entry.blockedMessage() ?: if (selected) "Unidade selecionada" else "Unidade vinculada", selected, minHeight = 76.dp) {
+                Choice(entry.selectorLabel().text(), entry.blockedMessage()?.text() ?: stringResource(if (selected) R.string.settings_unit_selected else R.string.settings_unit_linked), selected, minHeight = 76.dp) {
                     select(entry.sequencia)
                 }
             }
         }
-        if (units.isEmpty()) Text(state.residence?.notice() ?: "Nenhuma unidade vinculada.", Modifier.padding(horizontal = Margin), style = NovaType.Body)
+        if (units.isEmpty()) Text(state.residence?.notice()?.text() ?: stringResource(R.string.settings_no_linked_unit), Modifier.padding(horizontal = Margin), style = NovaType.Body)
         Row(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 32.dp), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.Top) {
             Icon(painterResource(R.drawable.nova_info_outline), null, Modifier.padding(top = 1.dp).size(18.dp), tint = NovaPrimary)
-            Text("Os vínculos são atualizados pelo cadastro do condomínio.", Modifier.weight(1f, fill = false),
+            Text(stringResource(R.string.settings_links_info), Modifier.weight(1f, fill = false),
                 style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
         }
     }
 }
 
-/** Selecionar idioma (Figma 11). Inglês e espanhol ficam desabilitados até existir tradução completa. */
+/** Selecionar idioma (Figma 11). Na primeira abertura o app já veio no idioma do aparelho (AppLanguageStore). */
 @Composable
-private fun ColumnScope.SelectLanguage(state: ResidenceState, saveLanguage: () -> Unit) {
+private fun ColumnScope.SelectLanguage(state: ResidenceState, saveLanguage: (AppLanguage) -> Unit) {
+    var choice by rememberSaveable { mutableStateOf(state.language) }
     Column(Modifier.fillMaxWidth().padding(top = 24.dp)) {
-        Guidance("O aplicativo será exibido no idioma escolhido.")
+        Guidance(stringResource(R.string.settings_language_guidance))
         Spacer(Modifier.height(36.dp))
         Column(Modifier.selectableGroup()) {
-            Choice("Português (Brasil)", null, true) {}
-            HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
-            Choice("English", null, false, enabled = false) {}
-            HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
-            Choice("Español", null, false, enabled = false) {}
+            AppLanguage.entries.forEachIndexed { index, language ->
+                if (index > 0) HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
+                Choice(language.displayName(), null, choice == language) { choice = language }
+            }
         }
-        state.preferenceError?.let { Box(Modifier.padding(horizontal = Margin, vertical = 16.dp)) { NovaNotice(it) } }
+        state.preferenceError?.let { Box(Modifier.padding(horizontal = Margin, vertical = 16.dp)) { NovaNotice(it.text()) } }
         if (state.savingPreference) NovaLoading()
     }
-    NovaButton("Salvar idioma", saveLanguage, Modifier.padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), enabled = !state.savingPreference)
+    NovaButton(stringResource(R.string.settings_save_language), { saveLanguage(choice) }, Modifier.padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), enabled = !state.savingPreference)
 }
 
 /** Privacidade (Figma 12). */
 @Composable
 private fun Privacy(navigate: (ResidencePage) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp)) {
-        SettingsRow("Termos de uso", "Regras e condições de uso do aplicativo") { navigate(ResidencePage.Terms) }
+        SettingsRow(stringResource(R.string.privacy_terms), stringResource(R.string.privacy_terms_detail)) { navigate(ResidencePage.Terms) }
         HorizontalDivider(color = NovaOutline)
-        SettingsRow("Política de privacidade", "Como seus dados são utilizados e protegidos") { navigate(ResidencePage.PrivacyPolicy) }
+        SettingsRow(stringResource(R.string.privacy_policy), stringResource(R.string.privacy_policy_detail)) { navigate(ResidencePage.PrivacyPolicy) }
         HorizontalDivider(color = NovaOutline)
-        SettingsRow("Dados pessoais", "Consulte os dados vinculados à sua conta") { navigate(ResidencePage.PersonalData) }
+        SettingsRow(stringResource(R.string.privacy_personal_data), stringResource(R.string.privacy_personal_data_detail)) { navigate(ResidencePage.PersonalData) }
         HorizontalDivider(color = NovaOutline)
-        SettingsRow("Solicitar exclusão da conta", "Solicite a remoção do acesso e dos dados do aplicativo") { navigate(ResidencePage.DeleteAccount) }
+        SettingsRow(stringResource(R.string.privacy_delete_account), stringResource(R.string.privacy_delete_account_detail)) { navigate(ResidencePage.DeleteAccount) }
     }
 }
 
@@ -177,18 +187,18 @@ private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (Resid
     val residence = state.residence
     val unit = residence?.units?.firstOrNull { it.sequencia == state.selectedUnit }
     Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp)) {
-        Guidance("Dados vinculados à sua conta e ao cadastro do condomínio.")
+        Guidance(stringResource(R.string.personal_data_guidance))
         Column(Modifier.padding(horizontal = Margin)) {
             val rows = listOfNotNull(
-                residence?.person?.nome?.takeIf { it.isNotBlank() }?.let { "Nome" to it.personName() },
-                residence?.person?.cpfMasked?.let { "CPF" to it },
-                user.email?.let { "E-mail" to it },
+                residence?.person?.nome?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.personal_data_name) to it.personName() },
+                residence?.person?.cpfMasked?.let { stringResource(R.string.personal_data_cpf) to it },
+                user.email?.let { stringResource(R.string.personal_data_email) to it },
             )
             rows.forEach { (label, value) ->
                 DataRow(label, value)
                 HorizontalDivider(color = NovaOutline)
             }
-            DataRow("Unidade ativa", unit?.selectorLabel() ?: "Nenhuma unidade",
+            DataRow(stringResource(R.string.personal_data_active_unit), unit?.selectorLabel()?.text() ?: stringResource(R.string.home_no_unit),
                 click = if (residence?.units.isNullOrEmpty()) null else ({ navigate(ResidencePage.SelectUnit) }))
         }
     }
@@ -199,24 +209,24 @@ private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (Resid
  * removidas pela administração (a API responde 403), então o botão nem é oferecido a elas.
  */
 @Composable
-private fun ColumnScope.DeleteAccount(user: AuthUser, back: () -> Unit, delete: () -> Unit, busy: Boolean, error: String?) {
+private fun ColumnScope.DeleteAccount(user: AuthUser, back: () -> Unit, delete: () -> Unit, busy: Boolean, error: UiText?) {
     val staff = user.role in setOf("porteiro", "sindico", "admin")
     Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 28.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        Text("Excluir sua conta", Modifier.semantics { heading() }, style = NovaType.ScreenTitle.copy(fontWeight = FontWeight.SemiBold), color = NovaOnSurface)
-        Text("Ao excluir sua conta, seu acesso ao aplicativo será encerrado. Alguns dados podem continuar armazenados pelo condomínio quando necessários para obrigações legais, administrativas ou de segurança.",
+        Text(stringResource(R.string.delete_title), Modifier.semantics { heading() }, style = NovaType.ScreenTitle.copy(fontWeight = FontWeight.SemiBold), color = NovaOnSurface)
+        Text(stringResource(R.string.delete_body),
             style = NovaType.Body.copy(lineHeight = 21.sp), color = NovaOnSurface)
         Column(Modifier.fillMaxWidth().background(NovaErrorContainer, RoundedCornerShape(14.dp)).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Antes de continuar", style = NovaType.BodyEmphasis, color = NovaError)
-            Text("A exclusão é imediata e não pode ser desfeita. Se precisar voltar a utilizar o app, será necessário criar uma nova conta e um novo vínculo pela administração do condomínio.",
+            Text(stringResource(R.string.delete_warning_title), style = NovaType.BodyEmphasis, color = NovaError)
+            Text(stringResource(R.string.delete_warning),
                 style = NovaType.Supporting, color = NovaOnSurfaceVariant)
         }
-        error?.let { NovaNotice(it) }
+        error?.let { NovaNotice(it.text()) }
     }
     Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        NovaButton("Cancelar", back, enabled = !busy, style = NovaButtonStyle.Neutral)
-        NovaButton(if (busy) "Excluindo conta…" else "Excluir conta", delete, enabled = !busy && !staff, style = NovaButtonStyle.Danger)
-        if (staff) Text("Contas da equipe são removidas pela administração do condomínio.",
+        NovaButton(stringResource(R.string.delete_cancel), back, enabled = !busy, style = NovaButtonStyle.Neutral)
+        NovaButton(stringResource(if (busy) R.string.delete_in_progress else R.string.delete_confirm), delete, enabled = !busy && !staff, style = NovaButtonStyle.Danger)
+        if (staff) Text(stringResource(R.string.auth_delete_staff),
             Modifier.fillMaxWidth(), style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
     }
 }
@@ -271,4 +281,11 @@ private fun Choice(title: String, subtitle: String?, selected: Boolean, enabled:
             if (selected) Box(Modifier.size(8.dp).background(ring, CircleShape))
         }
     }
+}
+
+/** Nome de cada idioma escrito nele mesmo, como nas listas de idioma do Android. */
+private fun AppLanguage.displayName(): String = when (this) {
+    AppLanguage.Portuguese -> "Português (Brasil)"
+    AppLanguage.English -> "English"
+    AppLanguage.Spanish -> "Español"
 }

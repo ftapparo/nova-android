@@ -1,6 +1,8 @@
 package br.com.novaresidence.feature.exhaust
 
 import br.com.novaresidence.TestSessionStore
+import br.com.novaresidence.R
+import br.com.novaresidence.core.ui.uiText
 import br.com.novaresidence.testSession
 import br.com.novaresidence.core.network.*
 import br.com.novaresidence.core.session.SessionCoordinator
@@ -83,13 +85,13 @@ class ExhaustTest {
         val maintenance = ExhaustState(off.copy(maintenance = true), loading = false)
         assertEquals(ExhaustPhase.Maintenance, maintenance.phase)
         assertFalse(maintenance.canActivate)
-        assertEquals("Em manutenção.", maintenance.homeSummary())
+        assertEquals(uiText(R.string.exhaust_home_maintenance), maintenance.homeSummary())
     }
 
     @Test fun `reinicio so vale com exaustor ligado e confirmado`() {
         val running = ExhaustState(off.copy(on = true, expiresAt = 10_800_000, command = "ligar"), loading = false, nowMillis = 0)
         assertTrue(running.canRestart)
-        assertEquals("Tempo restante 3:00h", running.homeSummary())
+        assertEquals(uiText(R.string.exhaust_home_remaining, 3L, 0L), running.homeSummary())
         assertFalse(ExhaustState(off, loading = false).canRestart)
         assertFalse(running.copy(sending = true).canRestart)
         assertFalse(running.copy(retrySeconds = 5).canRestart)

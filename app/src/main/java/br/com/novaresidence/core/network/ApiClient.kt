@@ -1,6 +1,9 @@
 package br.com.novaresidence.core.network
 
+import br.com.novaresidence.R
 import br.com.novaresidence.core.session.SessionCoordinator
+import br.com.novaresidence.core.ui.UiText
+import br.com.novaresidence.core.ui.uiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
@@ -27,17 +30,17 @@ class ApiException(
     /** Só alguns títulos são estáveis e documentados pela API (ex.: recusas de localização do exaustor). */
     val title: String? = null,
 ) : Exception(kind.name) {
-    fun userMessage(): String = when (kind) {
-        ApiErrorKind.Validation -> "Confira os dados informados."
-        ApiErrorKind.Unauthorized -> "E-mail ou senha incorretos."
-        ApiErrorKind.Forbidden -> "Acesso negado."
-        ApiErrorKind.NotFound -> "Não foi possível encontrar este recurso."
-        ApiErrorKind.Conflict -> "Este e-mail já possui uma conta."
-        ApiErrorKind.RateLimited -> "Muitas tentativas. Aguarde para tentar novamente."
-        ApiErrorKind.Unavailable -> "Serviço indisponível. Tente novamente."
-        ApiErrorKind.Network -> "Não foi possível conectar. Verifique sua conexão e tente novamente."
-        ApiErrorKind.Internal, ApiErrorKind.InvalidResponse -> "Não foi possível concluir a solicitação. Tente novamente."
-    }
+    fun userMessage(): UiText = uiText(when (kind) {
+        ApiErrorKind.Validation -> R.string.error_validation
+        ApiErrorKind.Unauthorized -> R.string.error_unauthorized
+        ApiErrorKind.Forbidden -> R.string.error_forbidden
+        ApiErrorKind.NotFound -> R.string.error_not_found
+        ApiErrorKind.Conflict -> R.string.error_conflict
+        ApiErrorKind.RateLimited -> R.string.error_rate_limited
+        ApiErrorKind.Unavailable -> R.string.error_unavailable
+        ApiErrorKind.Network -> R.string.error_network
+        ApiErrorKind.Internal, ApiErrorKind.InvalidResponse -> R.string.error_generic
+    })
 }
 
 val NovaJson = Json { ignoreUnknownKeys = true }
@@ -47,6 +50,8 @@ class ApiTransport(
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS).readTimeout(20, TimeUnit.SECONDS)
         .callTimeout(30, TimeUnit.SECONDS).retryOnConnectionFailure(false).build(),
+    /** Idioma do app (`pt-BR`, `en` ou `es`): a API responde nele os textos gerados pelo sistema. */
+    private val language: () -> String = { "pt-BR" },
 ) {
     private val apiUrl = baseUrl.trimEnd('/') + "/v3/api/"
 
@@ -56,6 +61,7 @@ class ApiTransport(
         withContext(Dispatchers.IO) {
             val request = Request.Builder().url(apiUrl + path.trimStart('/')).apply {
                 header("Accept", "application/json")
+                header("Accept-Language", language())
                 if (token != null) header("Authorization", "Bearer $token")
                 if (post) {
                     // Bodyless endpoints must not advertise an empty JSON document.

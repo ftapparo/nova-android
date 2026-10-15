@@ -1,5 +1,9 @@
 package br.com.novaresidence.feature.fire
 
+import br.com.novaresidence.core.ui.uiText
+import br.com.novaresidence.core.ui.asUiText
+import br.com.novaresidence.core.ui.UiText
+import br.com.novaresidence.R
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonElement
@@ -78,12 +82,12 @@ data class FireState(
     /** Falhas e supervisões ativas agora (consultadas só quando os contadores indicam atenção). */
     val activeEvents: List<CieLog> = emptyList(),
     val loading: Boolean = true,
-    val error: String? = null,
+    val error: UiText? = null,
     val requestId: String? = null,
     val retrySeconds: Long = 0,
     val history: List<CieLog>? = null,
     val historyLoading: Boolean = false,
-    val historyError: String? = null,
+    val historyError: UiText? = null,
 ) {
     val status: FireStatus get() {
         val panel = panel
@@ -101,22 +105,28 @@ data class FireState(
     val activeAlarm: CieLog? get() = if (alarms?.isTriggered == true) alarms.activeAlarms.firstOrNull() ?: alarms.latestAlarmLogs.firstOrNull() else null
 
     /** Texto da linha da central na home (Figma 08a/08c). */
-    fun homeSummary(): String = when (status) {
-        FireStatus.Loading -> "Consultando a central…"
-        FireStatus.Normal -> "Nenhum alarme de incêndio ativo."
-        FireStatus.Attention -> "Existe um aviso que requer verificação."
-        FireStatus.Offline -> "Central sem comunicação no momento."
-        FireStatus.Alarm -> "Siga as orientações de segurança"
-        FireStatus.Unavailable -> "Não foi possível consultar a central."
-    }
+    fun homeSummary(): UiText = uiText(when (status) {
+        FireStatus.Loading -> R.string.fire_home_loading
+        FireStatus.Normal -> R.string.fire_home_normal
+        FireStatus.Attention -> R.string.fire_home_attention
+        FireStatus.Offline -> R.string.fire_home_offline
+        FireStatus.Alarm -> R.string.fire_home_alarm
+        FireStatus.Unavailable -> R.string.fire_home_unavailable
+    })
 
     /** Destaque da home durante um alarme (Figma 08c): "Torre B - Andar 8". */
-    fun homeAlarmPlace(): String? = if (status != FireStatus.Alarm) null
-        else activeAlarm?.let { log -> listOfNotNull(log.towerLabel(), log.homeFloor()).joinToString(" - ").ifEmpty { null } } ?: "Alarme disparado"
+    fun homeAlarmPlace(): UiText? = if (status != FireStatus.Alarm) null
+        else activeAlarm?.let { log ->
+            val tower = log.towerLabel()
+            val floor = log.homeFloor()
+            when {
+                tower != null && floor != null -> uiText(R.string.fire_home_place, tower, floor)
+                else -> tower?.asUiText() ?: floor
+            }
+        } ?: uiText(R.string.fire_alarm_triggered)
 }
 
 private val PtBr = Locale.forLanguageTag("pt-BR")
-private val FullTime = DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm:ss", PtBr)
 
 private fun String.panelText(): String? = replace("\u0000", "").trim().ifEmpty { null }
 
@@ -126,14 +136,14 @@ fun String.cieName(): String = replace("\u0000", "").trim().lowercase(PtBr).spli
 
 fun CieLog.category(): String = event?.category ?: type
 
-fun CieLog.categoryLabel(): String = when (category()) {
-    "alarme" -> "Alarme"
-    "falha" -> "Falha"
-    "supervisao" -> "Supervisão"
-    "operacao" -> "Operação"
-    "bloqueio" -> "Bloqueio"
-    else -> "Evento"
-}
+fun CieLog.categoryLabel(): UiText = uiText(when (category()) {
+    "alarme" -> R.string.fire_category_alarm
+    "falha" -> R.string.fire_category_failure
+    "supervisao" -> R.string.fire_category_supervision
+    "operacao" -> R.string.fire_category_operation
+    "bloqueio" -> R.string.fire_category_blocked
+    else -> R.string.fire_category_event
+})
 
 // Com `display` presente, o local vem só da API: `place` nulo significa que o nome não segue a convenção
 // do condomínio (ex.: regras e eventos do sistema), e o app não deve adivinhar a partir do nome.
@@ -157,10 +167,11 @@ fun CieLog.floorLabel(): String? {
 }
 
 /** Andar no formato da home (Figma 08c): "Andar 8". */
-private fun CieLog.homeFloor(): String? {
-    display?.place?.floor?.takeIf { it > 0 }?.let { return "Andar $it" }
+private fun CieLog.homeFloor(): UiText? {
+    display?.place?.floor?.takeIf { it > 0 }?.let { return uiText(R.string.fire_home_floor, it) }
     val label = floorLabel() ?: return null
-    return Regex("^(\\d+)º andar$").find(label)?.let { "Andar ${it.groupValues[1]}" } ?: label.replaceFirstChar { it.uppercase() }
+    return Regex("^(\\d+)º andar$").find(label)?.let { uiText(R.string.fire_home_floor, it.groupValues[1].toInt()) }
+        ?: label.replaceFirstChar { it.uppercase() }.asUiText()
 }
 
 /** "Torre B · 8º andar" (separador configurável). */
@@ -168,8 +179,9 @@ fun CieLog.placeLine(separator: String = " · "): String? =
     listOfNotNull(towerLabel(), floorLabel()?.replaceFirstChar { it.uppercase() }).joinToString(separator).ifEmpty { null }
 
 /** Título da linha do histórico (Figma 29): o local, o nome registrado na central ou o rótulo do evento. */
-fun CieLog.historyTitle(): String = placeLine()
-    ?: display?.rule?.name?.panelText() ?: deviceNameRaw() ?: zoneNameRaw() ?: event?.label?.takeIf { it.isNotBlank() } ?: "Evento operacional"
+fun CieLog.historyTitle(): UiText = (placeLine()
+    ?: display?.rule?.name?.panelText() ?: deviceNameRaw() ?: zoneNameRaw() ?: event?.label?.takeIf { it.isNotBlank() })?.asUiText()
+    ?: uiText(R.string.fire_history_operational)
 
 fun CieLog.deviceNameRaw(): String? = (display?.deviceName ?: deviceName)?.panelText()
 
@@ -185,20 +197,20 @@ fun CieLog.loopAddress(): String? {
 }
 
 /** Título do detalhe (Figma 30a–30c). */
-fun CieLog.detailTitle(): String = when (category()) {
-    "alarme" -> "Evento de alarme"
-    "falha" -> "Dispositivo em falha"
-    "supervisao" -> "Supervisão de dispositivo"
-    "bloqueio" -> if (blocked == false) "Dispositivo desbloqueado" else "Dispositivo bloqueado"
-    "operacao" -> "Evento de operação"
-    else -> "Evento da central"
-}
+fun CieLog.detailTitle(): UiText = uiText(when (category()) {
+    "alarme" -> R.string.fire_detail_alarm
+    "falha" -> R.string.fire_detail_failure
+    "supervisao" -> R.string.fire_detail_supervision
+    "bloqueio" -> if (blocked == false) R.string.fire_detail_unblocked else R.string.fire_detail_blocked
+    "operacao" -> R.string.fire_detail_operation
+    else -> R.string.fire_detail_event
+})
 
 fun CieLog.instant(): Instant? = occurredInstant
 
-/** "04/10/2026 · 18:56:19" no fuso do aparelho. */
-fun Instant.fullTime(zone: ZoneId = ZoneId.systemDefault()): String =
-    atZone(zone).format(FullTime)
+/** "04/10/2026 · 18:56:19" no fuso do aparelho; em inglês, mês antes do dia. */
+fun Instant.fullTime(zone: ZoneId = ZoneId.systemDefault(), locale: Locale = Locale.getDefault()): String =
+    atZone(zone).format(DateTimeFormatter.ofPattern(if (locale.language == "en") "MM/dd/yyyy · HH:mm:ss" else "dd/MM/yyyy · HH:mm:ss", locale))
 
 /**
  * Assinatura de um `cie.status.updated` do WebSocket, que chega a cada ~1 s com o snapshot bruto do nova-cie.

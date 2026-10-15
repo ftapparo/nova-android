@@ -46,9 +46,8 @@ class AppViewModel(application: NovaApplication) : ViewModel() {
     val messages = MessageRepository(api)
     val legal = LegalRepository(api)
     val notifications = NotificationRepository(api)
-    val residencePreferences = ResidencePreferences(application)
     val ready = MutableStateFlow(false)
-    var restoreError: String? = null
+    var restoreError: UiText? = null
         private set
     /** Destino de uma notificação tocada, aplicado quando a área logada estiver disponível. */
     val pendingOpen = MutableStateFlow<PushOpen?>(null)
@@ -71,7 +70,7 @@ class AppViewModel(application: NovaApplication) : ViewModel() {
 fun App(app: AppViewModel) {
     val auth: AuthViewModel = viewModel { AuthViewModel(app.auth, app.legal::termsVersion) }
     val legal: LegalViewModel = viewModel { LegalViewModel(app.legal) }
-    val residence: ResidenceViewModel = viewModel { ResidenceViewModel(app.residence, app.auth, app.residencePreferences) }
+    val residence: ResidenceViewModel = viewModel { ResidenceViewModel(app.residence, app.auth, app.graph.language) }
     val exhaust: ExhaustViewModel = viewModel { ExhaustViewModel(app.exhaust, app.exhaustLocator::current, residence::refresh) }
     val fire: FireViewModel = viewModel { FireViewModel(app.fire) }
     val messages: MessageViewModel = viewModel { MessageViewModel(app.messages) }
@@ -195,8 +194,8 @@ fun App(app: AppViewModel) {
             val fireState by fire.state.collectAsStateWithLifecycle()
             val messageState by messages.state.collectAsStateWithLifecycle()
             val exhaustStatus = when {
-                !allowed -> ServiceStatus(unit?.blockedMessage() ?: "Indisponível para esta unidade.")
-                exhaustState.phase == ExhaustPhase.Running -> ServiceStatus(exhaustState.homeSummary(), "Em funcionamento", ServiceTone.Running)
+                !allowed -> ServiceStatus(unit?.blockedMessage() ?: uiText(R.string.home_exhaust_unavailable))
+                exhaustState.phase == ExhaustPhase.Running -> ServiceStatus(exhaustState.homeSummary(), uiText(R.string.home_exhaust_running), ServiceTone.Running)
                 else -> ServiceStatus(exhaustState.homeSummary())
             }
             val fireStatus = if (fireState.status == FireStatus.Alarm) ServiceStatus(fireState.homeSummary(), fireState.homeAlarmPlace(), ServiceTone.Alarm)

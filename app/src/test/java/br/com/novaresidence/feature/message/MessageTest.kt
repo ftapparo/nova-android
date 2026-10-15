@@ -4,6 +4,9 @@ import br.com.novaresidence.TestSessionStore
 import br.com.novaresidence.core.network.ApiClient
 import br.com.novaresidence.core.network.ApiTransport
 import br.com.novaresidence.core.session.SessionCoordinator
+import br.com.novaresidence.R
+import br.com.novaresidence.core.ui.asUiText
+import br.com.novaresidence.core.ui.uiText
 import br.com.novaresidence.testSession
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
@@ -42,10 +45,10 @@ class MessageTest {
 
     @Test fun `rotulos usam a etiqueta da administracao ou o nome da categoria`() {
         val base = CondoMessage(1, "manutencao", null, "T", "B", "2026-10-13T13:30:00Z")
-        assertEquals("Manutenção", base.badgeLabel())
-        assertEquals("Manutenção programada", base.copy(label = "Manutenção programada").badgeLabel())
-        assertEquals("Manutenção", base.copy(label = "Manutenção programada").categoryLabel())
-        assertEquals("Urgente", base.copy(category = "urgente").categoryLabel())
+        assertEquals(uiText(R.string.message_category_maintenance), base.badgeLabel())
+        assertEquals("Manutenção programada".asUiText(), base.copy(label = "Manutenção programada").badgeLabel())
+        assertEquals(uiText(R.string.message_category_maintenance), base.copy(label = "Manutenção programada").categoryLabel())
+        assertEquals(uiText(R.string.message_category_urgent), base.copy(category = "urgente").categoryLabel())
         assertNotNull(base.publishedInstant)
     }
 
@@ -55,7 +58,7 @@ class MessageTest {
         withContext(main) { model.start(true) }
         val state = withTimeout(5000) { model.state.first { it.latest.isNotEmpty() } }
         assertEquals(1, state.unreadCount)
-        assertEquals("Manutenção programada", state.latest[1].badgeLabel())
+        assertEquals("Manutenção programada".asUiText(), state.latest[1].badgeLabel())
         assertEquals("/v3/api/messages/carousel", server.takeRequest().path)
     }
 

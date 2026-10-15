@@ -1,10 +1,15 @@
 package br.com.novaresidence.feature.residence
 
+import br.com.novaresidence.core.ui.uiText
+import br.com.novaresidence.core.ui.UiText
+import br.com.novaresidence.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.novaresidence.core.network.ApiErrorKind
 import br.com.novaresidence.core.network.ApiException
 import br.com.novaresidence.core.session.SessionStorageException
+import br.com.novaresidence.core.ui.AppLanguage
+import br.com.novaresidence.core.ui.AppLanguageStore
 import br.com.novaresidence.feature.auth.AuthRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -23,37 +28,38 @@ data class ResidenceState(
     // The first residence lookup decides which navigation items exist. Keep the
     // branded launch state visible until it finishes instead of showing a partial home.
     val loading: Boolean = true,
-    val error: String? = null,
+    val error: UiText? = null,
     val requestId: String? = null,
     val retrySeconds: Long = 0,
     val savingPreference: Boolean = false,
-    val preferenceError: String? = null,
+    val preferenceError: UiText? = null,
+    val language: AppLanguage = AppLanguage.Portuguese,
     val languageSaves: Int = 0,
 )
 
 class ResidenceViewModel(
     private val repository: ResidenceRepository,
     private val auth: AuthRepository,
-    private val preferences: ResidencePreferences? = null,
+    private val languages: AppLanguageStore? = null,
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(ResidenceState())
+    private val mutableState = MutableStateFlow(ResidenceState(language = languages?.current() ?: AppLanguage.Portuguese))
     val state = mutableState.asStateFlow()
     private var load: Job? = null
     private var save: Job? = null
     private var waitingRetry = false
 
     fun stop() { load?.cancel() }
-    fun clear() { load?.cancel(); save?.cancel(); mutableState.value = ResidenceState() }
-    fun saveLanguage() {
-        val store = preferences ?: return
+    fun clear() { load?.cancel(); save?.cancel(); mutableState.value = ResidenceState(language = state.value.language) }
+    fun saveLanguage(language: AppLanguage) {
+        val store = languages ?: return
         if (state.value.savingPreference) return
         save = viewModelScope.launch {
             mutableState.update { it.copy(savingPreference = true, preferenceError = null) }
             try {
-                withContext(Dispatchers.IO) { store.savePortuguese() }
-                mutableState.update { it.copy(languageSaves = it.languageSaves + 1) }
+                if (!withContext(Dispatchers.IO) { store.save(language) }) throw IOException("language not saved")
+                mutableState.update { it.copy(language = language, languageSaves = it.languageSaves + 1) }
             } catch (_: IOException) {
-                mutableState.update { it.copy(preferenceError = "Não foi possível salvar o idioma. Tente novamente.") }
+                mutableState.update { it.copy(preferenceError = uiText(R.string.settings_language_save_failed)) }
             } finally { mutableState.update { it.copy(savingPreference = false) } }
         }
     }

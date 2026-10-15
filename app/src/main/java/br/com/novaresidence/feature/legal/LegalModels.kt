@@ -1,5 +1,6 @@
 package br.com.novaresidence.feature.legal
 
+import br.com.novaresidence.core.ui.UiText
 import kotlinx.serialization.Serializable
 
 const val TermsDocument = "termo-de-uso"
@@ -19,9 +20,9 @@ data class LegalDocument(
 data class LegalState(
     val documents: List<LegalDocument>? = null,
     val loading: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     val accepting: Boolean = false,
-    val acceptError: String? = null,
+    val acceptError: UiText? = null,
 ) {
     fun find(document: String): LegalDocument? = documents?.firstOrNull { it.document == document }
 }

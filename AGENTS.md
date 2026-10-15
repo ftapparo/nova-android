@@ -133,7 +133,11 @@ Domain vocabulary (use these terms consistently):
 | Exaustor | BBQ exhaust fan, one per prumada |
 | Vínculo | Link between the app account and the person record in the condo ERP |
 
-User-facing text is **Brazilian Portuguese**.
+User-facing text is **Brazilian Portuguese** by default, with complete **English** and **Spanish** translations:
+
+- Every user-facing text lives in `res/values/strings.xml` (pt-BR, default) with the same keys in `values-en/` and `values-es/` (lint `MissingTranslation` is an error). Glossary in `docs/traducao.md`.
+- Text built outside a composable (ViewModel state, models, `ApiException.userMessage()`) is a `UiText` (`core/ui/UiText.kt`): `Res`/`Plural` for app text, `Raw` for text that already came from the API. Tests compare `R.string` ids.
+- Language (`core/ui/AppLanguage.kt`): read from Android **only on the first launch** after install (pt/en/es, anything else → English) and stored; afterwards only the choice on screen 11 counts. Applied in `attachBaseContext` (Application and Activity) before the first frame; saving recreates the Activity. Language splits are disabled in the App Bundle.
 
 ---
 
@@ -274,6 +278,8 @@ Error (RFC 7807, adapted):
 | `urn:nova-api:internal-error` | 500 | Generic error message |
 
 `detail` is safe to display but is not stable — do not parse it. Include `meta.requestId` in bug reports.
+
+Every request sends `Accept-Language` with the app language (`pt-BR`, `en` or `es`). The API answers `detail`, the fire panel labels (`event.label`, `display.*`, `situation.label`) and the push texts in it; `error.title` is never translated (stable key), and messages written by the síndico and the legal documents stay in Portuguese.
 
 ## Authentication
 
@@ -448,7 +454,7 @@ O morador só liga ou reinicia o exaustor dentro da área do condomínio.
 - Configurações (09) exibe "Código Freedom" = `person.sequencia`. É o código do morador no cadastro do condomínio e ajuda no atendimento; exceção consciente à regra de não exibir identificadores internos.
 - Privacidade (12): Termos (13) e Política (14) exibem a página vigente publicada pela API (`feature/legal`, seção "Terms of Use and Privacy Policy"). Dados pessoais (15) mostra nome, CPF mascarado (`person.cpfMasked`; a API nunca envia o CPF completo, e a linha some quando vem nulo), e-mail e unidade ativa; "dados complementares" não existem no contrato e não são exibidos.
 - Excluir conta (16): a própria tela é a confirmação; "Excluir conta" chama `DELETE /auth/me` e, só depois da resposta de sucesso, limpa a sessão e volta às boas-vindas com "Sua conta foi excluída.". Em falha, a sessão continua e o erro aparece na tela (503: nada foi excluído). Para equipe (`porteiro`, `sindico`, `admin`) o botão fica desabilitado: essas contas são removidas pela administração.
-- Idioma é local; inglês e espanhol ficam desabilitados até existir tradução completa. `/me/settings` existe na API e pode sincronizar a preferência no futuro.
+- Idioma é local (`AppLanguageStore`): português, inglês e espanhol, escolhidos na tela 11; o idioma do Android só vale na primeira abertura. `/me/settings` existe na API e pode sincronizar a preferência no futuro.
 - As preferências residenciais não contêm tokens; ficam em `feature/residence`. O armazenamento de sessão continua exclusivo de `core/session`.
 - Manter os dados demonstrativos fora das integrações reais. Mockups eventualmente necessários por ausência de contrato devem ser identificados como simulação e documentados na entrega.
 
@@ -526,7 +532,7 @@ Native push uses **only** `/notifications/*` (decided on 13/10/2026). `/push/*` 
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| PUT | `/notifications/devices/android` | `{ installationId, token, appVersion?, osVersion?, deviceModel?, notificationsEnabled, alarmChannelEnabled? }` | `{ platform, installationId, notificationsEnabled, alarmChannelEnabled, registeredAt }` (30/h per account) |
+| PUT | `/notifications/devices/android` | `{ installationId, token, appVersion?, osVersion?, deviceModel?, notificationsEnabled, alarmChannelEnabled?, language? }` | `{ platform, installationId, notificationsEnabled, alarmChannelEnabled, registeredAt }` (30/h per account) |
 | DELETE | `/notifications/devices/android/{installationId}` | — | `null` (idempotent) |
 | PUT / DELETE | `/notifications/devices/ios…` | same | `null` — reserved for the iOS app, nothing stored |
 | GET / PUT | `/notifications/preferences` | `{ exhaustExpiring?, exhaustOff?, messages?, cieStaffAlerts? }` | `{ exhaustExpiring, exhaustExpiringMinutes, exhaustOff, messages, cieStaffAlerts }` |
@@ -534,7 +540,7 @@ Native push uses **only** `/notifications/*` (decided on 13/10/2026). `/push/*` 
 | POST | `/notifications/test/fire-alarm` | `{ installationId }` | `{ targets, sent, failed }` — admin only, validation tool (curl), **not called by the app**: the real `cie.alarm` push ("Alarme de incêndio (teste)") to one device, without touching the panel |
 
 - **App side** (`core/push`): `NovaApplication` holds the process graph because `NovaMessagingService` runs with the app closed. `installationId` is a UUID kept in `push_preferences`; the FCM token is never stored in clear (only a hash to detect changes) and never logged.
-- **Registration** (`PushRegistration`): after login with `mustChangePassword` and `mustAcceptTerms` resolved, on each return to the app, in `onNewToken` and after the permission flow. The API is only called when account, token, permission, alarm channel or app version changed, or after 24 h.
+- **Registration** (`PushRegistration`): after login with `mustChangePassword` and `mustAcceptTerms` resolved, on each return to the app, in `onNewToken` and after the permission flow. The API is only called when account, token, permission, alarm channel, app version or app language changed, or after 24 h. `language` makes the push texts come in the app language.
 - **Logout**: `AuthRepository.logout` calls `DELETE …/{installationId}` with the captured access token **before** `/auth/logout`, then the app deletes the FCM token (if the DELETE fails, the server invalidates the old token on the next send). Account deletion: the API removes the devices; the app deletes the FCM token. A push received without a local session is dropped and the FCM token deleted.
 - **Payload**: data-only message, all values strings: `type`, `title`, `body`, `channel`, `target` (`fire` | `exhaust` | `message` | `home`), `sentAt`, `dispatchId`, plus `exhaustId` or `messageId`/`category`. The app shows the server texts as they come and never interprets them; the tap opens `target` (message detail by `messageId`) only if the account can still see it.
 - **Channels** (ids fixed by the API; `PushChannels`): `cie_alarm` (high, alarm sound with `USAGE_ALARM`; a channel's sound cannot change after creation — use a new id), `cie_status` and `cie_info` (staff, created on their first push), `exhaust` (high), `messages`, `general`. No full-screen intent (Play restricts it to calling and alarm-clock apps).

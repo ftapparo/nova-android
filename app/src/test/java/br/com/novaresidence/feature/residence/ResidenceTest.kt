@@ -1,6 +1,8 @@
 package br.com.novaresidence.feature.residence
 
+import br.com.novaresidence.R
 import br.com.novaresidence.core.network.NovaJson
+import br.com.novaresidence.core.ui.uiText
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -26,15 +28,15 @@ class ResidenceTest {
     }
     @Test fun `rotulos da home e do seletor seguem o Figma`() {
         val value = unit(1).copy(quadra = "A", lote = "124")
-        assertEquals("Apto. 124 - Torre A", value.homeLabel())
-        assertEquals("Torre A · Apto. 124", value.selectorLabel())
+        assertEquals(uiText(R.string.unit_home_label, "124", "A"), value.homeLabel())
+        assertEquals(uiText(R.string.unit_selector_label, "124", "A"), value.selectorLabel())
     }
     @Test fun `pending and missing unit messages and blocked reasons match contract`() {
-        assertEquals("Cadastro em análise pela administração", Residence("pendente", true, null, emptyList()).notice())
-        assertEquals("Seu cadastro não possui unidade ativa", Residence("sem-unidade", true, null, emptyList()).notice())
-        assertEquals("Você não consta como morador desta unidade.", unit(1, true, "nao-morador").blockedMessage())
-        assertEquals("Esta unidade possui inquilino cadastrado; o acesso é do inquilino.", unit(1, true, "unidade-com-inquilino").blockedMessage())
-        assertEquals("Seu cadastro precisa ser regularizado na administração.", unit(1, true, "cadastro-inconsistente").blockedMessage())
+        assertEquals(uiText(R.string.residence_pending), Residence("pendente", true, null, emptyList()).notice())
+        assertEquals(uiText(R.string.residence_no_unit), Residence("sem-unidade", true, null, emptyList()).notice())
+        assertEquals(uiText(R.string.unit_blocked_not_resident), unit(1, true, "nao-morador").blockedMessage())
+        assertEquals(uiText(R.string.unit_blocked_tenant), unit(1, true, "unidade-com-inquilino").blockedMessage())
+        assertEquals(uiText(R.string.unit_blocked_inconsistent), unit(1, true, "cadastro-inconsistente").blockedMessage())
         assertNull(unit(1).blockedMessage())
     }
     @Test fun `nullable person and real labels decode from OpenAPI envelope data`() {

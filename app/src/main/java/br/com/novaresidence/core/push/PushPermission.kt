@@ -1,5 +1,7 @@
 package br.com.novaresidence.core.push
 
+import br.com.novaresidence.R
+import androidx.compose.ui.res.stringResource
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -33,7 +35,7 @@ fun rememberNotificationEnabler(registration: PushRegistration, changed: () -> U
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { changed() }
     return remember(registration, context) {
         {
-            val device = PushDevice.current(context)
+            val device = PushDevice.current(context, AppLanguageStore(context).current().tag)
             val activity = context.findActivity()
             when {
                 !device.notificationsEnabled && Build.VERSION.SDK_INT >= 33 && activity != null && (!registration.permissionAsked() ||
@@ -65,13 +67,13 @@ fun NotificationPrompt(enable: () -> Unit, dismiss: () -> Unit) {
     Column(Modifier.fillMaxWidth().background(NovaPrimarySoft, RoundedCornerShape(16.dp)).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Ative as notificações", Modifier.semantics { heading() }, style = NovaType.ItemTitle, color = NovaOnSurface)
-            Text("Receba o alarme de incêndio, o aviso antes de o exaustor desligar e os comunicados do condomínio.",
+            Text(stringResource(R.string.push_prompt_title), Modifier.semantics { heading() }, style = NovaType.ItemTitle, color = NovaOnSurface)
+            Text(stringResource(R.string.push_prompt_body),
                 style = NovaType.Body, color = NovaOnTint)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            NovaButton("Ativar notificações", enable, Modifier.weight(1f))
-            NovaTextLink("Agora não", dismiss, Modifier.width(112.dp), color = NovaOnTint)
+            NovaButton(stringResource(R.string.push_enable), enable, Modifier.weight(1f))
+            NovaTextLink(stringResource(R.string.push_not_now), dismiss, Modifier.width(112.dp), color = NovaOnTint)
         }
     }
 }

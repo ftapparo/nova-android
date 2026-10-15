@@ -1,5 +1,8 @@
 package br.com.novaresidence.feature.exhaust
 
+import br.com.novaresidence.core.ui.uiText
+import br.com.novaresidence.core.ui.UiText
+import br.com.novaresidence.R
 import kotlinx.serialization.Serializable
 import java.util.Locale
 
@@ -34,7 +37,7 @@ data class ExhaustState(
     val loading: Boolean = true,
     val sending: Boolean = false,
     val restarting: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     val requestId: String? = null,
     val retrySeconds: Long = 0,
     val nowMillis: Long = System.currentTimeMillis(),
@@ -80,15 +83,16 @@ data class ExhaustState(
     }
 
     /** Resumo exibido na linha do exaustor na home (telas 08a/08b). */
-    fun homeSummary(): String = when (phase) {
-        ExhaustPhase.Loading -> "Consultando equipamento…"
-        ExhaustPhase.Off -> "Disponível para utilização."
-        ExhaustPhase.Starting -> "Ligando…"
-        ExhaustPhase.Running -> remainingSeconds()?.let { "Tempo restante %d:%02dh".format(Locale.ROOT, it / 3600, (it % 3600) / 60) } ?: "Sem desligamento programado."
-        ExhaustPhase.Finishing -> "Desligando…"
-        ExhaustPhase.Offline, ExhaustPhase.Unavailable -> "Indisponível no momento."
-        ExhaustPhase.Maintenance -> "Em manutenção."
-        ExhaustPhase.Error -> "Verifique o estado do equipamento."
+    fun homeSummary(): UiText = when (phase) {
+        ExhaustPhase.Loading -> uiText(R.string.exhaust_home_loading)
+        ExhaustPhase.Off -> uiText(R.string.exhaust_home_off)
+        ExhaustPhase.Starting -> uiText(R.string.exhaust_home_starting)
+        ExhaustPhase.Running -> remainingSeconds()?.let { uiText(R.string.exhaust_home_remaining, it / 3600, (it % 3600) / 60) }
+            ?: uiText(R.string.exhaust_no_auto_off)
+        ExhaustPhase.Finishing -> uiText(R.string.exhaust_home_finishing)
+        ExhaustPhase.Offline, ExhaustPhase.Unavailable -> uiText(R.string.exhaust_home_unavailable)
+        ExhaustPhase.Maintenance -> uiText(R.string.exhaust_home_maintenance)
+        ExhaustPhase.Error -> uiText(R.string.exhaust_home_error)
     }
 }
 

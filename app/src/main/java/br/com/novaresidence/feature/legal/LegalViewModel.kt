@@ -1,5 +1,7 @@
 package br.com.novaresidence.feature.legal
 
+import br.com.novaresidence.core.ui.uiText
+import br.com.novaresidence.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.novaresidence.core.network.ApiErrorKind
@@ -46,7 +48,7 @@ class LegalViewModel(private val repository: LegalRepository) : ViewModel() {
                 val message = if (error.kind == ApiErrorKind.Conflict) {
                     // Versão nova publicada enquanto a tela estava aberta: mostra a vigente antes de aceitar.
                     load(refresh = true)
-                    "O Termo de Uso foi atualizado. Leia a versão vigente antes de aceitar."
+                    uiText(R.string.legal_terms_updated)
                 } else error.userMessage()
                 mutableState.update { it.copy(acceptError = message) }
             } catch (error: SessionStorageException) {

@@ -1,5 +1,9 @@
 package br.com.novaresidence.feature.notification
 
+import br.com.novaresidence.core.ui.uiText
+import br.com.novaresidence.core.ui.asUiText
+import br.com.novaresidence.core.ui.UiText
+import br.com.novaresidence.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.novaresidence.core.network.ApiException
@@ -14,9 +18,9 @@ data class NotificationState(
     val loading: Boolean = false,
     /** Opção sendo gravada; o interruptor fica desabilitado até a resposta. */
     val saving: NotificationOption? = null,
-    val error: String? = null,
+    val error: UiText? = null,
     val testing: Boolean = false,
-    val testMessage: String? = null,
+    val testMessage: UiText? = null,
 )
 
 class NotificationViewModel(private val repository: NotificationRepository) : ViewModel() {
@@ -58,13 +62,13 @@ class NotificationViewModel(private val repository: NotificationRepository) : Vi
             val message = try {
                 val result = repository.sendTest()
                 when {
-                    result.targets == 0 -> "Nenhum aparelho registrado nesta conta. Ative as notificações e tente de novo."
-                    result.sent > 0 -> "Notificação de teste enviada. Ela pode levar alguns instantes para chegar."
-                    else -> "Não foi possível entregar a notificação de teste."
+                    result.targets == 0 -> uiText(R.string.notification_test_no_device)
+                    result.sent > 0 -> uiText(R.string.notification_test_sent)
+                    else -> uiText(R.string.notification_test_failed)
                 }
             } catch (error: ApiException) {
                 // O detail da API diz, por exemplo, que o envio está desativado no servidor.
-                error.detail ?: error.userMessage()
+                error.detail?.asUiText() ?: error.userMessage()
             } catch (error: CancellationException) { throw error }
             mutableState.update { it.copy(testing = false, testMessage = message) }
         }

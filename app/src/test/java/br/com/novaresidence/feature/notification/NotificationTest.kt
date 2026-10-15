@@ -5,6 +5,9 @@ import br.com.novaresidence.core.network.ApiClient
 import br.com.novaresidence.core.network.ApiTransport
 import br.com.novaresidence.core.network.NovaJson
 import br.com.novaresidence.core.session.SessionCoordinator
+import br.com.novaresidence.R
+import br.com.novaresidence.core.ui.asUiText
+import br.com.novaresidence.core.ui.uiText
 import br.com.novaresidence.testSession
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
@@ -68,12 +71,12 @@ class NotificationTest {
         val model = NotificationViewModel(repository)
         withContext(main) { model.sendTest() }
         val state = withTimeout(5000) { model.state.first { it.testMessage != null } }
-        assertEquals("O envio de notificações está desativado no servidor.", state.testMessage)
+        assertEquals("O envio de notificações está desativado no servidor.".asUiText(), state.testMessage)
         assertEquals("POST", server.takeRequest().method)
 
         server.enqueue(MockResponse().setBody("""{"success":true,"data":{"targets":0,"sent":0,"failed":0},"meta":{}}"""))
         withContext(main) { model.sendTest() }
-        val none = withTimeout(5000) { model.state.first { !it.testing && it.testMessage?.startsWith("Nenhum aparelho") == true } }
+        val none = withTimeout(5000) { model.state.first { !it.testing && it.testMessage == uiText(R.string.notification_test_no_device) } }
         assertNotNull(none.testMessage)
     }
 }

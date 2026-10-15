@@ -50,6 +50,7 @@ class PushTest {
         assertEquals(store.installationId, body["installationId"]!!.jsonPrimitive.content)
         assertEquals("fcm-token-1", body["token"]!!.jsonPrimitive.content)
         assertTrue(body["notificationsEnabled"]!!.jsonPrimitive.boolean)
+        assertEquals("pt-BR", body["language"]!!.jsonPrimitive.content)
         assertEquals(PushStatus.Ready, registration.status.value)
         // O token FCM não fica salvo em claro no aparelho.
         assertFalse(store.registration!!.contains("fcm-token-1"))
@@ -70,6 +71,12 @@ class PushTest {
         enqueueRegistered()
         registration.register()
         assertEquals(3, server.requestCount)
+
+        // Os avisos saem no idioma do app: trocar o idioma registra de novo.
+        device = device.copy(language = "es")
+        enqueueRegistered()
+        registration.register()
+        assertEquals(4, server.requestCount)
     }
 
     @Test fun `permissao ou canal do alarme mudam o estado e registram de novo`() = runBlocking {

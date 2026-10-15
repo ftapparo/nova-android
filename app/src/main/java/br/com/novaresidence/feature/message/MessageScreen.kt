@@ -1,5 +1,6 @@
 package br.com.novaresidence.feature.message
 
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -50,7 +51,7 @@ private fun MessageBadge(message: CondoMessage, dot: Boolean) {
     Row(Modifier.background(look.container, CircleShape).heightIn(min = 24.dp).padding(horizontal = 9.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         if (dot) Box(Modifier.size(8.dp).background(look.color, CircleShape))
-        Text(message.badgeLabel(), style = NovaType.NavLabel.copy(letterSpacing = 0.sp), color = look.color, maxLines = 1)
+        Text(message.badgeLabel().text(), style = NovaType.NavLabel.copy(letterSpacing = 0.sp), color = look.color, maxLines = 1)
     }
 }
 
@@ -63,7 +64,7 @@ fun MessageCarousel(state: MessageState, open: (CondoMessage) -> Unit) {
     val messages = state.latest
     if (messages.isEmpty()) {
         Box(Modifier.fillMaxWidth().border(1.dp, NovaOutline, RoundedCornerShape(16.dp)).heightIn(min = 68.dp).padding(16.dp), contentAlignment = Alignment.CenterStart) {
-            Text(state.latestError?.let { "Não foi possível carregar os informativos." } ?: "Nenhuma mensagem nova",
+            Text(stringResource(if (state.latestError != null) R.string.message_carousel_failed else R.string.home_no_messages),
                 style = NovaType.Body, color = NovaOnSurfaceVariant)
         }
         return
@@ -77,13 +78,13 @@ fun MessageCarousel(state: MessageState, open: (CondoMessage) -> Unit) {
                 val message = messages[page]
                 val shape = RoundedCornerShape(16.dp)
                 Column(Modifier.height(208.dp).fillMaxWidth().clip(shape).background(Color.White).border(1.dp, NovaOutline, shape)
-                    .clickable(role = Role.Button, onClickLabel = "Ver mais") { open(message) }
+                    .clickable(role = Role.Button, onClickLabel = stringResource(R.string.message_see_more)) { open(message) }
                     .padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     MessageBadge(message, dot = true)
                     Text(message.title, style = NovaType.ItemTitle, color = NovaOnSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(message.body, Modifier.weight(1f), style = NovaType.Body, color = NovaOnSurface, overflow = TextOverflow.Ellipsis)
                     Row(Modifier.fillMaxWidth().heightIn(min = 28.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Ver mais", style = NovaType.Button, color = NovaPrimary)
+                        Text(stringResource(R.string.message_see_more), style = NovaType.Button, color = NovaPrimary)
                         Icon(painterResource(R.drawable.nova_chevron_forward), null, Modifier.size(18.dp), tint = NovaPrimary)
                     }
                 }
@@ -119,27 +120,27 @@ fun MessagesFeature(state: MessageState, initialMessage: Long?, back: () -> Unit
 @Composable
 private fun MessageList(state: MessageState, back: () -> Unit, loadList: (Boolean) -> Unit, open: (CondoMessage) -> Unit) {
     val groups = remember(state.list) {
-        state.list.orEmpty().groupBy { it.publishedInstant?.dayLabel() ?: "Sem data" }.toList()
+        state.list.orEmpty().groupBy { it.publishedInstant?.dayLabel() ?: uiText(R.string.date_none) }.toList()
     }
     Column(Modifier.fillMaxSize().background(NovaBackground)) {
-        NovaTopBar("Mensagens", back)
-        NovaFilterBar(listOf("Todas", "Não lidas"), if (state.unreadOnly) 1 else 0, height = 36.dp) { loadList(it == 1) }
+        NovaTopBar(stringResource(R.string.message_list_title), back)
+        NovaFilterBar(listOf(stringResource(R.string.message_filter_all), stringResource(R.string.message_filter_unread)), if (state.unreadOnly) 1 else 0, height = 36.dp) { loadList(it == 1) }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(start = 28.dp, end = 28.dp, top = 16.dp, bottom = 24.dp)) {
             when {
-                state.listLoading && state.list == null -> item { NovaLoading("Carregando mensagens…") }
+                state.listLoading && state.list == null -> item { NovaLoading(stringResource(R.string.message_loading)) }
                 state.listError != null && state.list == null -> item {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        NovaNotice(state.listError)
-                        NovaButton("Tentar novamente", { loadList(state.unreadOnly) }, style = NovaButtonStyle.Secondary)
+                        NovaNotice(state.listError.text())
+                        NovaButton(stringResource(R.string.message_try_again), { loadList(state.unreadOnly) }, style = NovaButtonStyle.Secondary)
                     }
                 }
                 groups.isEmpty() -> item {
-                    Text(if (state.unreadOnly) "Nenhuma mensagem não lida." else "Nenhuma mensagem no momento.", style = NovaType.Body, color = NovaOnSurfaceVariant)
+                    Text(stringResource(if (state.unreadOnly) R.string.message_empty_unread else R.string.message_empty), style = NovaType.Body, color = NovaOnSurfaceVariant)
                 }
                 // Cada mensagem é um item preguiçoso, como no histórico da central.
                 else -> groups.forEachIndexed { groupIndex, (day, messages) ->
                     item(key = "day:$day") {
-                        Text(day, Modifier.padding(top = if (groupIndex == 0) 0.dp else 32.dp, bottom = 24.dp).semantics { heading() },
+                        Text(day.text(), Modifier.padding(top = if (groupIndex == 0) 0.dp else 32.dp, bottom = 24.dp).semantics { heading() },
                             style = NovaType.Body, color = NovaOnSurfaceVariant)
                     }
                     itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
@@ -161,7 +162,7 @@ private fun MessageRow(message: CondoMessage, first: Boolean, last: Boolean, ope
             Icon(painterResource(look.icon), null, Modifier.size(24.dp), tint = look.color)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(message.categoryLabel(), style = NovaType.Supporting, color = look.color)
+            Text(message.categoryLabel().text(), style = NovaType.Supporting, color = look.color)
             Text(message.title, style = NovaType.ItemTitle, color = NovaOnSurface)
             message.publishedInstant?.let { Text(it.clockTime(), style = NovaType.Caption, color = NovaOnSurfaceVariant) }
         }
@@ -172,14 +173,14 @@ private fun MessageRow(message: CondoMessage, first: Boolean, last: Boolean, ope
 @Composable
 private fun MessageDetail(message: CondoMessage, back: () -> Unit) {
     Column(Modifier.fillMaxSize().background(NovaBackground)) {
-        NovaTopBar("Mensagem", back)
+        NovaTopBar(stringResource(R.string.message_detail_title), back)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, top = 24.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(26.dp)) {
             NovaCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     MessageBadge(message, dot = false)
                     Text(message.title, Modifier.semantics { heading() }, style = NovaType.ScreenTitle, color = NovaOnSurface)
-                    message.publishedInstant?.let { Text(it.dayAndTime(), style = NovaType.Supporting, color = NovaOnSurfaceVariant) }
+                    message.publishedInstant?.let { Text(it.dayAndTime().text(), style = NovaType.Supporting, color = NovaOnSurfaceVariant) }
                 }
             }
             Text(message.body, style = NovaType.Body.copy(lineHeight = 21.sp), color = NovaOnSurface)

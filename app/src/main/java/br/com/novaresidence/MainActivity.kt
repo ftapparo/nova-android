@@ -1,5 +1,6 @@
 package br.com.novaresidence
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -10,10 +11,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import br.com.novaresidence.core.push.PushChannels
 import br.com.novaresidence.core.push.PushOpen
+import br.com.novaresidence.core.ui.AppLanguageStore
 
 class MainActivity : ComponentActivity() {
     private val model: AppViewModel by viewModels { viewModelFactory { initializer { AppViewModel(application as NovaApplication) } } }
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguageStore.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,6 +28,8 @@ class MainActivity : ComponentActivity() {
         // cinza-clara atrás dos botões. Preto com ícones claros integra os botões à moldura do aparelho,
         // do splash nativo (tema) até as telas do app.
         enableEdgeToEdge(navigationBarStyle = SystemBarStyle.dark(Color.BLACK))
+        // A troca de idioma recria só a Activity: os nomes dos canais nas configurações do Android acompanham aqui.
+        PushChannels.createBase(this)
         // Recriação (ex.: rotação) reaproveita o intent original: o destino só vale na primeira abertura.
         if (savedInstanceState == null) openFromNotification(intent)
         setContent { App(model) }

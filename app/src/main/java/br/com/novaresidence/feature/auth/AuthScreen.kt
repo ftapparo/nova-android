@@ -1,5 +1,6 @@
 package br.com.novaresidence.feature.auth
 
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -46,12 +47,12 @@ fun AuthScreen(state: AuthState, viewModel: AuthViewModel, openLegal: (String) -
     }
     Column(Modifier.fillMaxSize().background(NovaBackground).systemBarsPadding().imePadding()) {
         if (state.page != AuthPage.Welcome) NovaTopBar(when (state.page) {
-            AuthPage.Login -> "Acessar conta"
-            AuthPage.Signup -> "Criar conta"
-            AuthPage.Recovery -> "Recuperar acesso"
-            AuthPage.RecoveryConfirm -> "Validar conta"
-            AuthPage.ChangePassword -> "Trocar senha"
-            else -> "Não foi possível entrar"
+            AuthPage.Login -> stringResource(R.string.auth_title_login)
+            AuthPage.Signup -> stringResource(R.string.auth_title_signup)
+            AuthPage.Recovery -> stringResource(R.string.auth_title_recovery)
+            AuthPage.RecoveryConfirm -> stringResource(R.string.auth_title_recovery_confirm)
+            AuthPage.ChangePassword -> stringResource(R.string.auth_title_change_password)
+            else -> stringResource(R.string.auth_title_error)
         }, if (state.page == AuthPage.ChangePassword) null else viewModel::back, !state.busy)
         Box(Modifier.weight(1f)) {
             key(state.page) {
@@ -87,23 +88,23 @@ private fun WelcomeContent(state: AuthState, viewModel: AuthViewModel, openLegal
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(Modifier.fillMaxWidth().padding(top = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Image(painterResource(R.drawable.nova_logo), "Nova Residence", Modifier.size(226.dp, 170.dp))
+                Image(painterResource(R.drawable.nova_logo), stringResource(R.string.app_name), Modifier.size(226.dp, 170.dp))
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Bem-vindo", style = NovaType.ScreenTitle, textAlign = TextAlign.Center)
-                    Text("Acompanhe informações e acesse os serviços do seu condomínio em um só lugar.", Modifier.widthIn(max = 340.dp),
+                    Text(stringResource(R.string.auth_welcome), style = NovaType.ScreenTitle, textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.auth_welcome_body), Modifier.widthIn(max = 340.dp),
                         style = NovaType.Body, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
                 }
                 Spacer(Modifier.height(28.dp))
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    NovaButton("Entrar", { viewModel.navigate(AuthPage.Login) }, enabled = !state.busy)
+                    NovaButton(stringResource(R.string.auth_enter), { viewModel.navigate(AuthPage.Login) }, enabled = !state.busy)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         HorizontalDivider(Modifier.weight(1f), color = NovaOutline)
-                        Text("ou continue com", style = NovaType.Caption, color = NovaOnSurfaceVariant)
+                        Text(stringResource(R.string.auth_or_continue_with), style = NovaType.Caption, color = NovaOnSurfaceVariant)
                         HorizontalDivider(Modifier.weight(1f), color = NovaOutline)
                     }
                     GoogleButton(state, viewModel)
                     // O login com Google pode criar a conta: o aviso fica junto da ação (sem tela no Figma).
-                    LegalLinksText("Ao continuar, você concorda com o ", openLegal, Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                    LegalLinksText(R.string.legal_continue_agreement, openLegal, Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                     AuthFeedback(state)
                 }
             }
@@ -128,10 +129,10 @@ private fun GoogleButton(state: AuthState, viewModel: AuthViewModel) {
 
 @Composable
 private fun SignupPrompt(state: AuthState, viewModel: AuthViewModel) {
-    val prompt = "Ainda não tem uma conta?"
+    val prompt = stringResource(R.string.auth_no_account)
     val action = @Composable {
         TextButton(onClick = { viewModel.navigate(AuthPage.Signup) }, enabled = !state.busy, contentPadding = PaddingValues(horizontal = 4.dp)) {
-            Text("Criar conta", style = NovaType.Button, color = NovaPrimary)
+            Text(stringResource(R.string.auth_create_account), style = NovaType.Button, color = NovaPrimary)
         }
     }
     // Com fonte ampliada, texto e ação empilham para não cortar nenhum dos dois.
@@ -148,12 +149,12 @@ private fun SignupPrompt(state: AuthState, viewModel: AuthViewModel) {
 private fun ErrorContent(state: AuthState, viewModel: AuthViewModel) {
     AuthContent {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            NovaIntroduction("Seus dados não conferem", "Confira seus dados de acesso e sua senha ou recupere seu acesso.")
-            NovaNotice("Nenhuma alteração foi feita na sua conta.", title = "Acesso não concluído")
-            NovaButton("Tentar novamente", viewModel::back, enabled = !state.busy)
-            NovaButton("Recuperar acesso", { viewModel.navigate(AuthPage.Recovery) }, enabled = !state.busy, style = NovaButtonStyle.Secondary)
-            if (state.retrySeconds > 0) Text("Tente novamente em ${state.retrySeconds}s", style = NovaType.Body)
-            Text("Se o problema continuar, fale com a administração do condomínio.", Modifier.fillMaxWidth(),
+            NovaIntroduction(stringResource(R.string.auth_error_title), stringResource(R.string.auth_error_body))
+            NovaNotice(stringResource(R.string.auth_error_notice), title = stringResource(R.string.auth_error_notice_title))
+            NovaButton(stringResource(R.string.auth_try_again), viewModel::back, enabled = !state.busy)
+            NovaButton(stringResource(R.string.auth_recover_access), { viewModel.navigate(AuthPage.Recovery) }, enabled = !state.busy, style = NovaButtonStyle.Secondary)
+            if (state.retrySeconds > 0) Text(stringResource(R.string.auth_retry_in, state.retrySeconds), style = NovaType.Body)
+            Text(stringResource(R.string.auth_error_help), Modifier.fillMaxWidth(),
                 style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
         }
     }
@@ -180,66 +181,66 @@ private fun AuthForm(state: AuthState, viewModel: AuthViewModel, openLegal: (Str
         }
     }
     val intro = when (page) {
-        AuthPage.Login -> "Vamos identificar você" to "Informe seus dados de acesso."
-        AuthPage.Signup -> "Vamos identificar você" to "Informe seus dados para cadastro."
-        AuthPage.Recovery -> "Vamos ajudar você a entrar" to "Informe seu e-mail e enviaremos as próximas instruções."
-        AuthPage.RecoveryConfirm -> "Digite o código" to "Se houver uma conta com este e-mail, você receberá um código de 6 dígitos. Ele expira em 15 minutos."
-        else -> "Crie uma nova senha" to "Para continuar, substitua sua senha temporária por uma senha pessoal."
+        AuthPage.Login -> R.string.auth_intro_identify to R.string.auth_intro_login
+        AuthPage.Signup -> R.string.auth_intro_identify to R.string.auth_intro_signup
+        AuthPage.Recovery -> R.string.auth_intro_recovery_title to R.string.auth_intro_recovery
+        AuthPage.RecoveryConfirm -> R.string.auth_intro_code_title to R.string.auth_intro_code
+        else -> R.string.auth_intro_change_title to R.string.auth_intro_change
     }
     AuthContent {
-        NovaIntroduction(intro.first, intro.second)
+        NovaIntroduction(stringResource(intro.first), stringResource(intro.second))
         // Login e cadastro têm uma linha de respiro a mais entre a introdução e o primeiro campo no Figma.
         val introGap = if (page in setOf(AuthPage.Login, AuthPage.Signup)) 36.dp else 16.dp
         if (page == AuthPage.RecoveryConfirm) {
             Spacer(Modifier.height(16.dp))
-            RecoveryCodeInput(code, { code = it }, state.fields["code"], !state.busy)
+            RecoveryCodeInput(code, { code = it }, state.fields["code"]?.text(), !state.busy)
             Spacer(Modifier.height(16.dp - FieldLabelInset))
         } else Spacer(Modifier.height(introGap - FieldLabelInset))
         Column(verticalArrangement = Arrangement.spacedBy(16.dp - FieldLabelInset)) {
             if (page in setOf(AuthPage.Login, AuthPage.Signup, AuthPage.Recovery)) {
-                AuthField("E-mail", email, { email = it }, state.fields["email"], !state.busy, keyboard = KeyboardType.Email,
-                    placeholder = when (page) { AuthPage.Signup -> "Digite um contato válido"; AuthPage.Recovery -> "nome@exemplo.com"; else -> "Digite seu e-mail" }, submit = if (page == AuthPage.Recovery) submit else null)
+                AuthField(stringResource(R.string.auth_email), email, { email = it }, state.fields["email"]?.text(), !state.busy, keyboard = KeyboardType.Email,
+                    placeholder = when (page) { AuthPage.Signup -> stringResource(R.string.auth_email_placeholder_signup); AuthPage.Recovery -> stringResource(R.string.auth_email_placeholder_recovery); else -> stringResource(R.string.auth_email_placeholder) }, submit = if (page == AuthPage.Recovery) submit else null)
             }
-            if (page == AuthPage.ChangePassword) AuthField("Senha atual", current, { current = it }, state.fields["currentPassword"], !state.busy, secret = true, placeholder = "Senha temporária")
+            if (page == AuthPage.ChangePassword) AuthField(stringResource(R.string.auth_current_password), current, { current = it }, state.fields["currentPassword"]?.text(), !state.busy, secret = true, placeholder = stringResource(R.string.auth_current_password_placeholder))
             if (page != AuthPage.Recovery) {
                 val isNew = page != AuthPage.Login
-                AuthField(if (signup) "Crie uma senha" else if (isNew) "Nova senha" else "Senha", password, { password = it },
-                    state.fields[if (isNew) "newPassword" else "password"] ?: state.fields["password"], !state.busy,
-                    secret = true, placeholder = if (isNew) "Mínimo de 8 caracteres" else "Digite sua senha", submit = submit,
-                    hint = if (isNew) "Use pelo menos 8 caracteres." else null)
+                AuthField(stringResource(if (signup) R.string.auth_create_password else if (isNew) R.string.auth_new_password else R.string.auth_password), password, { password = it },
+                    (state.fields[if (isNew) "newPassword" else "password"] ?: state.fields["password"])?.text(), !state.busy,
+                    secret = true, placeholder = stringResource(if (isNew) R.string.auth_new_password_placeholder else R.string.auth_password_placeholder), submit = submit,
+                    hint = if (isNew) stringResource(R.string.auth_password_hint) else null)
             }
         }
         Spacer(Modifier.height(16.dp))
         if (signup) {
             // A API registra o aceite da versão vigente junto com o cadastro.
-            LegalLinksText("Ao continuar, você concorda com o ", openLegal)
+            LegalLinksText(R.string.legal_continue_agreement, openLegal)
             Spacer(Modifier.height(16.dp))
         }
-        NovaButton(when (page) {
-            AuthPage.Login -> "Entrar"
-            AuthPage.Signup -> "Continuar"
-            AuthPage.Recovery -> "Enviar instruções"
-            AuthPage.RecoveryConfirm -> "Validar e continuar"
-            else -> "Salvar nova senha"
-        }, submit, enabled = canAct)
+        NovaButton(stringResource(when (page) {
+            AuthPage.Login -> R.string.auth_enter
+            AuthPage.Signup -> R.string.auth_continue
+            AuthPage.Recovery -> R.string.auth_send_instructions
+            AuthPage.RecoveryConfirm -> R.string.auth_validate_continue
+            else -> R.string.auth_save_password
+        }), submit, enabled = canAct)
         // O link ocupa 48 dp de toque com o texto centralizado: 2 dp + 14 dp internos = 16 dp visíveis.
         if (page == AuthPage.Login) {
             Spacer(Modifier.height(2.dp))
-            NovaTextLink("Esqueci minha senha", { viewModel.navigate(AuthPage.Recovery) }, enabled = !state.busy)
+            NovaTextLink(stringResource(R.string.auth_forgot_password), { viewModel.navigate(AuthPage.Recovery) }, enabled = !state.busy)
         }
         if (page == AuthPage.ChangePassword) {
             Spacer(Modifier.height(2.dp))
-            NovaTextLink("Sair", viewModel::logout, enabled = !state.busy)
+            NovaTextLink(stringResource(R.string.auth_sign_out), viewModel::logout, enabled = !state.busy)
         }
         if (page == AuthPage.RecoveryConfirm) {
             Spacer(Modifier.height(16.dp))
             val remaining = state.retrySeconds
-            NovaButton(if (remaining > 0) "Reenviar código em %02d:%02d".format(remaining / 60, remaining % 60) else "Reenviar código",
+            NovaButton(if (remaining > 0) stringResource(R.string.auth_resend_code_in, remaining / 60, remaining % 60) else stringResource(R.string.auth_resend_code),
                 { viewModel.recover(state.recoveryEmail) }, enabled = canAct, style = NovaButtonStyle.Secondary)
             Spacer(Modifier.height(24.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                 Icon(painterResource(R.drawable.nova_info_outline), null, Modifier.padding(top = 1.dp).size(18.dp), tint = NovaPrimary)
-                Text("Confira também a caixa de spam ou mensagens bloqueadas.", Modifier.weight(1f),
+                Text(stringResource(R.string.auth_check_spam), Modifier.weight(1f),
                     style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
             }
         }
@@ -253,8 +254,9 @@ private fun AuthForm(state: AuthState, viewModel: AuthViewModel, openLegal: (Str
 @Composable
 private fun RecoveryCodeInput(code: String, change: (String) -> Unit, error: String?, enabled: Boolean) {
     var focused by remember { mutableStateOf(false) }
+    val codeDescription = stringResource(R.string.auth_code_description)
     BasicTextField(code, { change(it.filter { char -> char in '0'..'9' }.take(6)) }, enabled = enabled,
-        modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused }.semantics { contentDescription = "Código de recuperação, 6 dígitos" },
+        modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused }.semantics { contentDescription = codeDescription },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Next),
         decorationBox = { inner ->
             Box {
@@ -277,13 +279,13 @@ private fun RecoveryCodeInput(code: String, change: (String) -> Unit, error: Str
 @Composable
 private fun AuthFeedback(state: AuthState) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        state.error?.let { NovaNotice(it, state.requestId) }
-        if (state.retrySeconds > 0) Text("Tente novamente em ${state.retrySeconds}s", style = NovaType.Body)
+        state.error?.let { NovaNotice(it.text(), state.requestId) }
+        if (state.retrySeconds > 0) Text(stringResource(R.string.auth_retry_in, state.retrySeconds), style = NovaType.Body)
         if (state.busy) {
             if (state.page == AuthPage.Recovery) Row(Modifier.fillMaxWidth().background(NovaPrimarySoft, RoundedCornerShape(12.dp)).padding(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(Modifier.size(32.dp), color = NovaPrimary, strokeWidth = 3.dp)
-                Text("Preparando uma forma segura de recuperação...", style = NovaType.Body, color = NovaHeader)
+                Text(stringResource(R.string.auth_preparing_recovery), style = NovaType.Body, color = NovaHeader)
             } else NovaLoading()
         }
     }
@@ -316,7 +318,7 @@ private fun AuthField(
         trailingIcon = {
             IconButton({ revealed = !revealed }) {
                 Icon(painterResource(if (revealed) R.drawable.nova_visibility_off else R.drawable.nova_visibility),
-                    if (revealed) "Ocultar senha" else "Mostrar senha", Modifier.size(24.dp), tint = FieldVariant)
+                    stringResource(if (revealed) R.string.auth_hide_password else R.string.auth_show_password), Modifier.size(24.dp), tint = FieldVariant)
             }
         },
         keyboardOptions = options, onKeyboardAction = keyboardAction,

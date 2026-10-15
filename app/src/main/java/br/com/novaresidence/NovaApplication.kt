@@ -17,6 +17,8 @@ import br.com.novaresidence.core.session.EncryptedSessionStore
 import br.com.novaresidence.core.session.SessionCoordinator
 import br.com.novaresidence.core.session.SessionData
 import br.com.novaresidence.core.session.SessionStorageException
+import br.com.novaresidence.core.ui.AppLanguageStore
+import br.com.novaresidence.core.ui.UiText
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,6 +28,10 @@ import kotlinx.serialization.json.put
 class NovaApplication : Application() {
     lateinit var graph: AppGraph
         private set
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppLanguageStore.wrap(base))
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -40,12 +46,13 @@ class NovaApplication : Application() {
  */
 class AppGraph(context: Context) {
     private val appContext = context.applicationContext
-    val transport = ApiTransport(BuildConfig.V3_BASE_URL)
+    val language = AppLanguageStore(appContext)
+    val transport = ApiTransport(BuildConfig.V3_BASE_URL, language = { language.current().tag })
     val session = SessionCoordinator(EncryptedSessionStore(appContext)) { token ->
         transport.post<SessionData>("auth/refresh", buildJsonObject { put("refreshToken", token) })
     }
     val api = ApiClient(transport, session)
-    val push = PushRegistration(api, SharedPreferencesPushStore(appContext), ::firebaseToken, { PushDevice.current(appContext) })
+    val push = PushRegistration(api, SharedPreferencesPushStore(appContext), ::firebaseToken, { PushDevice.current(appContext, language.current().tag) })
     /** Avisos recebidos com o app aberto: as telas visíveis reconsultam o estado na hora. */
     val pushEvents = MutableSharedFlow<PushMessage>(extraBufferCapacity = 16)
     /** Tela aberta com o app em primeiro plano (nula em segundo plano); lida pelo serviço do FCM em outra thread. */
@@ -53,10 +60,10 @@ class AppGraph(context: Context) {
 
     private val restoreGuard = Any()
     private var restored = false
-    private var restoreError: String? = null
+    private var restoreError: UiText? = null
 
     /** Lê a sessão salva uma vez por processo (tela ou serviço do FCM, o que vier primeiro). Devolve o erro para exibir. */
-    fun restoreSession(): String? = synchronized(restoreGuard) {
+    fun restoreSession(): UiText? = synchronized(restoreGuard) {
         if (!restored) {
             restored = true
             try { session.restore() } catch (error: SessionStorageException) { restoreError = error.userMessage }

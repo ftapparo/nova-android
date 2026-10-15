@@ -1,5 +1,8 @@
 package br.com.novaresidence.feature.legal
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.annotation.StringRes
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -26,13 +29,16 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import br.com.novaresidence.R
 import br.com.novaresidence.core.ui.*
 import kotlin.math.roundToInt
 
 // Corpo do texto na folha de estilo das páginas públicas (src/v3/legal/legal.documents.ts na API).
 private const val PageBodyPx = 16f
 
-private fun fallbackTitle(document: String) = if (document == TermsDocument) "Termo de Uso" else "Política de Privacidade"
+/** Título no idioma do app; o documento oficial (e o título enviado pela API) é sempre em português. */
+@Composable
+private fun documentTitle(document: String) = stringResource(if (document == TermsDocument) R.string.legal_terms else R.string.legal_privacy)
 
 /**
  * Termo de Uso ou Política de Privacidade (Figma 13 e 14): a página oficial publicada pela API, para o
@@ -42,12 +48,13 @@ private fun fallbackTitle(document: String) = if (document == TermsDocument) "Te
 fun LegalDocumentScreen(state: LegalState, document: String, back: () -> Unit, retry: () -> Unit) {
     val doc = state.find(document)
     Column(Modifier.fillMaxSize().background(Color.White)) {
-        NovaTopBar(doc?.title ?: fallbackTitle(document), back)
+        NovaTopBar(documentTitle(document), back)
+        PortugueseOnlyNotice()
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
                 doc != null -> LegalWebView(doc.htmlUrl, Modifier.fillMaxSize())
-                state.loading -> NovaLoading("Carregando documento…")
-                else -> LegalError(state.error ?: "Não foi possível carregar o documento.", retry)
+                state.loading -> NovaLoading(stringResource(R.string.legal_loading))
+                else -> LegalError(state.error?.text() ?: stringResource(R.string.legal_load_failed), retry)
             }
         }
     }
@@ -57,8 +64,15 @@ fun LegalDocumentScreen(state: LegalState, document: String, back: () -> Unit, r
 private fun LegalError(message: String, retry: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         NovaNotice(message)
-        NovaButton("Tentar novamente", retry, style = NovaButtonStyle.Secondary)
+        NovaButton(stringResource(R.string.legal_try_again), retry, style = NovaButtonStyle.Secondary)
     }
+}
+
+/** Fora do português, avisa que o texto exibido é o oficial, em português (o documento jurídico não é traduzido). */
+@Composable
+private fun PortugueseOnlyNotice() {
+    if (LocalConfiguration.current.locales[0].language == "pt") return
+    Box(Modifier.padding(start = 28.dp, end = 28.dp, bottom = 12.dp)) { NovaInfoStrip(stringResource(R.string.legal_portuguese_only), centered = false) }
 }
 
 /**
@@ -72,7 +86,7 @@ private fun LegalWebView(url: String, modifier: Modifier) {
     var failed by remember(url, attempt) { mutableStateOf(false) }
     val host = remember(url) { Uri.parse(url).host }
     Box(modifier) {
-        if (failed) LegalError("Não foi possível carregar o documento. Verifique sua conexão.") { attempt++ }
+        if (failed) LegalError(stringResource(R.string.legal_load_failed_connection)) { attempt++ }
         else key(url, attempt) {
             AndroidView(factory = { context ->
                 WebView(context).apply {
@@ -102,22 +116,34 @@ private fun LegalWebView(url: String, modifier: Modifier) {
             }, modifier = Modifier.fillMaxSize())
         }
         if (loading && !failed) Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.TopCenter) {
-            NovaLoading("Carregando documento…")
+            NovaLoading(stringResource(R.string.legal_loading))
         }
     }
 }
 
-/** Texto com "Termo de Uso" e "Política de Privacidade" tocáveis, que abrem os documentos. */
+// Posições dos links no modelo: %1$s = Termo de Uso, %2$s = Política de Privacidade.
+private val LinkSlot = Regex("%([12])\\\$s")
+
+/**
+ * Frase com "Termo de Uso" e "Política de Privacidade" tocáveis, que abrem os documentos. [template] tem `%1$s`
+ * (Termo) e `%2$s` (Política), para cada idioma posicionar os links na própria ordem.
+ */
 @Composable
-fun LegalLinksText(prefix: String, openLegal: (String) -> Unit, modifier: Modifier = Modifier, style: TextStyle = NovaType.Supporting,
+fun LegalLinksText(@StringRes template: Int, openLegal: (String) -> Unit, modifier: Modifier = Modifier, style: TextStyle = NovaType.Supporting,
     textAlign: TextAlign = TextAlign.Start) {
     val link = TextLinkStyles(SpanStyle(color = NovaPrimary, fontWeight = FontWeight.Medium, textDecoration = TextDecoration.Underline))
+    val sentence = stringResource(template)
+    val terms = stringResource(R.string.legal_terms)
+    val privacy = stringResource(R.string.legal_privacy)
     val text = buildAnnotatedString {
-        append(prefix)
-        withLink(LinkAnnotation.Clickable(TermsDocument, link) { openLegal(TermsDocument) }) { append("Termo de Uso") }
-        append(" e a ")
-        withLink(LinkAnnotation.Clickable(PrivacyDocument, link) { openLegal(PrivacyDocument) }) { append("Política de Privacidade") }
-        append(".")
+        var plain = 0
+        LinkSlot.findAll(sentence).forEach { slot ->
+            append(sentence.substring(plain, slot.range.first))
+            if (slot.groupValues[1] == "1") withLink(LinkAnnotation.Clickable(TermsDocument, link) { openLegal(TermsDocument) }) { append(terms) }
+            else withLink(LinkAnnotation.Clickable(PrivacyDocument, link) { openLegal(PrivacyDocument) }) { append(privacy) }
+            plain = slot.range.last + 1
+        }
+        append(sentence.substring(plain))
     }
     Text(text, modifier, style = style, color = NovaOnSurfaceVariant, textAlign = textAlign)
 }
@@ -130,25 +156,26 @@ fun LegalLinksText(prefix: String, openLegal: (String) -> Unit, modifier: Modifi
 fun TermsAcceptanceScreen(state: LegalState, accept: () -> Unit, logout: () -> Unit, openLegal: (String) -> Unit, retry: () -> Unit) {
     val terms = state.find(TermsDocument)
     Column(Modifier.fillMaxSize().background(NovaBackground).systemBarsPadding()) {
-        NovaTopBar("Termo de Uso")
+        NovaTopBar(stringResource(R.string.legal_terms))
         Column(Modifier.padding(horizontal = 28.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // O app não sabe se a conta já aceitou uma versão anterior: o título serve à conta antiga e à versão nova.
-            Text("Aceite do Termo de Uso", style = NovaType.ScreenTitle, color = NovaOnSurface)
-            Text("Para continuar usando o aplicativo, leia e aceite o Termo de Uso" + (terms?.let { " (versão ${it.version})" } ?: "") + ".",
+            Text(stringResource(R.string.legal_acceptance_title), style = NovaType.ScreenTitle, color = NovaOnSurface)
+            Text(terms?.let { stringResource(R.string.legal_acceptance_body_version, it.version) } ?: stringResource(R.string.legal_acceptance_body),
                 style = NovaType.Body, color = NovaOnSurfaceVariant)
         }
+        PortugueseOnlyNotice()
         Box(Modifier.weight(1f).fillMaxWidth().background(Color.White)) {
             when {
                 terms != null -> LegalWebView(terms.htmlUrl, Modifier.fillMaxSize())
-                state.loading -> NovaLoading("Carregando documento…")
-                else -> LegalError(state.error ?: "Não foi possível carregar o Termo de Uso.", retry)
+                state.loading -> NovaLoading(stringResource(R.string.legal_loading))
+                else -> LegalError(state.error?.text() ?: stringResource(R.string.legal_terms_load_failed), retry)
             }
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            LegalLinksText("Ao aceitar, você concorda com o ", openLegal)
-            state.acceptError?.let { NovaNotice(it) }
-            NovaButton(if (state.accepting) "Registrando aceite…" else "Aceitar e continuar", accept, enabled = terms != null && !state.accepting)
-            NovaTextLink("Sair", logout, enabled = !state.accepting)
+            LegalLinksText(R.string.legal_accept_agreement, openLegal)
+            state.acceptError?.let { NovaNotice(it.text()) }
+            NovaButton(stringResource(if (state.accepting) R.string.legal_registering else R.string.legal_accept), accept, enabled = terms != null && !state.accepting)
+            NovaTextLink(stringResource(R.string.legal_sign_out), logout, enabled = !state.accepting)
         }
     }
 }

@@ -38,6 +38,11 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }    // O idioma é escolhido dentro do app (tela 11): todos os idiomas precisam vir instalados, não só o do aparelho.
+    bundle {
+        language {
+            enableSplit = false
+        }
     }
 }
 

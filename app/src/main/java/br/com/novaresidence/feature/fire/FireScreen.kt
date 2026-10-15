@@ -1,5 +1,6 @@
 package br.com.novaresidence.feature.fire
 
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -66,8 +67,8 @@ fun FireFeature(
 }
 
 private data class StatusLook(
-    val image: Int, val grayscale: Boolean, val badge: String, val color: Color, val container: Color,
-    val title: String, val text: String, val info: String?,
+    val image: Int, val grayscale: Boolean, val badge: UiText, val color: Color, val container: Color,
+    val title: UiText, val text: UiText, val info: UiText?,
 )
 
 @Composable
@@ -77,7 +78,7 @@ private fun FireStatusScreen(
 ) {
     val status = state.status
     Column(Modifier.fillMaxSize().background(NovaServiceBackground)) {
-        NovaTopBar("Central de Incêndio", background = NovaServiceBackground, color = NovaInk)
+        NovaTopBar(stringResource(R.string.fire_title), background = NovaServiceBackground, color = NovaInk)
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             // Em telas mais baixas que o frame, a ilustração encolhe antes de empurrar orientações e ações para fora da tela.
             val available = maxHeight
@@ -99,37 +100,37 @@ private fun StatusContent(
 ) {
     val status = state.status
     val look = when (status) {
-        FireStatus.Normal -> StatusLook(R.drawable.nova_fire_normal, false, "Central online", NovaSuccess, NovaSuccessContainer,
+        FireStatus.Normal -> StatusLook(R.drawable.nova_fire_normal, false, uiText(R.string.fire_badge_online), NovaSuccess, NovaSuccessContainer,
             // Só promete aviso com o aparelho registrado e o alarme permitido (AGENTS.md, tela 26); a pessoa pode
             // desligar as notificações a qualquer momento, por isso o estado é reconferido a cada volta ao app.
-            "Sistema normal", "Nenhum alarme de incêndio ativo.",
-            if (notificationsReady) "Você será avisado se o estado da central mudar." else "O estado é atualizado enquanto o aplicativo estiver aberto.")
-        FireStatus.Attention -> StatusLook(R.drawable.nova_fire_attention, false, "Em verificação", NovaWarning, NovaWarningContainer,
-            "Atenção", "Existe um aviso que requer verificação.", "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável.")
-        FireStatus.Offline -> StatusLook(R.drawable.nova_fire_normal, true, "Sem comunicação", NovaOffline, NovaOfflineContainer,
-            "Central sem comunicação", "Não foi possível obter o estado atual da central.", "A equipe do condomínio é avisada pelo painel.")
-        FireStatus.Loading -> StatusLook(R.drawable.nova_fire_normal, true, "Consultando", NovaPrimary, NovaPrimarySoft,
-            "Consultando a central", "Aguarde enquanto obtemos o estado atual.", null)
-        else -> StatusLook(R.drawable.nova_fire_normal, true, "Indisponível", NovaOffline, NovaOfflineContainer,
-            "Estado indisponível", state.error ?: "Não foi possível consultar a central.", null)
+            uiText(R.string.fire_normal_title), uiText(R.string.fire_normal),
+            uiText(if (notificationsReady) R.string.fire_push_ready else R.string.fire_push_off))
+        FireStatus.Attention -> StatusLook(R.drawable.nova_fire_attention, false, uiText(R.string.fire_badge_checking), NovaWarning, NovaWarningContainer,
+            uiText(R.string.fire_attention_title), uiText(R.string.fire_attention), uiText(R.string.fire_attention_info))
+        FireStatus.Offline -> StatusLook(R.drawable.nova_fire_normal, true, uiText(R.string.fire_badge_offline), NovaOffline, NovaOfflineContainer,
+            uiText(R.string.fire_offline_title), uiText(R.string.fire_offline), uiText(R.string.fire_offline_info))
+        FireStatus.Loading -> StatusLook(R.drawable.nova_fire_normal, true, uiText(R.string.fire_badge_loading), NovaPrimary, NovaPrimarySoft,
+            uiText(R.string.fire_loading_title), uiText(R.string.fire_loading), null)
+        else -> StatusLook(R.drawable.nova_fire_normal, true, uiText(R.string.fire_badge_unavailable), NovaOffline, NovaOfflineContainer,
+            uiText(R.string.fire_unavailable_title), state.error ?: uiText(R.string.fire_unavailable), null)
     }
     Column(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }, horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         NovaIllustration(look.image, Modifier.size(illustration), contentScale = ContentScale.Crop,
             colorFilter = if (look.grayscale) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null)
-        NovaStatusBadge(look.badge, look.color, look.container)
-        Text(look.title, Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.Hero, color = NovaInk, textAlign = TextAlign.Center)
-        Text(look.text, Modifier.fillMaxWidth(), style = NovaType.Field.copy(lineHeight = 22.sp), color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
+        NovaStatusBadge(look.badge.text(), look.color, look.container)
+        Text(look.title.text(), Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.Hero, color = NovaInk, textAlign = TextAlign.Center)
+        Text(look.text.text(), Modifier.fillMaxWidth(), style = NovaType.Field.copy(lineHeight = 22.sp), color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
         if (status == FireStatus.Attention) state.activeEvents.firstNotNullOfOrNull { it.placeLine() }?.let { place ->
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Local do aviso", style = NovaType.Caption, color = NovaOnSurfaceVariant)
+                Text(stringResource(R.string.fire_warning_place), style = NovaType.Caption, color = NovaOnSurfaceVariant)
                 Text(place, style = NovaType.ItemTitle, color = NovaInk, textAlign = TextAlign.Center)
             }
         }
-        look.info?.let { NovaInfoStrip(it, accent = look.color, container = look.container, centered = false) }
-        if (status == FireStatus.Normal && !notificationsReady && enableNotifications != null) NovaTextLink("Ativar notificações", enableNotifications)
-        if (status == FireStatus.Unavailable) NovaButton("Tentar novamente", refresh, enabled = state.retrySeconds == 0L, height = 52.dp)
-        if (openHistory != null) NovaButton("Ver histórico de eventos", openHistory, style = NovaButtonStyle.Outlined, height = 52.dp)
+        look.info?.let { NovaInfoStrip(it.text(), accent = look.color, container = look.container, centered = false) }
+        if (status == FireStatus.Normal && !notificationsReady && enableNotifications != null) NovaTextLink(stringResource(R.string.push_enable), enableNotifications)
+        if (status == FireStatus.Unavailable) NovaButton(stringResource(R.string.fire_try_again), refresh, enabled = state.retrySeconds == 0L, height = 52.dp)
+        if (openHistory != null) NovaButton(stringResource(R.string.fire_view_history), openHistory, style = NovaButtonStyle.Outlined, height = 52.dp)
         Footnotes(state)
     }
 }
@@ -138,19 +139,19 @@ private fun StatusContent(
 private fun Footnotes(state: FireState) {
     val now by produceState(System.currentTimeMillis()) { while (true) { delay(15_000); value = System.currentTimeMillis() } }
     state.panel?.lastUpdated?.let { updated ->
-        Text(if (now - updated < 60_000) "Atualizado agora" else "Atualizado às ${updated.clockTime()}",
+        Text(if (now - updated < 60_000) stringResource(R.string.fire_updated_now) else stringResource(R.string.fire_updated_at, updated.clockTime()),
             style = NovaType.Caption, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
     }
-    if (state.error != null && state.status != FireStatus.Unavailable) Text(state.error, style = NovaType.Caption, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
-    if (state.retrySeconds > 0) Text("Nova consulta em ${state.retrySeconds}s", style = NovaType.Caption, color = NovaOnSurfaceVariant)
+    if (state.error != null && state.status != FireStatus.Unavailable) Text(state.error.text(), style = NovaType.Caption, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
+    if (state.retrySeconds > 0) Text(stringResource(R.string.fire_next_check_in, state.retrySeconds), style = NovaType.Caption, color = NovaOnSurfaceVariant)
 }
 
 private val SafetyGuidance = listOf(
-    "Aguarde as orientações da brigada de incêndio." to false,
-    "Se houver fogo ou fumaça no seu andar, saia imediatamente do local." to true,
-    "Utilize as escadas. Não use os elevadores." to false,
-    "Em caso de fumaça, permaneça abaixado." to false,
-    "Siga as orientações de evacuação dos brigadistas." to false,
+    R.string.fire_safety_1 to false,
+    R.string.fire_safety_2 to true,
+    R.string.fire_safety_3 to false,
+    R.string.fire_safety_4 to false,
+    R.string.fire_safety_5 to false,
 )
 
 /** Alarme ativo (Figma 28): prevalece sobre qualquer outro estado e permanece enquanto a central indicar alarme. */
@@ -161,23 +162,23 @@ private fun AlarmContent(state: FireState, illustration: Dp, openEvent: (CieLog)
         Column(Modifier.fillMaxWidth().padding(bottom = 8.dp).semantics { liveRegion = LiveRegionMode.Assertive },
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaIllustration(R.drawable.nova_fire_alarm, Modifier.size(illustration * 200f / 159f, illustration), contentScale = ContentScale.Crop)
-            NovaStatusBadge("Alarme ativo", NovaAlarm, NovaAlarmContainer)
-            Text("ALARME DE INCÊNDIO", Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.HeadlineHome.copy(fontWeight = FontWeight.Bold),
+            NovaStatusBadge(stringResource(R.string.fire_badge_alarm), NovaAlarm, NovaAlarmContainer)
+            Text(stringResource(R.string.fire_alarm_title), Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.HeadlineHome.copy(fontWeight = FontWeight.Bold),
                 color = NovaAlarm, textAlign = TextAlign.Center)
             log?.placeLine(" - ")?.let { Text(it, Modifier.fillMaxWidth(), style = NovaType.HeadlineHome, color = NovaInk, textAlign = TextAlign.Center) }
-            log?.instant()?.let { Text("Ocorrência iniciada às ${it.clockTime()}", style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
+            log?.instant()?.let { Text(stringResource(R.string.fire_alarm_started_at, it.clockTime()), style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
         }
         HorizontalDivider(color = NovaOutline)
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Orientações de segurança", Modifier.semantics { heading() }, style = NovaType.Highlight, color = NovaInk)
+            Text(stringResource(R.string.fire_safety_title), Modifier.semantics { heading() }, style = NovaType.Highlight, color = NovaInk)
             SafetyGuidance.forEach { (text, emphasis) ->
                 Row(Modifier.fillMaxWidth().heightIn(min = 38.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(8.dp).background(NovaAlarm, CircleShape))
-                    Text(text, style = if (emphasis) NovaType.BodyEmphasis else NovaType.Body, color = NovaInk)
+                    Text(stringResource(text), style = if (emphasis) NovaType.BodyEmphasis else NovaType.Body, color = NovaInk)
                 }
             }
         }
-        if (log != null) NovaButton("Ver detalhes do evento", { openEvent(log) }, style = NovaButtonStyle.Outlined)
+        if (log != null) NovaButton(stringResource(R.string.fire_view_event), { openEvent(log) }, style = NovaButtonStyle.Outlined)
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) { Footnotes(state) }
     }
 }
@@ -194,10 +195,10 @@ private fun CieLog.look(): EventLook = when (category()) {
 
 // Filtros do Figma 29; supervisão acompanha as falhas e bloqueio acompanha as operações da central.
 private val HistoryFilters = listOf(
-    "Todos" to null,
-    "Alarmes" to setOf("alarme"),
-    "Falhas" to setOf("falha", "supervisao"),
-    "Operação" to setOf("operacao", "bloqueio"),
+    R.string.fire_filter_all to null,
+    R.string.fire_filter_alarms to setOf("alarme"),
+    R.string.fire_filter_failures to setOf("falha", "supervisao"),
+    R.string.fire_filter_operation to setOf("operacao", "bloqueio"),
 )
 
 @Composable
@@ -206,28 +207,28 @@ private fun FireHistoryScreen(state: FireState, back: () -> Unit, reload: () -> 
     val types = HistoryFilters[filter].second
     // Até 200 eventos: agrupar só quando o histórico ou o filtro mudam, não a cada recomposição.
     val groups = remember(state.history, filter) {
-        state.history.orEmpty().filter { types == null || it.category() in types }.groupBy { it.instant()?.dayLabel() ?: "Sem data" }.toList()
+        state.history.orEmpty().filter { types == null || it.category() in types }.groupBy { it.instant()?.dayLabel() ?: uiText(R.string.date_none) }.toList()
     }
     Column(Modifier.fillMaxSize().background(NovaBackground)) {
-        NovaTopBar("Histórico de eventos", back)
-        NovaFilterBar(HistoryFilters.map { it.first }, filter) { filter = it }
+        NovaTopBar(stringResource(R.string.fire_history_title), back)
+        NovaFilterBar(HistoryFilters.map { stringResource(it.first) }, filter) { filter = it }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(start = 28.dp, end = 28.dp, top = 16.dp, bottom = 24.dp)) {
             when {
-                state.historyLoading && state.history == null -> item { NovaLoading("Carregando eventos…") }
+                state.historyLoading && state.history == null -> item { NovaLoading(stringResource(R.string.fire_history_loading)) }
                 state.historyError != null && state.history == null -> item {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        NovaNotice(state.historyError)
-                        NovaButton("Tentar novamente", reload, style = NovaButtonStyle.Secondary)
+                        NovaNotice(state.historyError.text())
+                        NovaButton(stringResource(R.string.fire_try_again), reload, style = NovaButtonStyle.Secondary)
                     }
                 }
                 groups.isEmpty() -> item {
-                    Text(if (filter == 0) "Nenhum evento registrado nos últimos 30 dias." else "Nenhum evento deste tipo nos últimos 30 dias.",
+                    Text(stringResource(if (filter == 0) R.string.fire_history_empty else R.string.fire_history_empty_filter),
                         style = NovaType.Body, color = NovaOnSurfaceVariant)
                 }
                 // Cada evento é um item preguiçoso: um dia pode ter dezenas de eventos, e montá-los de uma vez travava a tela.
                 else -> groups.forEachIndexed { groupIndex, (day, logs) ->
                     item(key = "day:$day") {
-                        Text(day, Modifier.padding(top = if (groupIndex == 0) 0.dp else 32.dp, bottom = 24.dp).semantics { heading() },
+                        Text(day.text(), Modifier.padding(top = if (groupIndex == 0) 0.dp else 32.dp, bottom = 24.dp).semantics { heading() },
                             style = NovaType.Body, color = NovaOnSurfaceVariant)
                     }
                     itemsIndexed(logs, key = { _, log -> log.key }) { index, log ->
@@ -248,8 +249,8 @@ private fun HistoryRow(log: CieLog, first: Boolean, last: Boolean, open: () -> U
             Icon(painterResource(look.icon), null, Modifier.size(24.dp), tint = look.iconColor)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(log.categoryLabel(), style = NovaType.Supporting, color = look.color)
-            Text(log.historyTitle(), style = NovaType.ItemTitle, color = NovaOnSurface)
+            Text(log.categoryLabel().text(), style = NovaType.Supporting, color = look.color)
+            Text(log.historyTitle().text(), style = NovaType.ItemTitle, color = NovaOnSurface)
             log.instant()?.let { Text(it.clockTime(), style = NovaType.Caption, color = NovaOnSurfaceVariant) }
         }
         Icon(painterResource(R.drawable.nova_chevron_forward), null, Modifier.size(20.dp), tint = NovaOnSurfaceVariant)
@@ -263,29 +264,29 @@ private fun FireEventScreen(log: CieLog, back: () -> Unit) {
     val instant = log.instant()
     var technical by rememberSaveable(log.key) { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(NovaBackground)) {
-        NovaTopBar("Detalhes do evento", back)
+        NovaTopBar(stringResource(R.string.fire_event_title), back)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             NovaCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NovaStatusBadge(log.categoryLabel(), look.color, look.container, height = 24.dp, textStyle = NovaType.NavLabel.copy(letterSpacing = 0.sp))
-                    Text(log.detailTitle(), Modifier.semantics { heading() }, style = NovaType.ScreenTitle, color = NovaOnSurface)
+                    NovaStatusBadge(log.categoryLabel().text(), look.color, look.container, height = 24.dp, textStyle = NovaType.NavLabel.copy(letterSpacing = 0.sp))
+                    Text(log.detailTitle().text(), Modifier.semantics { heading() }, style = NovaType.ScreenTitle, color = NovaOnSurface)
                     listOfNotNull(log.loopAddress(), log.zoneNameRaw()).joinToString(" - ").ifEmpty { null }?.let {
                         Text(it, style = NovaType.ScreenTitle, color = NovaOnSurface)
                     }
-                    Text(listOfNotNull(instant?.fullTime(), "ID ${log.id}").joinToString(" · "), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
+                    Text(listOfNotNull(instant?.fullTime(), stringResource(R.string.fire_event_id, log.id)).joinToString(" · "), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
                 }
             }
-            DetailSection("Ocorrência", listOf("Tipo" to (log.event?.label ?: log.detailTitle()), "ID" to log.id.toString(), "Data e hora" to instant?.fullTime()))
-            DetailSection("Localização", listOf("Zona" to log.zoneNameRaw(), "Laço/Endereço" to log.loopAddress(), "Andar" to log.floorLabel()?.replaceFirstChar { it.uppercase() }))
-            DetailSection("Dispositivo", listOf("Nome" to log.deviceNameRaw(), "Tipo" to log.deviceType()))
-            DetailSection("Estado", listOf("Evento (código)" to log.eventType?.toString(), "Bloqueado" to log.blocked?.let { if (it) "Sim" else "Não" }))
+            DetailSection(stringResource(R.string.fire_section_occurrence), listOf(stringResource(R.string.fire_field_type) to (log.event?.label ?: log.detailTitle().text()), stringResource(R.string.fire_field_id) to log.id.toString(), stringResource(R.string.fire_field_datetime) to instant?.fullTime()))
+            DetailSection(stringResource(R.string.fire_section_location), listOf(stringResource(R.string.fire_field_zone) to log.zoneNameRaw(), stringResource(R.string.fire_field_loop_address) to log.loopAddress(), stringResource(R.string.fire_field_floor) to log.floorLabel()?.replaceFirstChar { it.uppercase() }))
+            DetailSection(stringResource(R.string.fire_section_device), listOf(stringResource(R.string.fire_field_name) to log.deviceNameRaw(), stringResource(R.string.fire_field_type) to log.deviceType()))
+            DetailSection(stringResource(R.string.fire_section_state), listOf(stringResource(R.string.fire_field_event_code) to log.eventType?.toString(), stringResource(R.string.fire_field_blocked) to log.blocked?.let { stringResource(if (it) R.string.common_yes else R.string.common_no) }))
             log.raw?.let { raw ->
                 Row(Modifier.fillMaxWidth().clickable(role = Role.Button) { technical = !technical }.heightIn(min = 52.dp).padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Dados técnicos", style = NovaType.BodyEmphasis.copy(lineHeight = 18.sp), color = NovaInk)
-                        Text(if (technical) "Ocultar payload bruto" else "Ver payload bruto", style = NovaType.Caption, color = NovaOnSurfaceVariant)
+                        Text(stringResource(R.string.fire_technical_data), style = NovaType.BodyEmphasis.copy(lineHeight = 18.sp), color = NovaInk)
+                        Text(stringResource(if (technical) R.string.fire_hide_raw else R.string.fire_show_raw), style = NovaType.Caption, color = NovaOnSurfaceVariant)
                     }
                     Text(if (technical) "⌄" else "›", fontSize = 20.sp, lineHeight = 20.sp, color = NovaOnSurfaceVariant)
                 }

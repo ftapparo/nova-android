@@ -1,5 +1,9 @@
 package br.com.novaresidence.feature.auth
 
+import br.com.novaresidence.core.ui.uiText
+import br.com.novaresidence.core.ui.asUiText
+import br.com.novaresidence.core.ui.UiText
+import br.com.novaresidence.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.novaresidence.core.network.ApiErrorKind
@@ -18,13 +22,13 @@ enum class AuthPage { Welcome, Login, Signup, Recovery, RecoveryConfirm, ChangeP
 data class AuthState(
     val page: AuthPage = AuthPage.Welcome,
     val busy: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     val requestId: String? = null,
-    val fields: Map<String, String> = emptyMap(),
+    val fields: Map<String, UiText> = emptyMap(),
     val retrySeconds: Long = 0,
     val recoveryEmail: String = "",
     /** Falha da exclusão da conta (16): aparece na área logada, separada dos erros das telas de entrada. */
-    val deleteError: String? = null,
+    val deleteError: UiText? = null,
 )
 
 /** [termsVersion]: versão vigente do Termo de Uso, a que o cadastro e o login com Google mostram. */
@@ -50,9 +54,9 @@ class AuthViewModel(private val repository: AuthRepository, private val termsVer
         mutableState.update { it.copy(page = AuthPage.ChangePassword, error = null, fields = emptyMap()) }
     }
 
-    fun showMessage(message: String) { mutableState.update { it.copy(error = message) } }
+    fun showMessage(message: UiText) { mutableState.update { it.copy(error = message) } }
 
-    private fun action(errors: Map<String, String> = emptyMap(), allowDuringCooldown: Boolean = false, block: suspend () -> Unit) {
+    private fun action(errors: Map<String, UiText> = emptyMap(), allowDuringCooldown: Boolean = false, block: suspend () -> Unit) {
         if (state.value.busy || (!allowDuringCooldown && state.value.retrySeconds > 0)) return
         if (errors.isNotEmpty()) { mutableState.update { it.copy(fields = errors, error = null) }; return }
         mutableState.update { it.copy(busy = true, error = null, fields = emptyMap(), requestId = null, deleteError = null) }
@@ -62,7 +66,7 @@ class AuthViewModel(private val repository: AuthRepository, private val termsVer
             } catch (error: ApiException) {
                 mutableState.update { it.copy(
                     error = error.userMessage(), requestId = error.requestId,
-                    fields = error.fieldErrors.associate { field -> field.path.removePrefix("/") to field.message },
+                    fields = error.fieldErrors.associate { field -> field.path.removePrefix("/") to field.message.asUiText() },
                 ) }
                 if (error.retryAfterSeconds > 0) cooldown(error.retryAfterSeconds)
                 if (error.kind == br.com.novaresidence.core.network.ApiErrorKind.Unauthorized && state.value.page == AuthPage.Login) {
@@ -103,18 +107,18 @@ class AuthViewModel(private val repository: AuthRepository, private val termsVer
     }
     fun change(current: String, password: String) = action(
         validateAuthForm(password = password, newPassword = true) +
-            if (current.isEmpty()) mapOf("currentPassword" to "Informe sua senha atual.") else emptyMap(),
+            if (current.isEmpty()) mapOf("currentPassword" to uiText(R.string.auth_enter_current_password)) else emptyMap(),
     ) { repository.changePassword(current, password) }
 
     fun google(getToken: suspend () -> String) = action {
         val token = try { getToken() }
         catch (_: androidx.credentials.exceptions.GetCredentialCancellationException) { return@action }
         catch (_: androidx.credentials.exceptions.NoCredentialException) {
-            showMessage("Nenhuma conta Google disponível. Adicione uma conta ao dispositivo ou entre com e-mail.")
+            showMessage(uiText(R.string.auth_google_no_account))
             return@action
         } catch (error: CancellationException) { throw error }
         catch (_: Exception) {
-            showMessage("Não foi possível entrar com Google. Tente novamente ou use seu e-mail.")
+            showMessage(uiText(R.string.auth_google_failed))
             return@action
         }
         val version = try { termsVersion() } catch (_: ApiException) { null }
@@ -132,12 +136,12 @@ class AuthViewModel(private val repository: AuthRepository, private val termsVer
         viewModelScope.launch {
             try {
                 repository.deleteAccount()
-                mutableState.value = AuthState(error = "Sua conta foi excluída.")
+                mutableState.value = AuthState(error = uiText(R.string.auth_account_deleted))
             } catch (error: ApiException) {
                 mutableState.update { it.copy(deleteError = when (error.kind) {
-                    ApiErrorKind.Forbidden -> "Contas da equipe são removidas pela administração do condomínio."
+                    ApiErrorKind.Forbidden -> uiText(R.string.auth_delete_staff)
                     // 503: o login não foi excluído e a API desfez o restante.
-                    ApiErrorKind.Unavailable -> "Serviço indisponível. Nenhum dado foi excluído; tente novamente."
+                    ApiErrorKind.Unavailable -> uiText(R.string.auth_delete_unavailable)
                     else -> error.userMessage()
                 }) }
             } catch (error: SessionStorageException) {

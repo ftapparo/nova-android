@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import br.com.novaresidence.R
+import br.com.novaresidence.core.ui.localized
 
 /**
  * Canais de notificação, com os mesmos ids que a API envia. O som de um canal não pode mudar depois de
@@ -28,9 +29,9 @@ object PushChannels {
     const val General = "general"
     val All = setOf(FireAlarm, FireStatus, FireInfo, Exhaust, Messages, General)
 
-    private fun channel(id: String): NotificationChannel = when (id) {
-        FireAlarm -> NotificationChannel(id, "Alarme de incêndio", NotificationManager.IMPORTANCE_HIGH).apply {
-            description = "Alarme acionado na central de incêndio do condomínio."
+    private fun Context.channel(id: String): NotificationChannel = when (id) {
+        FireAlarm -> NotificationChannel(id, getString(R.string.channel_fire_alarm), NotificationManager.IMPORTANCE_HIGH).apply {
+            description = getString(R.string.channel_fire_alarm_description)
             // Som de alarme no volume de alarme: o toque comum pode estar baixo ou no silencioso.
             setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
                 AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
@@ -38,30 +39,31 @@ object PushChannels {
             vibrationPattern = longArrayOf(0, 800, 400, 800, 400, 800)
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
-        FireStatus -> NotificationChannel(id, "Central: alertas da equipe", NotificationManager.IMPORTANCE_DEFAULT).apply {
-            description = "Falha, supervisão, reinício e falta de comunicação da central (equipe do condomínio)."
+        FireStatus -> NotificationChannel(id, getString(R.string.channel_fire_status), NotificationManager.IMPORTANCE_DEFAULT).apply {
+            description = getString(R.string.channel_fire_status_description)
         }
-        FireInfo -> NotificationChannel(id, "Central: normalização e bloqueios", NotificationManager.IMPORTANCE_LOW).apply {
-            description = "Volta ao normal e dispositivos bloqueados (equipe do condomínio)."
+        FireInfo -> NotificationChannel(id, getString(R.string.channel_fire_info), NotificationManager.IMPORTANCE_LOW).apply {
+            description = getString(R.string.channel_fire_info_description)
         }
-        Exhaust -> NotificationChannel(id, "Exaustor", NotificationManager.IMPORTANCE_HIGH).apply {
-            description = "Tempo restante e desligamento do exaustor que você ligou."
+        Exhaust -> NotificationChannel(id, getString(R.string.channel_exhaust), NotificationManager.IMPORTANCE_HIGH).apply {
+            description = getString(R.string.channel_exhaust_description)
         }
-        Messages -> NotificationChannel(id, "Comunicados", NotificationManager.IMPORTANCE_DEFAULT).apply {
-            description = "Comunicados publicados pela administração."
+        Messages -> NotificationChannel(id, getString(R.string.channel_messages), NotificationManager.IMPORTANCE_DEFAULT).apply {
+            description = getString(R.string.channel_messages_description)
         }
-        else -> NotificationChannel(General, "Avisos gerais", NotificationManager.IMPORTANCE_DEFAULT)
+        else -> NotificationChannel(General, getString(R.string.channel_general), NotificationManager.IMPORTANCE_DEFAULT)
     }
 
     /** Canais de todos os perfis. Os da equipe só aparecem no Android quando o primeiro aviso deles chega. */
     fun createBase(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannels(listOf(FireAlarm, Exhaust, Messages, General).map(::channel))
+        val localized = context.localized()
+        manager.createNotificationChannels(listOf(FireAlarm, Exhaust, Messages, General).map { localized.channel(it) })
     }
 
+    /** Recriar um canal existente só atualiza nome e descrição (no idioma atual do app); as escolhas do usuário ficam. */
     fun ensure(context: Context, id: String) {
-        val manager = context.getSystemService(NotificationManager::class.java)
-        if (manager.getNotificationChannel(id) == null) manager.createNotificationChannel(channel(id))
+        context.getSystemService(NotificationManager::class.java).createNotificationChannel(context.localized().channel(id))
     }
 }
 

@@ -1,5 +1,6 @@
 package br.com.novaresidence.core.ui
 
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -106,7 +107,7 @@ fun NovaTopBar(title: String, back: (() -> Unit)? = null, enabled: Boolean = tru
     Row(Modifier.fillMaxWidth().background(background).height(56.dp).padding(start = if (back != null) 8.dp else 28.dp, end = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         if (back != null) IconButton(onClick = back, enabled = enabled, modifier = Modifier.size(48.dp)) {
-            Icon(painterResource(R.drawable.nova_back), "Voltar", Modifier.size(24.dp), tint = NovaOnSurface)
+            Icon(painterResource(R.drawable.nova_back), stringResource(R.string.common_back), Modifier.size(24.dp), tint = NovaOnSurface)
         }
         Text(title, Modifier.weight(1f).semantics { heading() }, style = NovaType.TopBar, color = color, maxLines = 1)
     }
@@ -132,7 +133,7 @@ fun NovaNotice(message: String, requestId: String? = null, title: String? = null
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             if (title != null) Text(title, style = NovaType.BodyEmphasis, color = NovaPrimary)
             Text(message, style = NovaType.Body, color = NovaOnSurface)
-            if (requestId != null) Text("Referência para suporte: $requestId", style = NovaType.Caption, color = NovaOnSurfaceVariant)
+            if (requestId != null) Text(stringResource(R.string.common_support_reference, requestId), style = NovaType.Caption, color = NovaOnSurfaceVariant)
         }
     }
 }
@@ -230,7 +231,7 @@ fun NovaSplash() {
 }
 
 @Composable
-fun NovaLoading(text: String = "Aguarde…") {
+fun NovaLoading(text: String = stringResource(R.string.common_wait)) {
     Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         CircularProgressIndicator(Modifier.size(24.dp), color = NovaPrimary, strokeWidth = 2.dp)
         Spacer(Modifier.width(12.dp))

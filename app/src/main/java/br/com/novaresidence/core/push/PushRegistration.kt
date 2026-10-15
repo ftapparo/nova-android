@@ -38,9 +38,11 @@ data class PushDevice(
     val appVersion: String,
     val osVersion: String,
     val deviceModel: String,
+    /** Idioma do app: a API envia os avisos deste aparelho nele. */
+    val language: String = "pt-BR",
 ) {
     companion object {
-        fun current(context: Context): PushDevice {
+        fun current(context: Context, language: String): PushDevice {
             val manager = context.getSystemService(NotificationManager::class.java)
             val alarm = manager.getNotificationChannel(PushChannels.FireAlarm)
             return PushDevice(
@@ -49,6 +51,7 @@ data class PushDevice(
                 appVersion = BuildConfig.VERSION_NAME,
                 osVersion = "Android ${Build.VERSION.RELEASE}",
                 deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}".take(80),
+                language = language,
             )
         }
     }
@@ -97,7 +100,7 @@ suspend fun firebaseToken(): String = suspendCancellableCoroutine { continuation
 
 /**
  * Registro do aparelho na API (`/notifications/devices/android`). O app registra a cada abertura, mas só
- * chama a API quando algo mudou (conta, token, permissão, canal do alarme, versão) ou depois de 24 h, para a
+ * chama a API quando algo mudou (conta, token, permissão, canal do alarme, versão, idioma) ou depois de 24 h, para a
  * API renovar o papel da conta e manter o aparelho como ativo.
  */
 class PushRegistration(
@@ -131,7 +134,7 @@ class PushRegistration(
         if (user == null || user.mustChangePassword || user.mustAcceptTerms) return@withLock refreshStatus()
         val current = device()
         val fcmToken = token()
-        val key = "${user.id}|" + digest(listOf(fcmToken, current.notificationsEnabled, current.alarmChannelEnabled, current.appVersion).joinToString("|"))
+        val key = "${user.id}|" + digest(listOf(fcmToken, current.notificationsEnabled, current.alarmChannelEnabled, current.appVersion, current.language).joinToString("|"))
         if (!force && store.registration == key && now() - store.registeredAt < DAY_MS) return@withLock refreshStatus()
 
         api.put<RegisteredDevice>("notifications/devices/android", buildJsonObject {
@@ -142,6 +145,7 @@ class PushRegistration(
             put("deviceModel", current.deviceModel)
             put("notificationsEnabled", current.notificationsEnabled)
             put("alarmChannelEnabled", current.alarmChannelEnabled)
+            put("language", current.language)
         })
         store.registration = key
         store.registeredAt = now()

@@ -1,5 +1,9 @@
 package br.com.novaresidence.feature.message
 
+import br.com.novaresidence.core.ui.uiText
+import br.com.novaresidence.core.ui.asUiText
+import br.com.novaresidence.core.ui.UiText
+import br.com.novaresidence.R
 import kotlinx.serialization.Serializable
 import java.time.Instant
 
@@ -23,25 +27,25 @@ data class CondoMessage(
 data class MessageList(val items: List<CondoMessage> = emptyList(), val unreadCount: Int = 0)
 
 /** Nome da categoria (linha da lista, Figma 17). */
-fun CondoMessage.categoryLabel(): String = when (category) {
-    "manutencao" -> "Manutenção"
-    "comunicado" -> "Comunicado"
-    "aviso" -> "Aviso"
-    "urgente" -> "Urgente"
-    else -> "Informativo"
-}
+fun CondoMessage.categoryLabel(): UiText = uiText(when (category) {
+    "manutencao" -> R.string.message_category_maintenance
+    "comunicado" -> R.string.message_category_notice
+    "aviso" -> R.string.message_category_warning
+    "urgente" -> R.string.message_category_urgent
+    else -> R.string.message_category_info
+})
 
 /** Etiqueta do cartão e do detalhe (Figma 08d e 18): a da administração ou o nome da categoria. */
-fun CondoMessage.badgeLabel(): String = label?.takeIf { it.isNotBlank() } ?: categoryLabel()
+fun CondoMessage.badgeLabel(): UiText = label?.takeIf { it.isNotBlank() }?.asUiText() ?: categoryLabel()
 
 data class MessageState(
     /** Carrossel da home (08d), na ordem da API. */
     val latest: List<CondoMessage> = emptyList(),
     val unreadCount: Int = 0,
-    val latestError: String? = null,
+    val latestError: UiText? = null,
     /** Lista da tela 17 conforme o filtro; null = ainda não carregada. */
     val list: List<CondoMessage>? = null,
     val unreadOnly: Boolean = false,
     val listLoading: Boolean = false,
-    val listError: String? = null,
+    val listError: UiText? = null,
 )
