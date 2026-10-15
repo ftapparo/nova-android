@@ -531,6 +531,7 @@ Native push uses **only** `/notifications/*` (decided on 13/10/2026). `/push/*` 
 | PUT / DELETE | `/notifications/devices/ios…` | same | `null` — reserved for the iOS app, nothing stored |
 | GET / PUT | `/notifications/preferences` | `{ exhaustExpiring?, exhaustOff?, messages?, cieStaffAlerts? }` | `{ exhaustExpiring, exhaustExpiringMinutes, exhaustOff, messages, cieStaffAlerts }` |
 | POST | `/notifications/test` | — | `{ targets, sent, failed }` (3 per 10 min; 503 when push is disabled on the server) |
+| POST | `/notifications/test/fire-alarm` | `{ installationId }` | `{ targets, sent, failed }` — admin only, validation tool (curl), **not called by the app**: the real `cie.alarm` push ("Alarme de incêndio (teste)") to one device, without touching the panel |
 
 - **App side** (`core/push`): `NovaApplication` holds the process graph because `NovaMessagingService` runs with the app closed. `installationId` is a UUID kept in `push_preferences`; the FCM token is never stored in clear (only a hash to detect changes) and never logged.
 - **Registration** (`PushRegistration`): after login with `mustChangePassword` and `mustAcceptTerms` resolved, on each return to the app, in `onNewToken` and after the permission flow. The API is only called when account, token, permission, alarm channel or app version changed, or after 24 h.

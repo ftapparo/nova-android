@@ -41,7 +41,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Validado em produção com 3 comunicados de teste (ids 2–4, inseridos no banco, vencem em 16/10): carrossel, contador do sino (3 → 2), lista agrupada em Hoje/Ontem com ícone por categoria, filtro Não lidas, detalhe e leitura gravada em `condo_message_read` | 13/10 |
 | ✅ | Carrossel com permanência e prioridade (decidido em 13/10): TTL padrão de 24 h ajustável pelo síndico; TTL 0 sai ao ser lido; fixado fica até desafixar (sempre TTL 0); ordem por prioridade da categoria (urgente > aviso > manutenção > comunicado), fixados primeiro dentro dela. API: `GET /messages/carousel`, campos no `POST /messages`, `PATCH /messages/:id` e migração 005, validados no Postgres em transação desfeita. App: home usa a rota nova e reconsulta o carrossel depois de marcar como lido | 13/10 |
 | ✅ | Carrossel validado em produção no J4 (migração 005 aplicada): fixado aparece pela prioridade da categoria mesmo depois de 24 h; TTL 0 lido sai; desafixado e lido sai; TTL 0 não lido aparece com o sino em 1 e sai do carrossel assim que é aberto, sem reabrir o app | 13/10 |
-| ⏳ | Publicação de comunicados: fica no novo frontend web, desenvolvido à parte (fora do escopo do app); a API já aceita `POST /messages` | — |
+| ✅ | Publicação de comunicados: fica no novo frontend web, desenvolvido à parte (fora do escopo do app); a API já aceita `POST /messages` | — |
 
 ## 3. Configurações (09–16)
 
@@ -98,7 +98,8 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Detalhe do evento com "Dados técnicos" | 12/10 |
 | ✅ | Correção "Torre B · Torre B" encontrada com dados reais | 12/10 |
 | ✅ | Validado com a API real (normal, histórico, detalhe) | 12/10 |
-| 🟡 | Alarme real ou simulado com a equipe ainda não validado | — |
+| ✅ | Alarme real: durante o desenvolvimento, um disparo da central apareceu no app (home e tela 28). Isso valida o caminho central → API → app. O push ainda não existia | antes de 13/10 |
+| 🟡 | Alerta prioritário (push `cie.alarm`): validação feita pela rota de teste da API, sem acionar a central (seção 7.1) | 15/10 |
 | ✅ | Figma 26 com push pronto e 26b com notificações desativadas/ação "Ativar notificações", refletindo a condição real do app | 14/10 |
 | ✅ | Figma 27 sincronizado: "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável." | 13/10 |
 
@@ -150,10 +151,11 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção "Push notifications". Mecani
 | ✅ | Corrigido na API (`cf58d48`): ligar e desligar o exaustor em poucos segundos não gerava o "Exaustor desligado" (o laço de 20 s não via o exaustor ligado); agora o aviso sai ~1 s depois do desligamento; em produção |
 | ✅ | **Notificação por tela aberta (14/10):** o aviso não aparece quando a tela dele está aberta (exaustor, central, mensagens, início) e a tela se atualiza na hora; em outra tela ou com o app fechado, aparece. O alarme de incêndio aparece sempre. Validado no J4 com comunicados 9 (Mensagens aberta: entrou na lista sem notificação) e 10 (Início aberta: notificação) e com o exaustor (tela do exaustor aberta: sem notificação; outra tela: "O exaustor da Torre A, final 4, foi desligado.") |
 | ✅ | **J4 (14/10):** "faltam 15 minutos" chegou a quem ligou; com o app fechado, o "desligado" pelo painel v2 chegou e o toque abriu o exaustor já atualizado |
-| ❌ | **Validar no J4:** alarme com o app fechado e tela bloqueada (com a equipe) e cartão de permissão num Android 13+ |
+| 🟡 | **Teste do alarme sem a central (15/10):** `POST /notifications/test/fire-alarm` `{ installationId }`, só para admin. Envia a um único aparelho o push real `cie.alarm` (canal `cie_alarm`, prioridade alta), com o título "Alarme de incêndio (teste)". Fica gravado como `cie.alarm.test`, para não afetar o reenvio de um alarme real. `tsc` limpo; falta o deploy |
+| ❌ | **Validar no J4 com a rota de teste:** app fechado e tela bloqueada (som de alarme, toque abre a central), app aberto na tela da central (a notificação aparece mesmo assim) e canal do alarme bloqueado. Opcional: celular de alguém da equipe. Falta também o cartão de permissão num Android 13+ |
 | ✅ | **Figma (14/10):** cartão da home (08e), tela Notificações para morador/equipe e estados de permissão, canal bloqueado e registro pendente (09a–09e); central com ação "Ativar notificações" (26b) |
 | ✅ | **Publicação:** Política de Privacidade 1.2 (token, identificador de instalação, modelo e versões, conteúdo dos avisos e retenção) em produção; "Segurança dos dados" salva no Play Console (14/10) conforme [docs/seguranca-dos-dados.md](docs/seguranca-dos-dados.md) |
-| ⚠️ | **Limite:** a entrega não é garantida em tempo real (economia de bateria, otimizações Samsung); nenhum texto promete aviso imediato |
+| ✅ | **Limite:** a entrega não é garantida em tempo real (economia de bateria, otimizações Samsung); nenhum texto promete aviso imediato |
 
 ## 7.2 Localização para ligar o exaustor — decidido em 13/10, implementado em 14/10
 
@@ -174,7 +176,6 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 | ✅ | **Produção (14/10, deploy `64645ab`):** com conta de morador (A-124 → A4), `curl` recebeu os 4 títulos — sem localização, simulada, precisão de 500 m e ponto a ~5 km — sem acionar o relé; variáveis da área configuradas (403, não 503) |
 | ✅ | **J4 (14/10, Android 8.1, conta como morador):** "Ligar exaustor" sem permissão → "Localização necessária" sem enviar nada; negar → aviso some; negar com "Não perguntar novamente" → "Localização não permitida" com "Abrir configurações" (abre os dados do app); localização desligada → "Localização desligada" e "Ativar localização" abre o diálogo do Play Services, que religa; com permissão, dentro do condomínio, o A4 ligou em ~1 s e "Reiniciar tempo" voltou o prazo de 02:59:26 para 03:00:13. A4 desligado pela API em seguida |
 | ✅ | **J4 (14/10):** localização simulada pelo provedor do Google (`setMockMode`) → "Localização simulada" (25i), recusada pela API sem acionar o relé. Simulação só no GPS do Android não chega ao app: o provedor do Google usou a posição real |
-| ❌ | Devolver o papel `admin` à conta usada no teste (`raw_app_meta_data.role`) |
 
 ## 8. Build de release e Play Console
 
@@ -198,11 +199,10 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 2. ✅ Deploy da API (no-cache, carrossel com migração 005, Termo 1.1) feito e validado no J4 (13/10). App commitado.
 3. ✅ Cadastro, tela de aceite, estado sem unidade e exclusão validados em produção com conta de teste (13/10). A conta para a revisão da Play foi criada e vinculada em 14/10 (seção 8).
 4. ✅ Avisos do Termo e tela de aceite desenhados no Figma pelo MCP (13/10).
-5. ❌ Trocar a senha pessoal usada nos testes (também consta do checklist de publicação).
-6. ✅ Faixa da tela 27 sincronizada no Figma com o texto implementado no app (13/10).
-7. 🟡 Push nativo funcionando no J4 (seção 7.1), correções em produção; falta validar o alarme com a equipe.
-8. 🟡 Verificação de localização do exaustor (seção 7.2): implementada e validada em produção e no J4 em 14/10 (centro -20.836533, -49.368565, raio 100 m); falta devolver o papel admin à conta usada no teste.
-9. ✅ Cores ajustadas para contraste refletidas no Figma (13/10).
-10. 🟡 Validar um alarme da central com a equipe.
+5. ✅ Faixa da tela 27 sincronizada no Figma com o texto implementado no app (13/10).
+6. 🟡 Push nativo funcionando no J4 (seção 7.1), correções em produção; falta validar o alarme com a equipe.
+7. 🟡 Verificação de localização do exaustor (seção 7.2): implementada e validada em produção e no J4 em 14/10 (centro -20.836533, -49.368565, raio 100 m); falta devolver o papel admin à conta usada no teste.
+8. ✅ Cores ajustadas para contraste refletidas no Figma (13/10).
+9. 🟡 Alarme da central: o caminho até o app foi validado com o disparo real. O push prioritário será validado pela rota `/notifications/test/fire-alarm` depois do deploy (seção 7.1), com a conta como admin (item 7).
 
 **Próximo bloco sugerido:** ícone, R8, chave e `.aab` assinado → OAuth de release → teste interno na Play. O push de alertas da central (seção 7.1) entra antes da publicação se for decidido que é obrigatório na 1ª versão.
