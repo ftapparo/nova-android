@@ -46,6 +46,9 @@ class ScreenTest {
         val coordinator = SessionCoordinator(store) { error("No network in visual tests") }
         return AuthViewModel(AuthRepository(ApiClient(ApiTransport("http://127.0.0.1:1"), coordinator))) { "1.0" }
     }
+    /** Texto do recurso no idioma do aparelho: o teste não quebra quando a redação é revisada. */
+    private fun text(id: Int, vararg args: Any): String = compose.activity.getString(id, *args)
+
     private fun capture(name: String) {
         waitForContent()
         compose.waitForIdle()
@@ -73,7 +76,7 @@ class ScreenTest {
         compose.onNodeWithText("ou continue com").assertIsDisplayed()
         compose.onNodeWithText("Google").performScrollTo().assertIsEnabled()
         compose.onNodeWithText("Criar conta").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Ao continuar, você concorda com o Termo de Uso e a Política de Privacidade.").assertExists()
+        compose.onNodeWithText(text(R.string.legal_continue_agreement, text(R.string.legal_terms), text(R.string.legal_privacy))).assertExists()
         capture("02_welcome")
         compose.onNodeWithText("Entrar").performClick()
         compose.onNodeWithText("E-mail").assertIsDisplayed()
@@ -98,15 +101,15 @@ class ScreenTest {
         compose.runOnIdle { model.navigate(AuthPage.Recovery) }
         capture("06_recovery")
         compose.runOnIdle { model.navigate(AuthPage.RecoveryConfirm) }
-        compose.onNodeWithText("Se houver uma conta com este e-mail, você receberá um código de 6 dígitos. Ele expira em 15 minutos.").assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.auth_intro_code)).assertIsDisplayed()
         compose.onNodeWithText("Validar conta").assertIsDisplayed()
-        compose.onNodeWithText("Confira também a caixa de spam ou mensagens bloqueadas.").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.auth_check_spam)).performScrollTo().assertIsDisplayed()
         capture("05_recovery_confirm")
         compose.runOnIdle { model.navigate(AuthPage.ChangePassword) }
         compose.onNodeWithText("Senha atual").assertIsDisplayed()
         capture("password_change")
         compose.runOnIdle { model.navigate(AuthPage.Error); model.showMessage(uiText(R.string.error_unauthorized)) }
-        compose.onNodeWithText("Confira seus dados de acesso e sua senha ou recupere seu acesso.").assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.auth_error_body)).assertIsDisplayed()
         capture("07_auth_error")
     }
 
@@ -124,7 +127,7 @@ class ScreenTest {
         capture("login_rate_limit")
         compose.runOnIdle { state = AuthState(page = AuthPage.Recovery, busy = true) }
         compose.onNodeWithText("Enviar instruções").assertIsNotEnabled()
-        compose.onNodeWithText("Preparando uma forma segura de recuperação...").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.auth_preparing_recovery)).performScrollTo().assertIsDisplayed()
         capture("recovery_loading")
     }
 
@@ -161,7 +164,7 @@ class ScreenTest {
         compose.runOnIdle { state = ResidenceState(Residence("pendente", true, null, emptyList())) }
         compose.onNodeWithText("Cadastro em análise pela administração").assertIsDisplayed()
         compose.onNodeWithText("Central de Incêndio").assertDoesNotExist()
-        compose.onNodeWithText("Informativos do condomínio").assertDoesNotExist()
+        compose.onNodeWithText(text(R.string.home_news)).assertDoesNotExist()
         capture("home_pending")
         compose.runOnIdle { state = ResidenceState(Residence("sem-unidade", true, null, emptyList())) }
         capture("home_no_unit")
@@ -188,7 +191,7 @@ class ScreenTest {
                 }, { read += it.id; state = state.copy(unreadCount = 0) }) })
         } }
         compose.onNodeWithText("Manutenção programada").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithContentDescription("Mensagens, 1 não lidas").assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.resources.getQuantityString(R.plurals.home_messages_unread, 1, 1)).assertIsDisplayed()
         capture("08d_home_messages")
         compose.onAllNodesWithText("Ver mais")[0].performScrollTo().performClick()
         compose.onNodeWithText("Mensagem").assertIsDisplayed()
@@ -356,20 +359,22 @@ class ScreenTest {
         capture("09_settings")
         compose.onNodeWithText("Minhas unidades").performScrollTo().performClick()
         compose.onNodeWithText("Unidade selecionada").assertIsDisplayed()
-        compose.onNodeWithText("Os vínculos são atualizados pelo cadastro do condomínio.").assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.settings_links_info)).assertIsDisplayed()
         compose.onNodeWithText("Torre A · Apto. 84").performClick()
         compose.runOnIdle { assertEquals(2, state.selectedUnit) }
         compose.onNodeWithContentDescription("Voltar").performClick()
         compose.onNodeWithText("Idioma").performScrollTo().performClick()
         compose.onNodeWithText("Português (Brasil)").assertIsDisplayed()
-        compose.onNodeWithText("English").assertIsNotEnabled()
+        // Os três idiomas têm tradução completa e podem ser escolhidos.
+        compose.onNodeWithText("English").assertIsEnabled()
+        compose.onNodeWithText("Español").assertIsEnabled()
         compose.onNodeWithText("Salvar idioma").performScrollTo().assertIsEnabled()
         capture("11_language_selection")
         compose.onNodeWithContentDescription("Voltar").performClick()
         compose.onNodeWithText("Privacidade").performScrollTo().performClick()
         capture("12_privacy")
         compose.onNodeWithText("Termos de uso").performClick()
-        compose.onNodeWithText("Termo de Uso").assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.legal_terms)).assertIsDisplayed()
         compose.onNodeWithText("Tentar novamente").assertIsEnabled()
         capture("13_terms")
         compose.onNodeWithContentDescription("Voltar").performClick()
@@ -384,7 +389,7 @@ class ScreenTest {
         compose.onNodeWithText("•••.456.789-••").assertIsDisplayed()
         capture("15_personal_data")
         compose.onNodeWithContentDescription("Voltar").performClick()
-        compose.onNodeWithText("Solicitar exclusão da conta").performClick()
+        compose.onNodeWithText(text(R.string.privacy_delete_account)).performClick()
         compose.onNodeWithText("Cancelar").performScrollTo().assertIsEnabled()
         capture("16_delete_account")
         compose.onNode(hasText("Excluir conta") and hasClickAction()).performScrollTo().assertIsEnabled().performClick()
@@ -414,7 +419,7 @@ class ScreenTest {
         }
         compose.onNodeWithText("Nenhum alarme de incêndio ativo.").assertIsDisplayed()
         tab("Alarme").performClick()
-        compose.onNodeWithText("Sistema normal").assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.fire_normal_title)).assertIsDisplayed()
         compose.onNodeWithText("Central online").assertIsDisplayed()
         compose.onNodeWithText("Atualizado agora").performScrollTo().assertIsDisplayed()
         capture("26_fire_normal")
@@ -424,7 +429,7 @@ class ScreenTest {
         compose.onNodeWithText("Você será avisado se o estado da central mudar.").performScrollTo().assertIsDisplayed()
         capture("26_fire_notifications_ready")
         compose.runOnIdle { state = normal.copy(alarms = CieAlarms(false, CieCounters(falha = 1)), activeEvents = listOf(failure)) }
-        compose.onNodeWithText("Em verificação").assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.fire_badge_checking)).assertIsDisplayed()
         compose.onNodeWithText("Torre A · 3º andar").performScrollTo().assertIsDisplayed()
         capture("27_fire_attention")
         compose.onNodeWithText("Ver histórico de eventos").performScrollTo().performClick()
@@ -472,7 +477,7 @@ class ScreenTest {
                 state = state.copy(preferences = state.preferences!!.with(option, enabled))
             }, {}, { permissionRequests++ }, { retries++ }, {})
         } }
-        compose.onNodeWithText("Este aparelho recebe as notificações do condomínio.").assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.notification_ready)).assertIsDisplayed()
         compose.onNodeWithText("Alertas da central").assertDoesNotExist()
         capture("09a_notifications_resident")
         compose.onNodeWithText("Comunicados").performScrollTo().performClick()

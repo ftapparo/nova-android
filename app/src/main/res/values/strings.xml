@@ -411,8 +411,8 @@
     <!-- Termo de Uso e Política de Privacidade -->
     <string name="legal_terms">Termos de Uso</string>
     <string name="legal_privacy">Política de Privacidade</string>
-    <string name="legal_continue_agreement">Ao continuar, você concorda com o %1$s e a %2$s.</string>
-    <string name="legal_accept_agreement">Ao aceitar, você concorda com o %1$s e a %2$s.</string>
+    <string name="legal_continue_agreement">Ao continuar, você concorda com os %1$s e a %2$s.</string>
+    <string name="legal_accept_agreement">Ao aceitar, você concorda com os %1$s e a %2$s.</string>
     <string name="legal_loading">Carregando documento…</string>
     <string name="legal_load_failed">Não foi possível carregar o documento.</string>
     <string name="legal_try_again">Tentar novamente</string>

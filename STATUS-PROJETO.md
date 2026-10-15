@@ -212,7 +212,7 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | # | | Pendência | Origem |
 |---|---|---|---|
 | 1 | ✅ | Remoto configurado (`ftapparo/nova-android`), README criado e push feito (15/10) | Situação |
-| 2 | ❌ | Rodar os testes de tela (`ScreenTest`) no J4 depois da tradução; foram atualizados e compilam, mas não rodaram (podem encerrar a sessão do aparelho) | 3.1 / 6 |
+| 2 | ✅ | Testes de tela no J4 depois da tradução: 13 aprovados (15/10). Passam a ler os textos dos recursos, para não quebrar quando a redação for revisada | 3.1 / 6 |
 | 3 | ❌ | `CHANGELOG.md`: atualizar as entradas antigas que ainda citam a numeração anterior das telas | 9 (antigo) |
 | 4 | ❌ | Ícone do app com a marca (hoje é o padrão do template) | 8 |
 | 5 | 🟡 | Conferir `versionCode`/`versionName` (hoje 1 / "1.0") e `targetSdk` para a 1ª publicação | 8 |
