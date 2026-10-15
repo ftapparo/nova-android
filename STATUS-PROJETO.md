@@ -1,10 +1,10 @@
 # Status do projeto — Nova Residence (app Android)
 
-Atualizado em **14/10/2026**.
+Atualizado em **15/10/2026**.
 
 Legenda: ✅ feito · 🟡 parcial · ⏳ depende de terceiros ou de outra etapa · ❌ não feito · ❓ aguarda decisão
 
-> **Situação em 14/10/2026:** API em produção com push nativo (migração 006), tempo real, localização do exaustor, exaustor simulado da conta de revisão e Política 1.2. App com push, WebSocket e localização commitados e validados no J4. Play Console: declarações de Conteúdo do app concluídas (Segurança dos dados, público 18+, classificação, acesso com conta de teste); falta o build de release e o teste interno. O repositório do app não tem remoto configurado.
+> **Situação em 14/10/2026:** API em produção com push nativo (migração 006), tempo real, localização do exaustor, exaustor simulado da conta de revisão e Política 1.2. App com push, WebSocket e localização commitados e validados no J4. Play Console: declarações de Conteúdo do app concluídas (Segurança dos dados, público 18+, classificação, acesso com conta de teste); falta o build de release e o teste interno. Repositório do app em `github.com/ftapparo/nova-android`.
 
 Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.md](DESIGN_GUIDE.md), [CHECKLIST-PUBLICACAO.md](CHECKLIST-PUBLICACAO.md), [docs/revisao-figma-e-integracao.md](docs/revisao-figma-e-integracao.md).
 
@@ -205,16 +205,25 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 | ✅ | Conta de revisão `app.test@novaresidence.com.br` (14/10): pessoa fictícia 23002 do ERP, unidade XYZ-100, Termo aceito, exaustor **simulado** na API (`EXHAUST_DEMO_UNITS`, commit `9b9de89`, sem relé e sem verificação de área); validada no J4 (ligar, contador, reiniciar, avisos "faltam" e "desligado") |
 | ❌ | Ficha da loja (descrição, capturas, imagem de destaque), teste interno e produção |
 
-## 9. Pendências imediatas (sem depender de terceiros)
+## 9. Pendências — em ordem de execução
 
-1. 🟡 Commit do trabalho de 12–13/10 feito, com entradas novas no `CHANGELOG.md`; as entradas antigas ainda citam a numeração anterior das telas.
-2. ✅ Deploy da API (no-cache, carrossel com migração 005, Termo 1.1) feito e validado no J4 (13/10). App commitado.
-3. ✅ Cadastro, tela de aceite, estado sem unidade e exclusão validados em produção com conta de teste (13/10). A conta para a revisão da Play foi criada e vinculada em 14/10 (seção 8).
-4. ✅ Avisos do Termo e tela de aceite desenhados no Figma pelo MCP (13/10).
-5. ✅ Faixa da tela 27 sincronizada no Figma com o texto implementado no app (13/10).
-6. ✅ Push nativo validado no J4 (seção 7.1), incluindo o alarme de incêndio (15/10); falta só o cartão de permissão num Android 13+.
-7. ✅ Verificação de localização do exaustor (seção 7.2): implementada e validada em produção e no J4 em 14/10 (centro -20.836533, -49.368565, raio 100 m); papel admin devolvido à conta usada no teste (15/10).
-8. ✅ Cores ajustadas para contraste refletidas no Figma (13/10).
-9. ✅ Alarme da central: o caminho até o app foi validado com o disparo real e o push prioritário pela rota `/notifications/test/fire-alarm` no J4 (15/10, seção 7.1).
+Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. Itens de publicação dependem dos anteriores.
 
-**Próximo bloco sugerido:** ícone, R8, chave e `.aab` assinado → OAuth de release → teste interno na Play. O push de alertas da central (seção 7.1) entra antes da publicação se for decidido que é obrigatório na 1ª versão.
+| # | | Pendência | Origem |
+|---|---|---|---|
+| 1 | ✅ | Remoto configurado (`ftapparo/nova-android`), README criado e push feito (15/10) | Situação |
+| 2 | ❌ | Rodar os testes de tela (`ScreenTest`) no J4 depois da tradução; foram atualizados e compilam, mas não rodaram (podem encerrar a sessão do aparelho) | 3.1 / 6 |
+| 3 | ❌ | `CHANGELOG.md`: atualizar as entradas antigas que ainda citam a numeração anterior das telas | 9 (antigo) |
+| 4 | ❌ | Ícone do app com a marca (hoje é o padrão do template) | 8 |
+| 5 | 🟡 | Conferir `versionCode`/`versionName` (hoje 1 / "1.0") e `targetSdk` para a 1ª publicação | 8 |
+| 6 | ❌ | Criar a chave de upload e configurar a assinatura no Gradle | 8 |
+| 7 | ❌ | Ativar o R8 e testar o build de release no J4 (login, push, central, exaustor, idiomas) | 6 / 8 |
+| 8 | ❌ | Baseline Profile (velocidade na primeira abertura de cada tela) | 6 |
+| 9 | ❌ | Gerar o `.aab` assinado e enviar ao teste interno da Play | 8 |
+| 10 | ❌ | Criar os clientes OAuth Android de release com o SHA-1 da chave de upload e da Play App Signing (disponível no Console após o 1º envio); sem eles o login Google falha no app da loja | 8 |
+| 11 | ❌ | Validar o app instalado pela Play (teste interno): login Google, push e exaustor com a conta de revisão | 8 |
+| 12 | ❌ | Cartão de permissão de notificações num Android 13+ (o J4 é 8.1), com o app do teste interno no celular de alguém da equipe | 7.1 |
+| 13 | ❌ | Ficha da loja em português: descrição, capturas e imagem de destaque | 8 |
+| 14 | ❌ | Ficha da loja em inglês e espanhol (opcional) | 3.1 |
+| 15 | ❌ | Publicação em produção na Play | 8 |
+| 16 | ⏳ | Volta automática ao normal após um alarme real (`cie.alarm.resolved`): conferir quando houver um disparo real da central; hoje validada só pela rota de teste | 7.1 |
