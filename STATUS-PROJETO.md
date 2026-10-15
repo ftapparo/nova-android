@@ -86,7 +86,6 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Proteções: sem comando duplicado, `Retry-After` respeitado, 409 em manutenção sem repetir | 30/09 |
 | ✅ | Cartão unidade/equipamento (prédio de 28 dp, faixa #EEECF6) | 12/10 · 13/10 |
 | ✅ | Validado com hardware real (autorizado) | 01/10 |
-| ❌ | Operação dos 24 exaustores pela equipe: não há tela no Figma | — |
 
 ## 5. Central de Incêndio (08c, 26–30c)
 
@@ -95,11 +94,12 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Estados normal, atenção (com local do aviso), sem comunicação e alarme com orientações de segurança | 01/10 · redesenho 12/10 |
 | ✅ | Uso dos campos interpretados pela API (`event`, `display`, `activeAlarms`), com alternativa para servidores antigos | 12/10 |
 | ✅ | Histórico de 30 dias agrupado por dia, com filtros e ícones | 12/10 · 13/10 |
+| ✅ | "Ver histórico de eventos" só para a equipe: a versão 1.0.0 sai para moradores | 15/10 |
 | ✅ | Detalhe do evento com "Dados técnicos" | 12/10 |
 | ✅ | Correção "Torre B · Torre B" encontrada com dados reais | 12/10 |
 | ✅ | Validado com a API real (normal, histórico, detalhe) | 12/10 |
 | ✅ | Alarme real: durante o desenvolvimento, um disparo da central apareceu no app (home e tela 28). Isso valida o caminho central → API → app. O push ainda não existia | antes de 13/10 |
-| 🟡 | Alerta prioritário (push `cie.alarm`): validação feita pela rota de teste da API, sem acionar a central (seção 7.1) | 15/10 |
+| ✅ | Alerta prioritário (push `cie.alarm`) validado no J4 pela rota de teste da API, sem acionar a central (seção 7.1) | 15/10 |
 | ✅ | Figma 26 com push pronto e 26b com notificações desativadas/ação "Ativar notificações", refletindo a condição real do app | 14/10 |
 | ✅ | Figma 27 sincronizado: "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável." | 13/10 |
 
@@ -116,7 +116,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | 46 testes unitários e 9 testes de tela aprovados no J4 | 13/10 |
 | ✅ | Contraste: amarelo, verde e cinzas escurecidos no Figma conforme os tokens do app e o DESIGN_GUIDE | 13/10 |
 | ❌ | Otimização R8 e Baseline Profile (velocidade na primeira abertura de cada tela) | — |
-| 🟡 | Push nativo (FCM): central, exaustor e comunicados — implementado e validado no J4 (teste, comunicado e exaustor desligado); falta o alarme real (seção 7.1) | 13/10 · 14/10 |
+| ✅ | Push nativo (FCM): central, exaustor e comunicados — implementado e validado no J4 (teste, comunicado, exaustor desligado e alarme de incêndio pela rota de teste) (seção 7.1) | 13/10 · 14/10 · 15/10 |
 | ✅ | WebSocket `/v3/ws` em tempo real com o app aberto: eventos da central e do exaustor disparam a reconsulta na hora; consulta periódica vira rede de segurança (60 s / 30 s). Reconexão com ticket novo, 4001 e backoff; 8 testes unitários. Validado no J4 (14/10): com a tela do exaustor aberta, o desligamento pelo painel v2 apareceu como "Desligando" e depois "Desligado" sem esperar a consulta de 30 s; ligar pelo app passou de "Ligando" a "Ligado" em menos de 1 s. Volume medido em 14/10: 15 `cie.status.updated` por minuto (um a cada 4 s), ~1 KB cada, ~16 KB/min ≈ 0,9 MB por hora de app aberto — baixo, sem filtro na API | 14/10 |
 
 ## 7. Dependências na API (`src/v3`)
@@ -139,6 +139,7 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção "Push notifications". Mecani
 |---|---|
 | ✅ | **API** (`7b67532`, deploy em 13/10): registro do aparelho `/notifications/devices/android` (rotas `/ios` reservadas, respondem vazio), preferências, teste, migração 006 e envio pelo FCM só de dados |
 | ✅ | **Central:** alarme para equipe e morador com unidade liberada (alta prioridade, um por episódio); falha, supervisão, reinício, bloqueio, sem comunicação, alarme encerrado e normalização só para a equipe |
+| 🟡 | **Central, morador (15/10):** depois de um alarme, aviso comum "Central de incêndio normalizada" (`cie.alarm.resolved`, canal `general`) quando a central volta a "Sistema normal"; substitui a notificação do alarme. Só morador que não é da equipe. `tsc` limpo; falta o deploy, e a validação depende de um alarme real |
 | ✅ | **Exaustor:** "faltam 15 minutos" (fixo no servidor) e "desligado" só para quem ligou ou reiniciou por último pelo app; tempo mudado pelo painel v2 não avisa ninguém |
 | ✅ | **Comunicados:** push quando um comunicado com `notify` fica visível, inclusive o agendado |
 | ✅ | **App:** `NovaApplication` com o grafo do processo, serviço do FCM, canais (alarme com som de alarme), registro só quando algo muda, remoção no logout, toque abrindo a tela certa, aviso sem sessão descartado |
@@ -151,8 +152,9 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção "Push notifications". Mecani
 | ✅ | Corrigido na API (`cf58d48`): ligar e desligar o exaustor em poucos segundos não gerava o "Exaustor desligado" (o laço de 20 s não via o exaustor ligado); agora o aviso sai ~1 s depois do desligamento; em produção |
 | ✅ | **Notificação por tela aberta (14/10):** o aviso não aparece quando a tela dele está aberta (exaustor, central, mensagens, início) e a tela se atualiza na hora; em outra tela ou com o app fechado, aparece. O alarme de incêndio aparece sempre. Validado no J4 com comunicados 9 (Mensagens aberta: entrou na lista sem notificação) e 10 (Início aberta: notificação) e com o exaustor (tela do exaustor aberta: sem notificação; outra tela: "O exaustor da Torre A, final 4, foi desligado.") |
 | ✅ | **J4 (14/10):** "faltam 15 minutos" chegou a quem ligou; com o app fechado, o "desligado" pelo painel v2 chegou e o toque abriu o exaustor já atualizado |
-| 🟡 | **Teste do alarme sem a central (15/10):** `POST /notifications/test/fire-alarm` `{ installationId }`, só para admin. Envia a um único aparelho o push real `cie.alarm` (canal `cie_alarm`, prioridade alta), com o título "Alarme de incêndio (teste)". Fica gravado como `cie.alarm.test`, para não afetar o reenvio de um alarme real. `tsc` limpo; falta o deploy |
-| ❌ | **Validar no J4 com a rota de teste:** app fechado e tela bloqueada (som de alarme, toque abre a central), app aberto na tela da central (a notificação aparece mesmo assim) e canal do alarme bloqueado. Opcional: celular de alguém da equipe. Falta também o cartão de permissão num Android 13+ |
+| ✅ | **Teste do alarme sem a central (15/10, API `26112bb`, em produção):** `POST /notifications/test/fire-alarm` `{ installationId }`, só para admin. Envia a um único aparelho o push real `cie.alarm` (canal `cie_alarm`, prioridade alta), com o título "Alarme de incêndio (teste)". Fica gravado como `cie.alarm.test`, para não afetar o reenvio de um alarme real |
+| ✅ | **J4 (15/10), 3 envios, todos com `sent: 1`:** (1) app em segundo plano e tela bloqueada → tocou o som de alarme do sistema (`usage=4`), com vibração, e a notificação ficou visível na tela bloqueada. A tela não acende, o que é esperado sem full-screen intent (restrição da Play); (2) app aberto na tela da central → balão no topo e som; (3) canal "Alarme de incêndio" bloqueado → nada tocou nem apareceu, e Configurações → Notificações mostra "Alarme de incêndio bloqueado" |
+| ❌ | Cartão de permissão num Android 13+ (o J4 é Android 8.1). Opcional: repetir o teste no celular de alguém da equipe |
 | ✅ | **Figma (14/10):** cartão da home (08e), tela Notificações para morador/equipe e estados de permissão, canal bloqueado e registro pendente (09a–09e); central com ação "Ativar notificações" (26b) |
 | ✅ | **Publicação:** Política de Privacidade 1.2 (token, identificador de instalação, modelo e versões, conteúdo dos avisos e retenção) em produção; "Segurança dos dados" salva no Play Console (14/10) conforme [docs/seguranca-dos-dados.md](docs/seguranca-dos-dados.md) |
 | ✅ | **Limite:** a entrega não é garantida em tempo real (economia de bateria, otimizações Samsung); nenhum texto promete aviso imediato |
@@ -200,9 +202,9 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 3. ✅ Cadastro, tela de aceite, estado sem unidade e exclusão validados em produção com conta de teste (13/10). A conta para a revisão da Play foi criada e vinculada em 14/10 (seção 8).
 4. ✅ Avisos do Termo e tela de aceite desenhados no Figma pelo MCP (13/10).
 5. ✅ Faixa da tela 27 sincronizada no Figma com o texto implementado no app (13/10).
-6. 🟡 Push nativo funcionando no J4 (seção 7.1), correções em produção; falta validar o alarme com a equipe.
-7. 🟡 Verificação de localização do exaustor (seção 7.2): implementada e validada em produção e no J4 em 14/10 (centro -20.836533, -49.368565, raio 100 m); falta devolver o papel admin à conta usada no teste.
+6. ✅ Push nativo validado no J4 (seção 7.1), incluindo o alarme de incêndio (15/10); falta só o cartão de permissão num Android 13+.
+7. ✅ Verificação de localização do exaustor (seção 7.2): implementada e validada em produção e no J4 em 14/10 (centro -20.836533, -49.368565, raio 100 m); papel admin devolvido à conta usada no teste (15/10).
 8. ✅ Cores ajustadas para contraste refletidas no Figma (13/10).
-9. 🟡 Alarme da central: o caminho até o app foi validado com o disparo real. O push prioritário será validado pela rota `/notifications/test/fire-alarm` depois do deploy (seção 7.1), com a conta como admin (item 7).
+9. ✅ Alarme da central: o caminho até o app foi validado com o disparo real e o push prioritário pela rota `/notifications/test/fire-alarm` no J4 (15/10, seção 7.1).
 
 **Próximo bloco sugerido:** ícone, R8, chave e `.aab` assinado → OAuth de release → teste interno na Play. O push de alertas da central (seção 7.1) entra antes da publicação se for decidido que é obrigatório na 1ª versão.

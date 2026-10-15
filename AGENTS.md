@@ -505,7 +505,7 @@ Every log/event item carries `event` (`category`, `label`, `kind`, `severity`) a
 
   Alertas de incêndio usam mensagem FCM de prioridade alta e canal próprio com som. A entrega não é garantida em tempo real (economia de bateria, otimizações da Samsung), então nenhum texto promete aviso imediato. Implementação: seção "Push notifications".
 - A faixa da tela 27 diz "A ocorrência foi registrada pela central e deve ser verificada pela equipe responsável." em vez de "A equipe responsável está verificando a ocorrência.", porque a API não informa se há verificação em andamento.
-- Histórico (29): últimos 30 dias, até 4 páginas de 50 eventos seguindo `nextCursor`, agrupados por dia e filtrados no app (Alarmes; Falhas = falha + supervisão; Operação = operação + bloqueio). Detalhe (30a–30c) usa só campos retornados; "Dados técnicos" mostra o registro como veio da API.
+- Histórico (29): só a equipe (`porteiro`, `sindico`, `admin`) vê "Ver histórico de eventos"; a versão 1.0.0 sai para moradores e o botão fica oculto para eles (decidido em 15/10/2026). Últimos 30 dias, até 4 páginas de 50 eventos seguindo `nextCursor`, agrupados por dia e filtrados no app (Alarmes; Falhas = falha + supervisão; Operação = operação + bloqueio). Detalhe (30a–30c) usa só campos retornados; "Dados técnicos" mostra o registro como veio da API.
 - Rótulos usam `display`/`event` quando presentes. Servidores sem esses campos caem no fallback: nomes do painel em caixa alta e com `\u0000` são normalizados por `cieName()`/`floorLabel()` ("TORRE B" → "Torre B", "8 ANDAR B T-B" → "8º andar").
 
 ## Real-time (WebSocket `/v3/ws`)
@@ -542,6 +542,7 @@ Native push uses **only** `/notifications/*` (decided on 13/10/2026). `/push/*` 
 | `type` | Who receives (the API decides) | Channel |
 |---|---|---|
 | `cie.alarm` | staff + residents with an unblocked unit; one per alarm episode; high priority | `cie_alarm` |
+| `cie.alarm.resolved` | residents with an unblocked unit who are not staff, once after each alarm, when the panel is back to "Sistema normal"; replaces the alarm notification (tag `cie-alarm`) | `general` |
 | `cie.alarm.cleared`, `cie.failure`, `cie.supervision`, `cie.restarting`, `cie.offline` · `cie.blocked`, `cie.normalized` | staff only | `cie_status` · `cie_info` |
 | `exhaust.expiring` (X min before the auto-off; X fixed on the server, default 15), `exhaust.off`, `exhaust.off.unconfirmed` | **only the owner of the current cycle**: the account of the last turn-on/restart through the app. Earlier accounts stop receiving once someone else restarts; a timer changed in the v2 web panel notifies nobody; turning it off yourself sends nothing | `exhaust` |
 | `message.published` | staff + residents with an unblocked unit, when a message with `notify` becomes visible | `messages` |
