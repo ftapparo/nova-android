@@ -8,6 +8,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2-purple)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-green)](https://developer.android.com/jetpack/compose)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-green)](https://developer.android.com/)
+[![License](https://img.shields.io/badge/license-propriet%C3%A1ria-red.svg)](LICENSE)
 
 </div>
 
@@ -28,6 +29,7 @@
 - [Segurança](#-segurança)
 - [Documentação](#-documentação)
 - [Changelog](#-changelog)
+- [Licença](#-licença)
 - [Autor](#-autor)
 
 ---
@@ -258,6 +260,12 @@ app/src/main/java/br/com/novaresidence/
 ## 📄 Changelog
 
 Para ver o histórico completo de alterações, consulte o [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+## 📝 Licença
+
+Software proprietário: **todos os direitos reservados**. Uso exclusivo do Condomínio Nova Residence; cópia, modificação, distribuição ou publicação dependem de autorização por escrito do autor. Veja o arquivo [LICENSE](LICENSE).
 
 ---
 
