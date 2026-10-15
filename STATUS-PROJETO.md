@@ -49,7 +49,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 |---|---|---|
 | ✅ | Configurações: conta, Código Freedom, unidades, idioma, privacidade, desconectar e versão | 12/10 |
 | ✅ | Seleção de unidade com motivos de bloqueio | 30/09 · visual 12/10 |
-| ✅ | Idioma: Português; inglês e espanhol desabilitados até haver tradução (tradução: seção 3.1) | 30/09 |
+| ✅ | Idioma: Português, English e Español (seção 3.1) | 30/09 · 15/10 |
 | ✅ | Menu de privacidade (12) | 12/10 |
 | ✅ | Termo de Uso (13) e Política de Privacidade (14) v1.0: página vigente publicada pela API, em WebView restrito, com o texto na escala do corpo do app (14 sp) | 13/10 |
 | ✅ | App pronto para versões novas do Termo: a versão nunca é fixa no código e é consultada em `GET /legal` na hora do cadastro, do Google e da tela de aceite | 13/10 |
@@ -70,12 +70,22 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Tela de aceite com título neutro "Aceite do Termo de Uso" (antes "Termo de Uso atualizado", errado para quem nunca aceitou) | 13/10 |
 | ✅ | Figma: avisos do Termo nas boas-vindas e cadastro, tela de aceite, documentos v1.1, dados pessoais e exclusão (incluindo equipe) sincronizados com o app | 13–14/10 |
 
-### 3.1 Tradução (inglês e espanhol) — a planejar
+## 3.1 Tradução (inglês e espanhol) — implementada em 15/10
+
+Regra decidida em 15/10: só na **primeira abertura** depois de instalar o app lê o idioma do Android (português, inglês ou espanhol; qualquer outro vira inglês, decidido em 15/10) e grava. Daí em diante vale só a escolha na tela 11, mesmo que o idioma do aparelho mude. Sem opção "Idioma do aparelho" e sem mudança no Figma.
 
 | | Item |
 |---|---|
-| ❌ | Planejar: extrair os textos para `strings.xml`, traduzir, decidir o idioma dos textos que vêm da API (`detail`, comunicados, central) e dos documentos jurídicos |
-| ❌ | Habilitar inglês e espanhol na tela 11 só com a tradução completa |
+| ✅ | Textos do app em `strings.xml` (pt-BR padrão, `values-en`, `values-es`; 396 textos); fora da tela, `UiText` (`core/ui`) |
+| ✅ | Idioma gravado em `AppLanguageStore` (`core/ui/AppLanguage.kt`) e aplicado antes do primeiro quadro (`attachBaseContext`); tela 11 com os três idiomas; troca recria a Activity |
+| ✅ | App Bundle sem divisão por idioma (`bundle.language.enableSplit = false`): a Play instalaria só o idioma do aparelho e a troca manual ficaria sem textos |
+| ✅ | Datas no idioma do app; canais de notificação renomeados no idioma atual; Termo e Política com aviso "documento oficial só em português" em en/es |
+| ✅ | App envia `Accept-Language` e `language` no registro do aparelho (inofensivos antes do deploy da API) |
+| ✅ | Validado no J4: português na primeira abertura (aparelho em pt-BR), troca para English e Español na tela 11, idioma mantido depois de matar o app |
+| 🟡 | **API** (`src/v3`, sem commit): `detail`, rótulos da central e push no idioma do `Accept-Language`/aparelho; `error.title` não muda. Falta commit, **migração 007 antes do deploy** e validação em produção |
+| ✅ | Textos revisados nas três línguas em 15/10 (glossário em [docs/traducao.md](docs/traducao.md)) |
+| ❌ | Primeira abertura com o Android em inglês/espanhol: e com outro idioma (deve abrir em inglês): validar em aparelho ou emulador com instalação limpa (o J4 está em pt-BR) |
+| ❌ | Ficha da Play em inglês e espanhol (opcional) |
 
 ## 4. Exaustor (19–24)
 
@@ -139,7 +149,7 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção "Push notifications". Mecani
 |---|---|
 | ✅ | **API** (`7b67532`, deploy em 13/10): registro do aparelho `/notifications/devices/android` (rotas `/ios` reservadas, respondem vazio), preferências, teste, migração 006 e envio pelo FCM só de dados |
 | ✅ | **Central:** alarme para equipe e morador com unidade liberada (alta prioridade, um por episódio); falha, supervisão, reinício, bloqueio, sem comunicação, alarme encerrado e normalização só para a equipe |
-| 🟡 | **Central, morador (15/10):** depois de um alarme, aviso comum "Central de incêndio normalizada" (`cie.alarm.resolved`, canal `general`) quando a central volta a "Sistema normal"; substitui a notificação do alarme. Só morador que não é da equipe. `tsc` limpo; falta o deploy, e a validação depende de um alarme real |
+| ✅ | **Central, morador (15/10):** depois de um alarme, aviso comum "Central de incêndio normalizada" (`cie.alarm.resolved`, canal `general`) quando a central volta a "Sistema normal"; substitui a notificação do alarme. Só morador que não é da equipe. A pendência sobrevive a reinício da API (histórico de envios, últimas 6 h). Em produção (API `964c2ef` e `0e202af`). Validado no J4 sem alarme real pela rota de teste com `type: "resolved"` (API `476e290`): o alarme de teste chegou pelo canal `cie_alarm` e a normalizada **substituiu** o alarme na bandeja (uma única notificação `cie-alarm`, canal `general`, importância padrão). A detecção automática da volta ao normal não foi testada com alarme real: ela usa a mesma lógica dos avisos da equipe |
 | ✅ | **Exaustor:** "faltam 15 minutos" (fixo no servidor) e "desligado" só para quem ligou ou reiniciou por último pelo app; tempo mudado pelo painel v2 não avisa ninguém |
 | ✅ | **Comunicados:** push quando um comunicado com `notify` fica visível, inclusive o agendado |
 | ✅ | **App:** `NovaApplication` com o grafo do processo, serviço do FCM, canais (alarme com som de alarme), registro só quando algo muda, remoção no logout, toque abrindo a tela certa, aviso sem sessão descartado |
