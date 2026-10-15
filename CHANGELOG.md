@@ -30,6 +30,7 @@
 
 ### Alterado
 
+- `AGENTS.md`: os textos do app são os de `strings.xml`; o Figma é modelo visual e não muda a redação.
 - Central de incêndio: "Ver histórico de eventos" passa a aparecer só para a equipe (porteiro, síndico, admin). A versão 1.0.0 sai para moradores (decisão de 15/10/2026).
 
 - Respostas do formulário "Segurança dos dados" da Play em `docs/seguranca-dos-dados.md` (e-mail, nome, IDs de usuário, outras ações, IDs do dispositivo e diagnóstico; nada compartilhado), alinhadas à Política de Privacidade 1.2. Volume do tempo real medido: ~0,9 MB por hora de app aberto, sem necessidade de filtro na API.

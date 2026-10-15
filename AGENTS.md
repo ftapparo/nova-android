@@ -71,7 +71,7 @@ Do not distribute a feature across global `ui/`, `data/`, `domain/` directories.
 
 ## UI e design
 
-Leia `DESIGN_GUIDE.md` antes de alterar interface. Ele define a hierarquia tipográfica, espaçamento, componentes e adaptação a janelas. Consulte os nós correspondentes pelo MCP do Figma e compare com o aplicativo renderizado; o Figma é uma referência visual revisável. Quando houver divergência, aplique o guia, valide no aparelho e registre a correção necessária no Figma. Mantenha textos funcionais em fonte Android/Material 3 e tokens compartilhados em `core/ui`. O app usa densidade proporcional ao frame de 412 dp do Figma em telas mais estreitas (ver `DESIGN_GUIDE.md` §6); use os valores do Figma em dp/sp sem compensações manuais por largura. Para comparar com o Figma, capture o aparelho e o PNG do nó lado a lado na mesma escala.
+Leia `DESIGN_GUIDE.md` antes de alterar interface. Ele define a hierarquia tipográfica, espaçamento, componentes e adaptação a janelas. Consulte os nós correspondentes pelo MCP do Figma e compare com o aplicativo renderizado; o Figma é uma referência visual revisável. Quando houver divergência, aplique o guia, valide no aparelho e registre a correção necessária no Figma. **Os textos do app são os de `res/values*/strings.xml`; o Figma é modelo visual e não muda a redação** — não copie textos do desenho para os recursos sem pedido explícito. Mantenha textos funcionais em fonte Android/Material 3 e tokens compartilhados em `core/ui`. O app usa densidade proporcional ao frame de 412 dp do Figma em telas mais estreitas (ver `DESIGN_GUIDE.md` §6); use os valores do Figma em dp/sp sem compensações manuais por largura. Para comparar com o Figma, capture o aparelho e o PNG do nó lado a lado na mesma escala.
 
 ---
 
