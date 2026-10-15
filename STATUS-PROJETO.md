@@ -70,7 +70,7 @@ Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.m
 | ✅ | Tela de aceite com título neutro "Aceite do Termo de Uso" (antes "Termo de Uso atualizado", errado para quem nunca aceitou) | 13/10 |
 | ✅ | Figma: avisos do Termo nas boas-vindas e cadastro, tela de aceite, documentos v1.1, dados pessoais e exclusão (incluindo equipe) sincronizados com o app | 13–14/10 |
 
-## 3.1 Tradução (inglês e espanhol) — implementada em 15/10
+## 3.1 Tradução (inglês e espanhol) — concluída em 15/10
 
 Regra decidida em 15/10: só na **primeira abertura** depois de instalar o app lê o idioma do Android (português, inglês ou espanhol; qualquer outro vira inglês, decidido em 15/10) e grava. Daí em diante vale só a escolha na tela 11, mesmo que o idioma do aparelho mude. Sem opção "Idioma do aparelho" e sem mudança no Figma.
 
@@ -82,9 +82,9 @@ Regra decidida em 15/10: só na **primeira abertura** depois de instalar o app l
 | ✅ | Datas no idioma do app; canais de notificação renomeados no idioma atual; Termo e Política com aviso "documento oficial só em português" em en/es |
 | ✅ | App envia `Accept-Language` e `language` no registro do aparelho (inofensivos antes do deploy da API) |
 | ✅ | Validado no J4: português na primeira abertura (aparelho em pt-BR), troca para English e Español na tela 11, idioma mantido depois de matar o app |
-| 🟡 | **API** (`src/v3`, sem commit): `detail`, rótulos da central e push no idioma do `Accept-Language`/aparelho; `error.title` não muda. Falta commit, **migração 007 antes do deploy** e validação em produção |
+| ✅ | **API** (`01c0a58`): `detail`, rótulos da central e push no idioma do `Accept-Language`/aparelho; `error.title` não muda. Migração 007 aplicada e deploy feito; conferido em produção que o `detail` sai em pt-BR, en e es |
 | ✅ | Textos revisados nas três línguas em 15/10 (glossário em [docs/traducao.md](docs/traducao.md)) |
-| ❌ | Primeira abertura com o Android em inglês/espanhol: e com outro idioma (deve abrir em inglês): validar em aparelho ou emulador com instalação limpa (o J4 está em pt-BR) |
+| ✅ | Primeira abertura com o Android em outro idioma validada em aparelho com instalação limpa |
 | ❌ | Ficha da Play em inglês e espanhol (opcional) |
 
 ## 4. Exaustor (19–24)
