@@ -79,7 +79,8 @@ Em aparelhos com botões fixos (ex.: Galaxy J4), a barra dos botões do Android 
 ### Formulários
 
 - Campo com texto de 16 sp, rótulo persistente e placeholder apenas como exemplo. Altura visual alvo **52–56 dp**. O OutlinedTextField do Material 3 tem mínimo próprio: não forçar 52 dp se isso cortar rótulo, cursor ou texto ampliado; validar o componente real.
-- Botão principal com pelo menos 48 dp de altura e texto de 14 sp Medium. Largura total apenas dentro da coluna de conteúdo, que tem largura máxima em telas largas.
+- Cartão informativo (“Info strip”): sempre `NovaInfoStrip` — “i” contornado de 22 dp, texto 13/18 sp centralizado, fundo #EEECF6 (ou a cor do estado na central/manutenção), cantos de 14 dp, 14/12 dp de respiro e mínimo de 64 dp que cresce com o texto. Vale para exaustor, central, unidades (13), validação de conta (07), notificações e aviso de idioma dos documentos; não montar “ícone + texto” solto nas telas.
+- Botão principal com pelo menos 48 dp de altura e texto de 14 sp Medium. **Todos os botões do app têm a mesma altura (48 dp, crescendo com o texto) e o mesmo texto (14/20 sp Medium)**, inclusive nas telas de serviço (15/10/2026); o Figma ainda usa 52 dp e 15 sp SemiBold no exaustor e em “Ver histórico de eventos”, o que deve ser corrigido no Figma, não copiado. Largura total apenas dentro da coluna de conteúdo, que tem largura máxima em telas largas.
 - “Esqueci minha senha” deve ser link/TextButton com área de toque adequada, não uma segunda pílula branca de largura total. Login Google deve parecer alternativa, sem disputar a ação principal.
 - Mostrar erro junto ao campo e deixar a tela rolar com o teclado aberto. Evitar vários espaços de 20 dp entre botão, link, separador e ação social.
 
@@ -90,6 +91,8 @@ Linhas interativas têm alvo mínimo de 48 dp; altura visual típica de 56–64 
 ### Exaustor
 
 Destacar estado atual e ação disponível; unidade e explicação ficam em segundo plano. Evitar SpaceBetween que empurre estado e botão para extremos de uma tela alta. Em tela baixa, permitir rolagem e preservar a visibilidade de erro/aviso. Contador grande é exceção funcional, testada com fonte ampliada.
+
+Revisão de **15/10/2026** (telas 21 e 23): ilustrações quadradas de 250 dp no exaustor e 200 dp na central, reduzidas conforme a altura disponível. Estado usa `EquipmentState` (28/38 sp SemiBold), apoio e tempo restante usam `EquipmentSupporting` (16/22 sp Regular); título e apoio formam um bloco com intervalo de 4 dp. O alarme ativo usa `AlarmTitle` (28/28 sp; título Bold e local SemiBold). Blocos ficam a 16 dp, faixa de serviço tem mínimo de 64 dp e cresce com o texto. Ações, avisos e orientações continuam roláveis. A unidade do cartão mantém 18/22 sp Bold. Configurações e seus filhos (12–20) usam o fundo #F5F6FA do app; só a área do documento no Termo e na Política (17 e 18) é branca.
 
 ### Navegação inferior
 

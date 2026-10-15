@@ -40,7 +40,7 @@ fun NotificationScreen(
 ) {
     LaunchedEffect(Unit) { load() }
     val context = LocalContext.current
-    Column(Modifier.fillMaxSize().background(Color.White)) {
+    Column(Modifier.fillMaxSize().background(NovaBackground)) {
         NovaTopBar(stringResource(R.string.notification_title), back)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
             .padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(28.dp)) {
@@ -96,7 +96,7 @@ fun NotificationScreen(
 @Composable
 private fun DeviceStatus(status: PushStatus, enable: () -> Unit, retryRegistration: () -> Unit) {
     when (status) {
-        PushStatus.Ready -> NovaInfoStrip(stringResource(R.string.notification_ready), centered = false)
+        PushStatus.Ready -> NovaInfoStrip(stringResource(R.string.notification_ready))
         PushStatus.PermissionNeeded -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             NovaNotice(stringResource(R.string.notification_denied), title = stringResource(R.string.notification_denied_title))
             NovaButton(stringResource(R.string.push_enable), enable)

@@ -85,7 +85,7 @@ private fun FireStatusScreen(
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, top = 16.dp, bottom = 18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Column(Modifier.widthIn(max = 480.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    if (status == FireStatus.Alarm) AlarmContent(state, (available - 560.dp).coerceIn(96.dp, 159.dp), openEvent)
+                    if (status == FireStatus.Alarm) AlarmContent(state, (available - 504.dp).coerceIn(120.dp, 200.dp), openEvent)
                     else StatusContent(state, (available - 420.dp).coerceIn(120.dp, 200.dp), refresh, openHistory, notificationsReady, enableNotifications)
                 }
             }
@@ -114,23 +114,25 @@ private fun StatusContent(
         else -> StatusLook(R.drawable.nova_fire_normal, true, uiText(R.string.fire_badge_unavailable), NovaOffline, NovaOfflineContainer,
             uiText(R.string.fire_unavailable_title), state.error ?: uiText(R.string.fire_unavailable), null)
     }
-    Column(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }, horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 16.dp).semantics { liveRegion = LiveRegionMode.Polite }, horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)) {
         NovaIllustration(look.image, Modifier.size(illustration), contentScale = ContentScale.Crop,
             colorFilter = if (look.grayscale) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null)
-        NovaStatusBadge(look.badge.text(), look.color, look.container)
-        Text(look.title.text(), Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.Hero, color = NovaInk, textAlign = TextAlign.Center)
-        Text(look.text.text(), Modifier.fillMaxWidth(), style = NovaType.Field.copy(lineHeight = 22.sp), color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
+        NovaStatusBadge(look.badge.text(), look.color, look.container, Modifier.widthIn(min = if (status == FireStatus.Attention) 132.dp else 122.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(look.title.text(), Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.EquipmentState, color = NovaInk, textAlign = TextAlign.Center)
+            Text(look.text.text(), Modifier.fillMaxWidth(), style = NovaType.EquipmentSupporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
+        }
         if (status == FireStatus.Attention) state.activeEvents.firstNotNullOfOrNull { it.placeLine() }?.let { place ->
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.fire_warning_place), style = NovaType.Caption, color = NovaOnSurfaceVariant)
                 Text(place, style = NovaType.ItemTitle, color = NovaInk, textAlign = TextAlign.Center)
             }
         }
-        look.info?.let { NovaInfoStrip(it.text(), accent = look.color, container = look.container, centered = false) }
+        look.info?.let { NovaInfoStrip(it.text(), accent = look.color, container = look.container) }
         if (status == FireStatus.Normal && !notificationsReady && enableNotifications != null) NovaTextLink(stringResource(R.string.push_enable), enableNotifications)
-        if (status == FireStatus.Unavailable) NovaButton(stringResource(R.string.fire_try_again), refresh, enabled = state.retrySeconds == 0L, height = 52.dp)
-        if (openHistory != null) NovaButton(stringResource(R.string.fire_view_history), openHistory, style = NovaButtonStyle.Outlined, height = 52.dp)
+        if (status == FireStatus.Unavailable) NovaButton(stringResource(R.string.fire_try_again), refresh, enabled = state.retrySeconds == 0L)
+        if (openHistory != null) NovaButton(stringResource(R.string.fire_view_history), openHistory, style = NovaButtonStyle.Outlined)
         Footnotes(state)
     }
 }
@@ -158,18 +160,20 @@ private val SafetyGuidance = listOf(
 @Composable
 private fun AlarmContent(state: FireState, illustration: Dp, openEvent: (CieLog) -> Unit) {
     val log = state.activeAlarm
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Column(Modifier.fillMaxWidth().padding(bottom = 8.dp).semantics { liveRegion = LiveRegionMode.Assertive },
-            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            NovaIllustration(R.drawable.nova_fire_alarm, Modifier.size(illustration * 200f / 159f, illustration), contentScale = ContentScale.Crop)
-            NovaStatusBadge(stringResource(R.string.fire_badge_alarm), NovaAlarm, NovaAlarmContainer)
-            Text(stringResource(R.string.fire_alarm_title), Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.HeadlineHome.copy(fontWeight = FontWeight.Bold),
-                color = NovaAlarm, textAlign = TextAlign.Center)
-            log?.placeLine(" - ")?.let { Text(it, Modifier.fillMaxWidth(), style = NovaType.HeadlineHome, color = NovaInk, textAlign = TextAlign.Center) }
-            log?.instant()?.let { Text(stringResource(R.string.fire_alarm_started_at, it.clockTime()), style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
+    Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, bottom = 8.dp).semantics { liveRegion = LiveRegionMode.Assertive },
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            NovaIllustration(R.drawable.nova_fire_alarm, Modifier.size(illustration), contentScale = ContentScale.Crop)
+            NovaStatusBadge(stringResource(R.string.fire_badge_alarm), NovaAlarm, NovaAlarmContainer, Modifier.widthIn(min = 112.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.fire_alarm_title), Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.AlarmTitle.copy(fontWeight = FontWeight.Bold),
+                    color = NovaAlarm, textAlign = TextAlign.Center)
+                log?.placeLine(" - ")?.let { Text(it, Modifier.fillMaxWidth(), style = NovaType.AlarmTitle, color = NovaInk, textAlign = TextAlign.Center) }
+                log?.instant()?.let { Text(stringResource(R.string.fire_alarm_started_at, it.clockTime()), style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
+            }
         }
         HorizontalDivider(color = NovaOutline)
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.fire_safety_title), Modifier.semantics { heading() }, style = NovaType.Highlight, color = NovaInk)
             SafetyGuidance.forEach { (text, emphasis) ->
                 Row(Modifier.fillMaxWidth().heightIn(min = 38.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -44,23 +44,23 @@ import br.com.novaresidence.R
 enum class NovaButtonStyle { Primary, Secondary, Outlined, Neutral, Danger }
 
 /**
- * Botão em pílula do Figma: 48 dp (52 dp nas telas de serviço), texto 14 Medium.
+ * Botão em pílula: 48 dp e texto 14 Medium em todo o app (DESIGN_GUIDE); o Figma varia 48/52 dp e 14/15 sp nas telas de serviço.
  * O ícone opcional fica centralizado junto ao texto, como em "Ligar exaustor".
  */
 @Composable
 fun NovaButton(
     label: String, onClick: () -> Unit, modifier: Modifier = Modifier,
     enabled: Boolean = true, style: NovaButtonStyle = NovaButtonStyle.Primary,
-    icon: Int? = null, height: Dp = 48.dp, textStyle: TextStyle = NovaType.Button,
+    icon: Int? = null,
 ) {
     val content: @Composable RowScope.() -> Unit = {
         if (icon != null) {
             Icon(painterResource(icon), null, Modifier.size(22.dp))
             Spacer(Modifier.width(10.dp))
         }
-        Text(label, style = textStyle, textAlign = TextAlign.Center)
+        Text(label, style = NovaType.Button, textAlign = TextAlign.Center)
     }
-    val sized = modifier.fillMaxWidth().heightIn(min = height)
+    val sized = modifier.fillMaxWidth().heightIn(min = 48.dp)
     val padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
     when (style) {
         NovaButtonStyle.Outlined, NovaButtonStyle.Neutral -> {
@@ -138,27 +138,29 @@ fun NovaNotice(message: String, requestId: String? = null, title: String? = null
     }
 }
 
-/** Selo de estado com ponto colorido ("Disponível", "Central online", "Alarme"). */
+/** Selo de estado com texto colorido e centralizado ("Disponível", "Central online", "Alarme"). */
 @Composable
 fun NovaStatusBadge(label: String, color: Color, container: Color, modifier: Modifier = Modifier, height: Dp = 28.dp, textStyle: TextStyle = NovaType.Badge) {
     Row(modifier.background(container, RoundedCornerShape(14.dp)).heightIn(min = height).padding(horizontal = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(7.dp).background(color, CircleShape))
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = textStyle, color = color, maxLines = 1)
     }
 }
 
-/** Faixa informativa com "i" contornado (exaustor e central). */
+/**
+ * Cartão informativo único do app ("Info strip" do Figma): "i" contornado, texto 13/18 centralizado,
+ * mínimo de 64 dp que cresce com o texto. Só a cor muda com o estado (central, manutenção).
+ */
 @Composable
-fun NovaInfoStrip(text: String, modifier: Modifier = Modifier, accent: Color = NovaPrimary, container: Color = NovaInfoSurface, centered: Boolean = true) {
-    Row(modifier.fillMaxWidth().background(container, RoundedCornerShape(14.dp)).padding(horizontal = 14.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = if (centered) Alignment.Top else Alignment.CenterVertically) {
+fun NovaInfoStrip(text: String, modifier: Modifier = Modifier, accent: Color = NovaPrimary, container: Color = NovaInfoSurface) {
+    Row(modifier.fillMaxWidth().background(container, RoundedCornerShape(14.dp)).heightIn(min = 64.dp).padding(horizontal = 14.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         NovaInfoMark(accent)
-        Text(text, Modifier.weight(1f), style = NovaType.Supporting, color = NovaOnTint, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
+        Text(text, Modifier.weight(1f), style = NovaType.Supporting, color = NovaOnTint, textAlign = TextAlign.Center)
     }
 }
 
-/** "i" contornado de 22 dp do Figma (faixas informativas e aviso da tela 07). */
+/** "i" contornado de 22 dp do Figma (cartão informativo e [NovaNotice]). */
 @Composable
 fun NovaInfoMark(accent: Color, border: Dp = 1.6.dp) {
     Box(Modifier.size(22.dp).border(border, accent, CircleShape), contentAlignment = Alignment.Center) {

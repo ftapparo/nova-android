@@ -72,7 +72,7 @@ private fun LegalError(message: String, retry: () -> Unit) {
 @Composable
 private fun PortugueseOnlyNotice() {
     if (LocalConfiguration.current.locales[0].language == "pt") return
-    Box(Modifier.padding(start = 28.dp, end = 28.dp, bottom = 12.dp)) { NovaInfoStrip(stringResource(R.string.legal_portuguese_only), centered = false) }
+    Box(Modifier.padding(start = 28.dp, end = 28.dp, bottom = 12.dp)) { NovaInfoStrip(stringResource(R.string.legal_portuguese_only)) }
 }
 
 /**

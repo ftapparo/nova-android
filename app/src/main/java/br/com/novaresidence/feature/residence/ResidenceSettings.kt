@@ -63,7 +63,7 @@ internal fun ResidenceSettings(
         ResidencePage.DeleteAccount -> stringResource(R.string.settings_title_delete_account)
         else -> stringResource(R.string.settings_title)
     }
-    Column(Modifier.fillMaxSize().background(Color.White)) {
+    Column(Modifier.fillMaxSize().background(NovaBackground)) {
         NovaTopBar(title, back)
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxWidth()
@@ -119,13 +119,13 @@ private fun ColumnScope.Settings(
     }
 }
 
-/** Selecionar unidade (Figma 10): a escolha vale durante a sessão. */
+/** Selecionar unidade (Figma 13): a escolha vale durante a sessão. */
 @Composable
 private fun SelectUnit(state: ResidenceState, select: (Int) -> Unit) {
     val units = state.residence?.units.orEmpty()
     Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp)) {
         Guidance(stringResource(R.string.settings_select_unit_guidance))
-        Spacer(Modifier.height(36.dp))
+        Spacer(Modifier.height(28.dp))
         Column(Modifier.selectableGroup()) {
             units.forEachIndexed { index, entry ->
                 if (index > 0) HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
@@ -136,12 +136,7 @@ private fun SelectUnit(state: ResidenceState, select: (Int) -> Unit) {
             }
         }
         if (units.isEmpty()) Text(state.residence?.notice()?.text() ?: stringResource(R.string.settings_no_linked_unit), Modifier.padding(horizontal = Margin), style = NovaType.Body)
-        Row(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 32.dp), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.Top) {
-            Icon(painterResource(R.drawable.nova_info_outline), null, Modifier.padding(top = 1.dp).size(18.dp), tint = NovaPrimary)
-            Text(stringResource(R.string.settings_links_info), Modifier.weight(1f, fill = false),
-                style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
-        }
+        NovaInfoStrip(stringResource(R.string.settings_links_info), Modifier.padding(start = Margin, end = Margin, top = 28.dp))
     }
 }
 
@@ -151,7 +146,7 @@ private fun ColumnScope.SelectLanguage(state: ResidenceState, saveLanguage: (App
     var choice by rememberSaveable { mutableStateOf(state.language) }
     Column(Modifier.fillMaxWidth().padding(top = 24.dp)) {
         Guidance(stringResource(R.string.settings_language_guidance))
-        Spacer(Modifier.height(36.dp))
+        Spacer(Modifier.height(28.dp))
         Column(Modifier.selectableGroup()) {
             AppLanguage.entries.forEachIndexed { index, language ->
                 if (index > 0) HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
@@ -188,7 +183,8 @@ private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (Resid
     val unit = residence?.units?.firstOrNull { it.sequencia == state.selectedUnit }
     Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp)) {
         Guidance(stringResource(R.string.personal_data_guidance))
-        Column(Modifier.padding(horizontal = Margin)) {
+        Spacer(Modifier.height(12.dp))
+        Column(Modifier.padding(horizontal = Margin), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val rows = listOfNotNull(
                 residence?.person?.nome?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.personal_data_name) to it.personName() },
                 residence?.person?.cpfMasked?.let { stringResource(R.string.personal_data_cpf) to it },
@@ -233,7 +229,7 @@ private fun ColumnScope.DeleteAccount(user: AuthUser, back: () -> Unit, delete: 
 
 @Composable
 private fun Guidance(text: String) {
-    Text(text, Modifier.fillMaxWidth().padding(horizontal = Margin), style = NovaType.Body, color = NovaOnSurfaceVariant)
+    Text(text, Modifier.fillMaxWidth().padding(horizontal = Margin).heightIn(min = 40.dp), style = NovaType.Body, color = NovaOnSurfaceVariant)
 }
 
 @Composable

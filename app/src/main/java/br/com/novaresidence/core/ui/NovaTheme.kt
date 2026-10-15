@@ -71,7 +71,9 @@ private fun style(size: Int, height: Int, weight: FontWeight = FontWeight.Normal
 
 /** Estilos "Nova / Typography" do Figma, pelo papel de cada texto. */
 object NovaType {
-    val Hero = style(32, 38, FontWeight.SemiBold)
+    val EquipmentState = style(28, 38, FontWeight.SemiBold)
+    val EquipmentSupporting = style(16, 22)
+    val AlarmTitle = style(28, 28, FontWeight.SemiBold)
     val HeadlineHome = style(22, 28, FontWeight.SemiBold)
     val ScreenTitle = style(20, 26, FontWeight.Medium)
     val TopBar = style(18, 24)

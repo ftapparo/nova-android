@@ -89,25 +89,27 @@ fun ExhaustScreen(
             blockedMessage ?: uiText(if (unitLabel == null) R.string.exhaust_select_unit else R.string.exhaust_none_for_unit),
             uiText(R.string.exhaust_unavailable_info))
     }
-    val copy = location?.second?.let { StateCopy(phaseCopy.image, it.title, it.description, it.info) } ?: phaseCopy
+    val copy = location?.second?.let { StateCopy(R.drawable.nova_exhaust_location, it.title, it.description, it.info) } ?: phaseCopy
     Column(Modifier.fillMaxSize().background(NovaServiceBackground)) {
         NovaTopBar(stringResource(R.string.exhaust_title))
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             // Em telas mais baixas que o frame (ex.: J4 com botões), a ilustração encolhe antes de esconder ação e aviso (DESIGN_GUIDE §6).
-            val illustration = (maxHeight - 452.dp).coerceIn(150.dp, 247.dp)
+            val illustration = (maxHeight - 454.dp).coerceIn(150.dp, 250.dp)
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, top = 16.dp, bottom = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
-                Column(Modifier.widthIn(max = 560.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                Column(Modifier.widthIn(max = 560.dp).fillMaxWidth()) {
                     ContextCard(unitLabel, state, selectUnit)
-                    Column(Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 18.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        NovaIllustration(copy.image, Modifier.height(illustration).aspectRatio(329f / 247f, matchHeightConstraintsFirst = true))
-                        Text(copy.title.text(), Modifier.fillMaxWidth().semantics { heading(); liveRegion = LiveRegionMode.Polite }, style = NovaType.Hero, color = NovaInk, textAlign = TextAlign.Center)
-                        Text(copy.description.text(), Modifier.fillMaxWidth(), color = NovaOnSurfaceVariant, textAlign = TextAlign.Center,
-                            style = if (phase == ExhaustPhase.Running) NovaType.HeroSupporting.copy(fontWeight = FontWeight.Medium) else NovaType.HeroSupporting)
+                    Column(Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        NovaIllustration(copy.image, Modifier.size(illustration), contentScale = ContentScale.Crop)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(copy.title.text(), Modifier.fillMaxWidth().semantics { heading(); liveRegion = LiveRegionMode.Polite }, style = NovaType.EquipmentState, color = NovaInk, textAlign = TextAlign.Center)
+                            Text(copy.description.text(), Modifier.fillMaxWidth(), color = NovaOnSurfaceVariant, textAlign = TextAlign.Center,
+                                style = NovaType.EquipmentSupporting)
+                        }
                         if (phase == ExhaustPhase.Error) state.error?.let { Text(it.text(), Modifier.fillMaxWidth(), style = NovaType.Body, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
                         if (state.retrySeconds > 0) Text(stringResource(R.string.auth_retry_in, state.retrySeconds), style = NovaType.Body, color = NovaOnSurfaceVariant)
-                        Column(Modifier.fillMaxWidth().padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Column(Modifier.fillMaxWidth().padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Action(phase, state, blockedMessage, activate, restart, refresh, location, locationAction)
                             copy.info?.let { NovaInfoStrip(it.text()) }
                             state.requestId?.let { Text(stringResource(R.string.common_support_reference, it), Modifier.fillMaxWidth(), style = NovaType.Caption, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
@@ -124,40 +126,38 @@ private fun Action(
     phase: ExhaustPhase, state: ExhaustState, blockedMessage: UiText?, activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit,
     location: Pair<LocationIssue, LocationCopy>?, locationAction: (LocationIssue) -> Unit,
 ) {
-    val power = NovaType.Button.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
     val running = phase == ExhaustPhase.Running
     val action = location?.second?.action
     when {
         state.locating -> NovaButton(stringResource(R.string.exhaust_checking_location), {}, enabled = false, icon = if (running) null else R.drawable.nova_power,
-            style = if (running) NovaButtonStyle.Outlined else NovaButtonStyle.Primary, height = 52.dp, textStyle = power)
-        location != null && action != null -> NovaButton(action.text(), { locationAction(location.first) }, enabled = blockedMessage == null, height = 52.dp)
+            style = if (running) NovaButtonStyle.Outlined else NovaButtonStyle.Primary)
+        location != null && action != null -> NovaButton(action.text(), { locationAction(location.first) }, enabled = blockedMessage == null)
         location != null && location.second.retry -> NovaButton(stringResource(R.string.exhaust_try_again), if (running) restart else activate,
-            enabled = (if (running) state.canRestart else state.canActivate) && blockedMessage == null, height = 52.dp)
-        else -> PhaseAction(phase, state, blockedMessage, activate, restart, refresh, power)
+            enabled = (if (running) state.canRestart else state.canActivate) && blockedMessage == null)
+        else -> PhaseAction(phase, state, blockedMessage, activate, restart, refresh)
     }
 }
 
 @Composable
 private fun PhaseAction(
     phase: ExhaustPhase, state: ExhaustState, blockedMessage: UiText?, activate: () -> Unit, restart: () -> Unit, refresh: () -> Unit,
-    power: TextStyle,
 ) {
     when (phase) {
         ExhaustPhase.Off -> NovaButton(stringResource(R.string.exhaust_turn_on), activate, enabled = state.canActivate && blockedMessage == null,
-            icon = R.drawable.nova_power, height = 52.dp, textStyle = power)
-        ExhaustPhase.Starting -> NovaButton(stringResource(R.string.exhaust_turning_on), {}, enabled = false, icon = R.drawable.nova_power, height = 52.dp, textStyle = power)
-        ExhaustPhase.Finishing -> NovaButton(stringResource(R.string.exhaust_turning_off), {}, enabled = false, icon = R.drawable.nova_power, height = 52.dp, textStyle = power)
+            icon = R.drawable.nova_power)
+        ExhaustPhase.Starting -> NovaButton(stringResource(R.string.exhaust_turning_on), {}, enabled = false, icon = R.drawable.nova_power)
+        ExhaustPhase.Finishing -> NovaButton(stringResource(R.string.exhaust_turning_off), {}, enabled = false, icon = R.drawable.nova_power)
         ExhaustPhase.Running -> NovaButton(stringResource(if (state.restarting) R.string.exhaust_restarting else R.string.exhaust_restart), restart,
-            enabled = state.canRestart && blockedMessage == null, style = NovaButtonStyle.Outlined, height = 52.dp)
+            enabled = state.canRestart && blockedMessage == null, style = NovaButtonStyle.Outlined)
         ExhaustPhase.Error -> NovaButton(stringResource(R.string.exhaust_try_again), if (state.canActivate) activate else refresh,
-            enabled = !state.sending && !state.loading && state.retrySeconds == 0L, height = 52.dp)
+            enabled = !state.sending && !state.loading && state.retrySeconds == 0L)
         ExhaustPhase.Unavailable -> NovaButton(stringResource(R.string.exhaust_refresh), refresh, enabled = !state.loading && state.retrySeconds == 0L,
-            style = NovaButtonStyle.Secondary, height = 52.dp)
+            style = NovaButtonStyle.Secondary)
         else -> Unit
     }
 }
 
-/** Cartão "Unidade ativa · Equipamento" (Figma 19); o toque abre a seleção de unidade. */
+/** Cartão "Unidade ativa · Equipamento" (Figma 23a); o toque abre a seleção de unidade. */
 @Composable
 private fun ContextCard(unitLabel: UiText?, state: ExhaustState, selectUnit: () -> Unit) {
     val shape = RoundedCornerShape(18.dp)
@@ -182,7 +182,7 @@ private fun ContextCard(unitLabel: UiText?, state: ExhaustState, selectUnit: () 
         VerticalDivider(Modifier.height(60.dp), color = NovaOutline)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.exhaust_equipment), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
-            NovaStatusBadge(stringResource(label), color, container, height = 22.dp)
+            NovaStatusBadge(stringResource(label), color, container, Modifier.widthIn(min = 76.dp), height = 22.dp)
         }
     }
 }

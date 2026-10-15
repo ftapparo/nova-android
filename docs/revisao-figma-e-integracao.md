@@ -3,6 +3,31 @@
 Arquivo de referência: [Nova Residence no Figma](https://www.figma.com/design/kixzSbydhXP4k7qTSKWJbK/Sem-t%C3%ADtulo?node-id=0-1).
 Estrutura, propriedades, textos, componentes e assets foram consultados pelo MCP do Figma. As capturas locais ficam em `artifacts/`, fora do Git.
 
+## Figma → Android — nova revisão de 15/10/2026
+
+Revisão consultada pelo MCP após a tradução do app. **O Figma é referência visual; os textos do app são os de `strings.xml`** (decidido em 15/10/2026): a redação do desenho não substitui a dos recursos. O Figma continua somente em português; os recursos `values-en` e `values-es`, a seleção local de idioma e o contrato traduzido da API foram preservados. As seções anteriores deste documento são registros históricos e usam a numeração anterior.
+
+| Numeração atual | Nós de referência | Aplicação |
+|---|---|---|
+| 01–09 · Splash e autenticação | `56:1138`, `4:29391`, `323:1063`, `4:29479`, `309:1089`, `4:29564`, `4:29697`, `4:29743`, `4:29808` | Conferidos logo, margens, campos, ações e recuperação; textos do app mantidos. |
+| 10a–10j · Início | `214:857`, `214:961`, `214:1066`, `90:2382`, `321:1243`, `323:1123`, `323:1216`, `323:1309`, `323:1400`, `330:1363` | Seção de comunicados e estado sem unidade conferidos (textos do app mantidos); carrossel de 356 × 208 dp e navegação preservados. |
+| 11a–11b · Mensagens | `217:856`, `217:877` | Filtros, linhas, resumo e detalhe conferidos; conteúdo continua vindo da API. |
+| 12–14 · Configurações, unidade e idioma | `231:809`, `231:879`, `231:954` | Instrução com mínimo de 40 dp e intervalo de 28 dp antes das opções; informação dos vínculos no cartão informativo padrão (`NovaInfoStrip`, como exaustor e central), também aplicado à validação de conta (07), notificações e documentos legais. Três idiomas continuam habilitados. |
+| 15a–15e · Notificações | `321:916`, `321:977`, `321:1045`, `321:1111`, `321:1177` | Fundo #F5F6FA, como todas as telas de 12 a 20 (o branco anterior era erro do Figma, corrigido em 15/10/2026); preferências e estados reais preservados. |
+| 16–20b · Privacidade e conta | `233:816`, `233:897`, `233:954`, `233:1011`, `234:881`, `310:842` | Dados pessoais com intervalo de 12 dp entre elementos; aviso de exclusão com o texto do app. |
+| 21a–21f · Central | `257:856`, `320:869`, `257:939`, `257:1024`, `323:1613`, `323:1660` | Três ilustrações novas, quadradas; título de estado 28/38, apoio 16/22, agrupamento de 4 dp, blocos de 16 dp e faixas com mínimo de 64 dp. Alarme com imagem 200 dp, títulos 28/28 e orientações roláveis. Selos sem ponto, centralizados, como na revisão. |
+| 22a–22d · Histórico e detalhe | `265:979`, `269:829`, `269:916`, `269:1003` | Conferidos filtros, categorias, linhas e dados retornados. A regra vigente de histórico só para equipe na versão 1.0.0 permanece. |
+| 23a–23h · Exaustor | `245:942`, `246:2841`, `246:2912`, `246:3212`, `246:3054`, `246:3298`, `323:1493`, `323:1553` | Quatro ilustrações novas de 250 dp, título 28/38, apoio/contador 16/22, agrupamento de 4 dp e faixa com mínimo de 64 dp. |
+| 23i–23o · Localização | `341:1388`, `341:1434`, `341:1480`, `341:1526`, `341:1572`, `341:1618`, `341:1664` | Ilustração própria com marcador de localização (a mesma nos sete frames), composição do exaustor e textos do app; permissões, verificação e comandos não mudam. Esses frames ainda mostram o ponto no selo “Disponível” e 14 dp entre ação e faixa, restos da versão anterior: o app usa o selo sem ponto e 16 dp em todos os estados, como 23a–23h (corrigir no Figma). |
+
+Os oito PNGs originais foram obtidos dos assets retornados por `get_design_context`, sem rasterizar telas. São imagens com transparência de 1254 × 1254 px (desligado: 1242 × 1238). Gerados 40 WebP RGBA com Pillow/libwebp, qualidade 85, método 6, alpha 100 e redimensionamento Lanczos com recorte central quadrado: exaustor 250/375/500/750/1000 px e central 200/300/400/600/800 px, de mdpi a xxxhdpi. Total: 1.043.064 bytes. A decodificação assíncrona e o cache continuam em `NovaIllustration`.
+
+Mantidas diferenças intencionais: botões padronizados em 48 dp e 14/20 sp Medium em todas as telas (o Figma mistura 48/52 dp, 14 Medium/15 SemiBold e cantos de 24 dp/pílula no exaustor e na central); textos funcionais em fonte Android; conteúdo cresce em EN/ES e com fonte ampliada; margem lateral de 28 dp conforme o guia (alguns frames da home ainda usam 20); documentos legais e versão são os vigentes da API, sem fixar a versão 1.1 do desenho; cadastro não promete prazo de análise de 24 horas, que a API não garante; exclusão continua imediata após confirmação, com entrada “Excluir conta”; erros gramaticais “da evento” do Figma continuam corrigidos. Nenhum arquivo ou texto foi escrito no Figma nesta rodada.
+
+Validação concluída: `lint` sem erros (25 avisos), `testDebugUnitTest` com 73 testes, `assembleDebug`, `assembleDebugAndroidTest` e 13 testes `ScreenTest` no Galaxy J4 (Android 8.1), incluindo os três idiomas a 100%/130% de fonte com insets e ações roláveis. O APK final foi instalado preservando os dados do app. Testes usam dados fictícios e callbacks locais, sem comandos ao hardware ou testes contra a API de produção. Chaves traduzíveis e parâmetros de formatação conferidos nos três recursos.
+
+Evidências em `artifacts/figma-sync-20261015/`: nove comparações Figma/aparelho lado a lado, normalizadas para largura de 412 dp com a barra de status recortada, e oito painéis PT/EN/ES (100%/130%). Conferidos imagens, hierarquia, selos, margens, quebras e acesso às ações. A ilustração menor nas capturas com navegação inferior acompanha a altura útil do J4; diferenças das métricas da fonte nativa e das barras do Android são mantidas, sem compensações por aparelho. Capturas com fonte ampliada mostram posições de rolagem para alcançar ações e avisos. Não houve inspeção em tablet/janela ≥600 dp ou Android 13+ nesta rodada.
+
 ## Sincronização app → Figma — 13/10/2026
 
 Revisão executada pelo MCP a partir das pendências do `STATUS-PROJETO.md` e dos textos e tokens implementados no app:

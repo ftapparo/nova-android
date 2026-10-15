@@ -4,9 +4,21 @@ Atualizado em **15/10/2026**.
 
 Legenda: ✅ feito · 🟡 parcial · ⏳ depende de terceiros ou de outra etapa · ❌ não feito · ❓ aguarda decisão
 
-> **Situação em 14/10/2026:** API em produção com push nativo (migração 006), tempo real, localização do exaustor, exaustor simulado da conta de revisão e Política 1.2. App com push, WebSocket e localização commitados e validados no J4. Play Console: declarações de Conteúdo do app concluídas (Segurança dos dados, público 18+, classificação, acesso com conta de teste); falta o build de release e o teste interno. Repositório do app em `github.com/ftapparo/nova-android`.
+> **Situação em 15/10/2026:** API em produção com push nativo (migração 006), tempo real, localização do exaustor, exaustor simulado da conta de revisão e Política 1.2. App com push, WebSocket e localização commitados e validados no J4; português, inglês e espanhol disponíveis. Nova revisão visual do Figma aplicada ao projeto (seção abaixo). Play Console: declarações de Conteúdo do app concluídas (Segurança dos dados, público 18+, classificação, acesso com conta de teste); falta o build de release e o teste interno. Repositório do app em `github.com/ftapparo/nova-android`.
 
 Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.md](DESIGN_GUIDE.md), [CHECKLIST-PUBLICACAO.md](CHECKLIST-PUBLICACAO.md), [docs/revisao-figma-e-integracao.md](docs/revisao-figma-e-integracao.md).
+
+## Revisão visual do Figma — 15/10/2026
+
+| | Item |
+|---|---|
+| ✅ | Revisão atual consultada pelo MCP; mapa da nova numeração 01–23o em [docs/revisao-figma-e-integracao.md](docs/revisao-figma-e-integracao.md) |
+| ✅ | Oito ilustrações novas (exaustor, localização e central), com 40 WebP por densidade; composição quadrada, títulos de estado 28 sp, apoio 16 sp, selos e blocos agrupados como no desenho |
+| ✅ | Notificações com fundo atualizado; espaçamento de unidade, idioma e dados pessoais alinhado; textos continuam os de `strings.xml` (o Figma é só referência visual) |
+| ✅ | Inglês/espanhol e seleção de idioma preservados; Figma permanece somente em português e não foi alterado nesta rodada |
+| ✅ | `lint` sem erros (25 avisos), 73 testes unitários, `assembleDebug` e 13 testes de tela no J4 aprovados; PT/EN/ES com fonte 100%/130%, capturas comparadas ao Figma e APK atualizado no aparelho |
+
+As referências numéricas nas demais seções são históricas: início agora é 10, mensagens 11, configurações 12–20, central 21–22 e exaustor 23. Documentos oficiais continuam dinâmicos pela API; diferenças intencionais estão no documento de revisão.
 
 ## 1. Autenticação (telas 01–07)
 

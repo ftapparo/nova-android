@@ -30,6 +30,7 @@
 
 ### Alterado
 
+- Revisão visual do Figma de 15/10/2026: oito ilustrações novas e quadradas (exaustor 250 dp, central 200 dp e uma própria para os avisos de localização); estado em 28/38 sp com apoio em 16/22 sp e alarme em 28/28 sp; selos sem ponto e centralizados; Configurações e suas telas (12–20) no fundo cinza #F5F6FA, com só a área do documento do Termo e da Política em branco. Botões padronizados em 48 dp e 14 sp Medium em todas as telas, e um único cartão informativo (`NovaInfoStrip`, mínimo de 64 dp) no exaustor, na central, em Minhas unidades, na validação de conta, em Notificações e no aviso de idioma dos documentos. Os textos continuam os do `strings.xml`. Teste de tela do exaustor, da central e de Notificações em português, inglês e espanhol com fonte de 100% e 130%.
 - `AGENTS.md`: os textos do app são os de `strings.xml`; o Figma é modelo visual e não muda a redação.
 - Central de incêndio: "Ver histórico de eventos" passa a aparecer só para a equipe (porteiro, síndico, admin). A versão 1.0.0 sai para moradores (decisão de 15/10/2026).
 

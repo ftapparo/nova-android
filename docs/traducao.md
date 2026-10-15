@@ -1,11 +1,11 @@
 # Tradução do app (inglês e espanhol)
 
-Os textos do app ficam em `app/src/main/res/values/strings.xml` (português, padrão), `values-en/` e `values-es/`, com as mesmas chaves. As traduções foram feitas e revisadas nas três línguas em 15/10/2026.
+Os textos do app ficam em `app/src/main/res/values/strings.xml` (português, padrão), `values-en/` e `values-es/`, com as mesmas chaves. As traduções foram feitas e revisadas nas três línguas em 15/10/2026. Os textos do app são os destes recursos; o Figma é referência visual e permanece somente em português. A numeração atual coloca a seleção de idioma na tela 14.
 
 ## Como o idioma é escolhido
 
 - Na primeira abertura depois de instalar, o app lê o idioma do Android: português, inglês ou espanhol (qualquer região) viram o idioma do app; qualquer outro vira inglês. O valor fica gravado.
-- Daí em diante vale só a escolha em Configurações → Idioma (tela 11). Mudar o idioma do Android não muda o app.
+- Daí em diante vale só a escolha em Configurações → Idioma (tela 14). Mudar o idioma do Android não muda o app.
 - A API recebe o idioma em `Accept-Language` e no registro do aparelho (push). Ela traduz o `detail` dos erros, os rótulos da central e os avisos. Comunicados do síndico, nomes cadastrados na central e o Termo/Política continuam em português.
 
 ## Glossário

@@ -1,6 +1,14 @@
 package br.com.novaresidence
 
 import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -516,5 +524,65 @@ class ScreenTest {
         compose.runOnIdle { assertEquals(1, requests) }
         compose.onNodeWithText("Agora não").performClick()
         compose.onNodeWithText("Ative as notificações").assertDoesNotExist()
+    }
+
+    @Test fun revisedServiceScreensReflowInThreeLanguagesWithLargeText() {
+        // Contextos locais: a revisão visual não muda a preferência de idioma nem a fonte do aparelho.
+        val configuration = android.content.res.Configuration(compose.activity.resources.configuration)
+        var language by mutableStateOf("pt")
+        var largeText by mutableStateOf(false)
+        var page by mutableIntStateOf(0)
+        var location by mutableStateOf<LocationIssue?>(null)
+        val off = Exhaust("A4", "A", 4, false, null, "executado", true)
+        var commands = 0
+        var tests = 0
+        compose.setContent {
+            val context = remember(language) {
+                compose.activity.createConfigurationContext(android.content.res.Configuration(configuration).apply {
+                    setLocale(java.util.Locale.forLanguageTag(language))
+                })
+            }
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalContext provides context,
+                LocalConfiguration provides context.resources.configuration,
+                LocalDensity provides Density(density.density, if (largeText) 1.3f else 1f)) {
+                NovaResidenceTheme {
+                    Box(Modifier.fillMaxSize().systemBarsPadding()) {
+                        when (page) {
+                            0 -> ExhaustScreen(ExhaustState(off, loading = false, location = location),
+                                uiText(R.string.unit_card_label, "124", "A"), null, { commands++ }, {}, {}, {})
+                            1 -> FireFeature(FireState(CiePanel(online = true, connected = true), CieAlarms(false), loading = false),
+                                {}, {}, notificationsReady = true)
+                            else -> NotificationScreen(NotificationState(preferences = NotificationPreferences()), PushStatus.Ready,
+                                false, {}, { _, _ -> }, { tests++ }, {}, {}, {})
+                        }
+                    }
+                }
+            }
+        }
+        for (locale in listOf("pt", "en", "es")) for (large in listOf(false, true)) {
+            compose.runOnIdle { language = locale; largeText = large; page = 0; location = null }
+            val context = compose.activity.createConfigurationContext(android.content.res.Configuration(configuration).apply {
+                setLocale(java.util.Locale.forLanguageTag(locale))
+            })
+            fun localized(id: Int) = context.getString(id)
+            compose.onNodeWithText(localized(R.string.exhaust_turn_on)).performScrollTo().assertIsEnabled()
+            capture("revised_${locale}_${if (large) 130 else 100}_exhaust")
+            compose.onNodeWithText(localized(R.string.exhaust_turn_on)).performClick()
+            compose.runOnIdle { location = LocationIssue.Approximate }
+            compose.onNodeWithText(localized(R.string.exhaust_allow_precise_location)).performScrollTo().assertIsEnabled()
+            compose.onNodeWithText(localized(R.string.exhaust_location_privacy)).performScrollTo().assertIsDisplayed()
+            capture("revised_${locale}_${if (large) 130 else 100}_location")
+            compose.runOnIdle { page = 1 }
+            compose.onNodeWithText(localized(R.string.fire_normal_title)).assertIsDisplayed()
+            compose.onNodeWithText(localized(R.string.fire_view_history)).performScrollTo().assertIsEnabled()
+            capture("revised_${locale}_${if (large) 130 else 100}_fire")
+            compose.runOnIdle { page = 2 }
+            compose.onNodeWithText(localized(R.string.notification_send_test)).performScrollTo().assertIsEnabled()
+            compose.onNodeWithText(localized(R.string.notification_delivery_note)).performScrollTo().assertIsDisplayed()
+            capture("revised_${locale}_${if (large) 130 else 100}_notifications")
+            compose.onNodeWithText(localized(R.string.notification_send_test)).performScrollTo().performClick()
+        }
+        compose.runOnIdle { assertEquals(6, commands); assertEquals(6, tests) }
     }
 }

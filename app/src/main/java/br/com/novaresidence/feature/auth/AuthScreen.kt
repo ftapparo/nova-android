@@ -116,7 +116,7 @@ private fun WelcomeContent(state: AuthState, viewModel: AuthViewModel, openLegal
 @Composable
 private fun GoogleButton(state: AuthState, viewModel: AuthViewModel) {
     val context = LocalContext.current
-    Button({ viewModel.google { googleIdToken(context) } }, Modifier.fillMaxWidth().height(48.dp), enabled = !state.busy && state.retrySeconds == 0L,
+    Button({ viewModel.google { googleIdToken(context) } }, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = !state.busy && state.retrySeconds == 0L,
         shape = RoundedCornerShape(999.dp), elevation = null,
         colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = NovaOnSurfaceVariant,
             disabledContainerColor = Color.White, disabledContentColor = NovaDisabledContent),
@@ -238,11 +238,7 @@ private fun AuthForm(state: AuthState, viewModel: AuthViewModel, openLegal: (Str
             NovaButton(if (remaining > 0) stringResource(R.string.auth_resend_code_in, remaining / 60, remaining % 60) else stringResource(R.string.auth_resend_code),
                 { viewModel.recover(state.recoveryEmail) }, enabled = canAct, style = NovaButtonStyle.Secondary)
             Spacer(Modifier.height(24.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-                Icon(painterResource(R.drawable.nova_info_outline), null, Modifier.padding(top = 1.dp).size(18.dp), tint = NovaPrimary)
-                Text(stringResource(R.string.auth_check_spam), Modifier.weight(1f),
-                    style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
-            }
+            NovaInfoStrip(stringResource(R.string.auth_check_spam))
         }
         if (state.busy || state.error != null || state.retrySeconds > 0) {
             Spacer(Modifier.height(16.dp))

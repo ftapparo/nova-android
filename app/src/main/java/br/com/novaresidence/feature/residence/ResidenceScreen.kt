@@ -56,9 +56,8 @@ internal enum class ResidencePage { Home, Fire, Exhaust, Messages, Settings, Sel
 
 private val Tabs = setOf(ResidencePage.Home, ResidencePage.Fire, ResidencePage.Exhaust)
 
-// Configurações e seus filhos usam conteúdo branco sob a barra cinza (Figma 09–16).
-private val WhitePages = setOf(ResidencePage.Settings, ResidencePage.SelectUnit, ResidencePage.SelectLanguage, ResidencePage.Notifications, ResidencePage.Privacy,
-    ResidencePage.Terms, ResidencePage.PrivacyPolicy, ResidencePage.PersonalData, ResidencePage.DeleteAccount)
+// Configurações e seus filhos usam o fundo cinza do app (Figma 12–20); só Termo e Política (17 e 18) leem o documento em área branca.
+private val WhitePages = setOf(ResidencePage.Terms, ResidencePage.PrivacyPolicy)
 
 private val PageStackSaver = listSaver<List<ResidencePage>, String>({ it.map(ResidencePage::name) }, { it.map(ResidencePage::valueOf) })
 
