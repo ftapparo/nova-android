@@ -207,7 +207,8 @@ fun App(app: AppViewModel) {
                 homeMessages = { open -> MessageCarousel(messageState) { open(it.id) } },
                 messagesContent = { initial, back -> MessagesFeature(messageState, initial, back, messages::loadList, messages::markRead) },
                 fireContent = { _, _, fullScreen ->
-                    FireFeature(fireState, fire::refresh, fire::loadHistory, fullScreen, pushStatus == PushStatus.Ready, enableNotifications)
+                    FireFeature(fireState, fire::refresh, fire::loadHistory, fullScreen, pushStatus == PushStatus.Ready, enableNotifications,
+                        showHistory = staff)
                 },
                 notificationPrompt = if (pushStatus == PushStatus.PermissionNeeded && !pushPromptDismissed) {
                     { NotificationPrompt(enableNotifications, app.push::dismissPrompt) }

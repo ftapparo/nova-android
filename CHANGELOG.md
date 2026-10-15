@@ -29,6 +29,8 @@
 
 ### Alterado
 
+- Central de incêndio: "Ver histórico de eventos" passa a aparecer só para a equipe (porteiro, síndico, admin). A versão 1.0.0 sai para moradores (decisão de 15/10/2026).
+
 - Respostas do formulário "Segurança dos dados" da Play em `docs/seguranca-dos-dados.md` (e-mail, nome, IDs de usuário, outras ações, IDs do dispositivo e diagnóstico; nada compartilhado), alinhadas à Política de Privacidade 1.2. Volume do tempo real medido: ~0,9 MB por hora de app aberto, sem necessidade de filtro na API.
 - Sincronização bidirecional com o Figma (14/10/2026): menu inferior com 4 dp entre ícone e rótulo; carrossel de comunicados com cartões de 356 × 208 dp, respiro vertical de 12 dp e o próximo cartão aparecendo até a borda da folha. No Figma, 17 frames novos (push, estados da home, do exaustor e da central). Testes de tela para as preferências de notificação, o cartão de permissão e a faixa da central, com a tela mantida acesa durante a suíte. Registro em `docs/revisao-figma-e-integracao.md`.
 - Figma sincronizado com o app (13/10/2026): avisos do Termo nas boas-vindas e no cadastro, nova tela de aceite (04b), Termo e Política v1.0 (13, 14), dados pessoais com CPF mascarado (15), exclusão de conta incluindo o estado da equipe (16, 16b), textos das faixas da central (26, 27) e cores de contraste dos tokens do app. Registro em `docs/revisao-figma-e-integracao.md`.

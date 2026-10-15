@@ -43,11 +43,12 @@ private enum class FirePage { Status, History, Event }
 /**
  * Central de incêndio (Figma 26–30c), somente leitura. [fullScreen] oculta o menu inferior no histórico e no detalhe.
  * [notificationsReady]: aparelho registrado e notificações do alarme permitidas; senão a tela 26 oferece [enableNotifications].
+ * [showHistory]: a versão 1.0.0 sai para moradores e só a equipe vê o histórico de eventos (decisão de 15/10/2026).
  */
 @Composable
 fun FireFeature(
     state: FireState, refresh: () -> Unit, loadHistory: () -> Unit, fullScreen: (Boolean) -> Unit = {},
-    notificationsReady: Boolean = false, enableNotifications: (() -> Unit)? = null,
+    notificationsReady: Boolean = false, enableNotifications: (() -> Unit)? = null, showHistory: Boolean = true,
 ) {
     var page by rememberSaveable { mutableStateOf(FirePage.Status) }
     var eventKey by rememberSaveable { mutableStateOf<String?>(null) }
@@ -59,7 +60,8 @@ fun FireFeature(
     when {
         page == FirePage.Event && event != null -> FireEventScreen(event) { page = eventOrigin }
         page != FirePage.Status -> FireHistoryScreen(state, { page = FirePage.Status }, loadHistory) { open(it, FirePage.History) }
-        else -> FireStatusScreen(state, refresh, { loadHistory(); page = FirePage.History }, notificationsReady, enableNotifications) { open(it, FirePage.Status) }
+        else -> FireStatusScreen(state, refresh, if (showHistory) ({ loadHistory(); page = FirePage.History }) else null,
+            notificationsReady, enableNotifications) { open(it, FirePage.Status) }
     }
 }
 
@@ -70,7 +72,7 @@ private data class StatusLook(
 
 @Composable
 private fun FireStatusScreen(
-    state: FireState, refresh: () -> Unit, openHistory: () -> Unit, notificationsReady: Boolean, enableNotifications: (() -> Unit)?,
+    state: FireState, refresh: () -> Unit, openHistory: (() -> Unit)?, notificationsReady: Boolean, enableNotifications: (() -> Unit)?,
     openEvent: (CieLog) -> Unit,
 ) {
     val status = state.status
@@ -92,7 +94,7 @@ private fun FireStatusScreen(
 
 @Composable
 private fun StatusContent(
-    state: FireState, illustration: Dp, refresh: () -> Unit, openHistory: () -> Unit,
+    state: FireState, illustration: Dp, refresh: () -> Unit, openHistory: (() -> Unit)?,
     notificationsReady: Boolean, enableNotifications: (() -> Unit)?,
 ) {
     val status = state.status
@@ -127,7 +129,7 @@ private fun StatusContent(
         look.info?.let { NovaInfoStrip(it, accent = look.color, container = look.container, centered = false) }
         if (status == FireStatus.Normal && !notificationsReady && enableNotifications != null) NovaTextLink("Ativar notificações", enableNotifications)
         if (status == FireStatus.Unavailable) NovaButton("Tentar novamente", refresh, enabled = state.retrySeconds == 0L, height = 52.dp)
-        NovaButton("Ver histórico de eventos", openHistory, style = NovaButtonStyle.Outlined, height = 52.dp)
+        if (openHistory != null) NovaButton("Ver histórico de eventos", openHistory, style = NovaButtonStyle.Outlined, height = 52.dp)
         Footnotes(state)
     }
 }
