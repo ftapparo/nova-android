@@ -46,8 +46,12 @@ android {
     buildTypes {
         release {
             signingConfigs.findByName("release")?.let { signingConfig = it }
+            // R8: encolhe e otimiza o release; regras próprias em proguard-rules.pro.
             optimization {
-                enable = false
+                enable = true
+                keepRules {
+                    files.add(file("proguard-rules.pro"))
+                }
             }
         }
     }
