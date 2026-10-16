@@ -106,11 +106,12 @@ Com 700+ moradores, o vínculo manual pelo zelador não é viável. Conta penden
 | | Item |
 |---|---|
 | ✅ | Levantamento do cadastro (15/10, só leitura): 1.070 das 1.081 pessoas com unidade têm CPF e celular; celular só com dígitos, com e sem o nono dígito, alguns sem DDD, dois estrangeiros (Portugal) |
-| ✅ | **API** (`ebcfbbc`, sem push): `POST /residence/link/self/check` e `/confirm`, comparação do celular com DDI, erro genérico, 409 para pessoa já vinculada, limite de tentativas, token de uso único |
+| ✅ | **API** (`ebcfbbc`): `POST /residence/link/self/check` e `/confirm`, comparação do celular com DDI, erro genérico, 409 para pessoa já vinculada, limite de tentativas, token de uso único |
 | ✅ | **API:** registro de atividades no Postgres (`audit_event`, migração 008): toda escrita da v3, inclusive login e cadastro, e motivo das tentativas de vínculo; sem CPF, celular, senha ou localização; 365 dias |
 | ✅ | **App:** telas 07b (seletor de país com bandeira) e 07c, fluxo obrigatório para conta pendente que não é da equipe, 7 testes unitários e teste de tela (15 aprovados no J4) |
-| ❌ | Push da API, migração 008 aplicada e deploy |
-| ❌ | Validação em produção: erro genérico, vínculo, 409 e 429; conferir `audit_event` sem dados pessoais |
+| ✅ | Push da API, migração 008 aplicada e deploy (16/10) |
+| ✅ | Produção (16/10), conta de teste nova: celular errado → erro genérico 404; CPF e celular certos → 409 "pessoa já vinculada" (a pessoa está na conta principal); `detail` em inglês traduzido; `audit_event` com cadastro, login (inclusive o recusado) e as tentativas com o motivo, sem CPF, celular ou senha |
+| ❌ | Vínculo concluído em produção pelo app (07b → 07c → início): depende de desfazer o vínculo da conta principal ou de outra pessoa de teste; 429 só nos testes (travaria a conta por 1 h) |
 | ❌ | Política de Privacidade 1.3 (CPF e celular só para conferir o cadastro; registro de atividades por 12 meses) e "Segurança dos dados" na Play (telefone e CPF com processamento efêmero) |
 | ❌ | Figma: seletor de DDI na 07b e remover da 06 o aviso "pode levar até 24h" |
 
