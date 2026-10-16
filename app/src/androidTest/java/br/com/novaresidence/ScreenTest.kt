@@ -585,4 +585,38 @@ class ScreenTest {
         }
         compose.runOnIdle { assertEquals(6, commands); assertEquals(6, tests) }
     }
+
+    @Test fun residenceLinkFormCountryPickerAndConfirmation() {
+        // Sem rede: o formulário e a conferência são estados de tela; nenhum CPF real é usado.
+        val store = object : SessionStore {
+            override fun read(): SessionData? = null
+            override fun write(session: SessionData) = Unit
+            override fun clear() = Unit
+        }
+        val coordinator = SessionCoordinator(store) { error("No network in visual tests") }
+        val model = ResidenceLinkViewModel(ResidenceRepository(ApiClient(ApiTransport("http://127.0.0.1:1"), coordinator)))
+        val user = AuthUser("test", "morador@example.com", null, false)
+        val unit = ResidenceUnit(97, "A", "124", "A-124", true, true, false, false, null)
+        val found = SelfLinkCheck("token", SelfLinkPerson("MORADOR DE TESTE", "•••.982.247-••"), listOf(unit))
+        var state by mutableStateOf(ResidenceLinkState())
+        var left = 0
+        compose.setContent { NovaResidenceTheme { ResidenceLinkScreen(state, user, model, { left++ }, {}, {}) } }
+        compose.onNodeWithText(text(R.string.link_intro_title)).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.link_cpf)).assertIsDisplayed()
+        compose.onNodeWithText("🇧🇷 +55").assertIsDisplayed()
+        capture("07b_link_form")
+        compose.onNodeWithText("🇧🇷 +55").performClick()
+        compose.onNodeWithText(text(R.string.link_country_title)).assertIsDisplayed()
+        capture("07b_link_country_dialog")
+        compose.onNodeWithText("+351").performScrollTo().performClick()
+        compose.onNodeWithText("🇵🇹 +351").assertIsDisplayed()
+        compose.onNodeWithContentDescription(text(R.string.common_back)).performClick()
+        compose.runOnIdle { assertEquals(1, left) }
+        compose.runOnIdle { state = ResidenceLinkState(check = found) }
+        compose.onNodeWithText("Morador de Teste").assertIsDisplayed()
+        compose.onNodeWithText("•••.982.247-••").assertIsDisplayed()
+        compose.onNodeWithText("morador@example.com").assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.link_confirm)).performScrollTo().assertIsEnabled()
+        capture("07c_link_confirmation")
+    }
 }

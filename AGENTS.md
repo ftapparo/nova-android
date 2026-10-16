@@ -376,7 +376,7 @@ Right after login (and on app resume), call `GET /residence/me` (Bearer). It dec
 
 | `status` | Meaning | UI |
 |---|---|---|
-| `pendente` | Account not yet linked to the condo record by staff | "Cadastro em análise pela administração" — nothing enabled |
+| `pendente` | Account not yet linked to the condo record | Resident (not staff): self-link flow 07b/07c before the logged-in area (see below) |
 | `ativo` | Linked, has at least one unit | Show units; enable actions only for units with `blocked: false` |
 | `sem-unidade` | Linked, but no unit today (moved out) | "Seu cadastro não possui unidade ativa" — nothing enabled |
 
@@ -386,6 +386,15 @@ Right after login (and on app resume), call `GET /residence/me` (Bearer). It dec
   - `unidade-com-inquilino` — "Esta unidade possui inquilino cadastrado; o acesso é do inquilino."
   - `cadastro-inconsistente` — "Seu cadastro precisa ser regularizado na administração."
 - The server caches this for up to 2 minutes; a change made by staff may take that long to appear.
+
+### Self-link by CPF and mobile number (decided on 15/10/2026)
+
+With 700+ residents, manual linking by staff is not viable. A pending account that is not staff goes straight to screen 07b (`feature/residence/ResidenceLinkScreen.kt`); the back arrow signs out.
+
+- 07b: CPF (mask `000.000.000-00`, check digit validated in the app) and mobile number with a **DDI picker with flag** (`PhoneCountries`, Brazil +55 by default, mask `(00) 00000-0000`; other countries 6–14 digits). `POST /residence/link/self/check` `{ cpf, phone: { ddi, number } }` → `{ confirmation, person: { nome, cpfMasked }, units }`.
+- 07c: shows name, masked CPF, account e-mail and units; "Confirmar" → `POST /residence/link/self/confirm` `{ confirmation }` (single use, 10 min) → updated `Residence`.
+- Errors: 404 = data do not match (same answer for unknown CPF, other number or no unit; tell the user to check and, if correct, contact the management) · 409 = person already linked to another account (show `detail`) · 429 + `Retry-After` · confirm 404 = expired, back to 07b.
+- CPF and phone exist only in the composition and in the request: never stored or logged, in the app or in the API.
 
 ## Roles and Permissions
 

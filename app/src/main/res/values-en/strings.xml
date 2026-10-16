@@ -422,4 +422,27 @@
     <string name="legal_registering">Saving your acceptance…</string>
     <string name="legal_accept">Accept and continue</string>
     <string name="legal_sign_out">Sign out</string>
+
+    <!-- Vínculo automático da conta (07b e 07c) -->
+    <string name="link_title">Link account</string>
+    <string name="link_intro_title">Let\'s link your unit</string>
+    <string name="link_intro">Enter the details registered with the condominium.</string>
+    <string name="link_cpf">CPF</string>
+    <string name="link_phone">Mobile number</string>
+    <string name="link_continue">Continue</string>
+    <string name="link_info">Make sure you enter the same details registered in the access control system.</string>
+    <string name="link_country_description">Mobile number country: %1$s, +%2$s</string>
+    <string name="link_country_title">Mobile number country</string>
+    <string name="link_country_search">Search country or code</string>
+    <string name="link_confirm_title">Personal data</string>
+    <string name="link_confirm_guidance">Check the details found in the condominium records before linking your account.</string>
+    <string name="link_confirm_units">Units</string>
+    <string name="link_confirm">Confirm</string>
+    <string name="link_back">Back</string>
+    <string name="link_invalid_cpf">Enter a valid CPF.</string>
+    <string name="link_invalid_phone_br">Enter the mobile number with the area code.</string>
+    <string name="link_invalid_phone">Enter a valid number.</string>
+    <string name="link_not_matched">The details entered do not match the condominium records. Check them and try again; if they are correct, contact the management.</string>
+    <string name="link_person_taken">This person is already linked to another account. Contact the management.</string>
+    <string name="link_expired">The verification has expired. Enter your details again.</string>
 </resources>

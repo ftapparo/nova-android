@@ -1,5 +1,6 @@
 package br.com.novaresidence.core.network
 
+import br.com.novaresidence.BuildConfig
 import br.com.novaresidence.R
 import br.com.novaresidence.core.session.SessionCoordinator
 import br.com.novaresidence.core.ui.UiText
@@ -62,6 +63,8 @@ class ApiTransport(
             val request = Request.Builder().url(apiUrl + path.trimStart('/')).apply {
                 header("Accept", "application/json")
                 header("Accept-Language", language())
+                // Vai para o registro de atividades da API, para saber de qual versão do app veio cada ação.
+                header("X-App-Version", BuildConfig.VERSION_NAME)
                 if (token != null) header("Authorization", "Bearer $token")
                 if (post) {
                     // Bodyless endpoints must not advertise an empty JSON document.

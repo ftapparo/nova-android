@@ -215,7 +215,7 @@ private fun ColumnScope.DeleteAccount(user: AuthUser, back: () -> Unit, delete: 
 }
 
 @Composable
-private fun Guidance(text: String) {
+internal fun Guidance(text: String) {
     Text(text, Modifier.fillMaxWidth().padding(horizontal = NovaSpacing.Margin).heightIn(min = 40.dp), style = NovaType.Body, color = NovaOnSurfaceVariant)
 }
 
@@ -225,7 +225,7 @@ private fun SettingsRow(title: String, detail: String, click: (() -> Unit)? = nu
 
 /** Linha dos dados pessoais (Figma 19): rótulo e valor, mais alta que a das configurações. */
 @Composable
-private fun DataRow(label: String, value: String, click: (() -> Unit)? = null) = LinkRow(label, value, 112.dp, 24.dp, click)
+internal fun DataRow(label: String, value: String, click: (() -> Unit)? = null) = LinkRow(label, value, 112.dp, 24.dp, click)
 
 @Composable
 private fun LinkRow(title: String, detail: String, minHeight: Dp, verticalPadding: Dp, click: (() -> Unit)?) {

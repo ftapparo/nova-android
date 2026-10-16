@@ -425,4 +425,27 @@
     <string name="legal_registering">Guardando tu aceptación…</string>
     <string name="legal_accept">Aceptar y continuar</string>
     <string name="legal_sign_out">Salir</string>
+
+    <!-- Vínculo automático da conta (07b e 07c) -->
+    <string name="link_title">Vincular cuenta</string>
+    <string name="link_intro_title">Vamos a vincular su unidad</string>
+    <string name="link_intro">Ingrese los datos registrados en el condominio.</string>
+    <string name="link_cpf">CPF</string>
+    <string name="link_phone">Celular</string>
+    <string name="link_continue">Continuar</string>
+    <string name="link_info">Asegúrese de ingresar los mismos datos registrados en el sistema de control de acceso.</string>
+    <string name="link_country_description">País del celular: %1$s, +%2$s</string>
+    <string name="link_country_title">País del celular</string>
+    <string name="link_country_search">Buscar país o código</string>
+    <string name="link_confirm_title">Datos personales</string>
+    <string name="link_confirm_guidance">Revise los datos encontrados en el registro del condominio antes de vincular su cuenta.</string>
+    <string name="link_confirm_units">Unidades</string>
+    <string name="link_confirm">Confirmar</string>
+    <string name="link_back">Volver</string>
+    <string name="link_invalid_cpf">Ingrese un CPF válido.</string>
+    <string name="link_invalid_phone_br">Ingrese el celular con el código de área.</string>
+    <string name="link_invalid_phone">Ingrese un número válido.</string>
+    <string name="link_not_matched">Los datos ingresados no coinciden con el registro del condominio. Revíselos e inténtelo de nuevo; si son correctos, comuníquese con la administración.</string>
+    <string name="link_person_taken">Esta persona ya está vinculada a otra cuenta. Comuníquese con la administración.</string>
+    <string name="link_expired">La verificación venció. Ingrese los datos nuevamente.</string>
 </resources>

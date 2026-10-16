@@ -195,13 +195,13 @@ private fun AuthForm(state: AuthState, viewModel: AuthViewModel, openLegal: (Str
         } else Spacer(Modifier.height(introGap - FieldLabelInset))
         Column(verticalArrangement = Arrangement.spacedBy(16.dp - FieldLabelInset)) {
             if (page in setOf(AuthPage.Login, AuthPage.Signup, AuthPage.Recovery)) {
-                AuthField(stringResource(R.string.auth_email), email, { email = it }, state.fields["email"]?.text(), !state.busy, keyboard = KeyboardType.Email,
+                NovaTextField(stringResource(R.string.auth_email), email, { email = it }, state.fields["email"]?.text(), !state.busy, keyboard = KeyboardType.Email,
                     placeholder = when (page) { AuthPage.Signup -> stringResource(R.string.auth_email_placeholder_signup); AuthPage.Recovery -> stringResource(R.string.auth_email_placeholder_recovery); else -> stringResource(R.string.auth_email_placeholder) }, submit = if (page == AuthPage.Recovery) submit else null)
             }
-            if (page == AuthPage.ChangePassword) AuthField(stringResource(R.string.auth_current_password), current, { current = it }, state.fields["currentPassword"]?.text(), !state.busy, secret = true, placeholder = stringResource(R.string.auth_current_password_placeholder))
+            if (page == AuthPage.ChangePassword) NovaTextField(stringResource(R.string.auth_current_password), current, { current = it }, state.fields["currentPassword"]?.text(), !state.busy, secret = true, placeholder = stringResource(R.string.auth_current_password_placeholder))
             if (page != AuthPage.Recovery) {
                 val isNew = page != AuthPage.Login
-                AuthField(stringResource(if (signup) R.string.auth_create_password else if (isNew) R.string.auth_new_password else R.string.auth_password), password, { password = it },
+                NovaTextField(stringResource(if (signup) R.string.auth_create_password else if (isNew) R.string.auth_new_password else R.string.auth_password), password, { password = it },
                     (state.fields[if (isNew) "newPassword" else "password"] ?: state.fields["password"])?.text(), !state.busy,
                     secret = true, placeholder = stringResource(if (isNew) R.string.auth_new_password_placeholder else R.string.auth_password_placeholder), submit = submit,
                     hint = if (isNew) stringResource(R.string.auth_password_hint) else null)
@@ -282,47 +282,4 @@ private fun AuthFeedback(state: AuthState) {
             } else NovaLoading()
         }
     }
-}
-
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun AuthField(
-    label: String, value: String, change: (String) -> Unit, error: String?, enabled: Boolean,
-    secret: Boolean = false, keyboard: KeyboardType = KeyboardType.Text, placeholder: String = "",
-    submit: (() -> Unit)? = null, hint: String? = null,
-) {
-    val input = remember { TextFieldState(initialText = value) }
-    LaunchedEffect(input) { snapshotFlow { input.text.toString() }.collect(change) }
-    val options = KeyboardOptions(keyboardType = if (secret) KeyboardType.Password else keyboard, imeAction = if (submit != null) ImeAction.Done else ImeAction.Next)
-    val keyboardAction = KeyboardActionHandler { performDefaultAction -> if (submit != null) submit() else performDefaultAction() }
-    val colors = OutlinedTextFieldDefaults.colors(
-        unfocusedBorderColor = NovaFieldOutline, focusedBorderColor = NovaPrimary,
-        unfocusedLabelColor = NovaFieldVariant, focusedLabelColor = NovaPrimary,
-        unfocusedPlaceholderColor = NovaFieldVariant, focusedPlaceholderColor = NovaFieldVariant,
-    )
-    val textStyle = NovaType.Field
-    val supporting = error ?: hint
-    var revealed by remember { mutableStateOf(false) }
-    if (secret) OutlinedSecureTextField(
-        state = input, modifier = Modifier.fillMaxWidth(), enabled = enabled, textStyle = textStyle,
-        labelPosition = TextFieldLabelPosition.Attached(alwaysMinimize = true), label = { Text(label) },
-        placeholder = { Text(placeholder) }, isError = error != null, colors = colors,
-        supportingText = if (supporting != null) ({ Text(supporting) }) else null,
-        trailingIcon = {
-            IconButton({ revealed = !revealed }) {
-                Icon(painterResource(if (revealed) R.drawable.nova_visibility_off else R.drawable.nova_visibility),
-                    stringResource(if (revealed) R.string.auth_hide_password else R.string.auth_show_password), Modifier.size(24.dp), tint = NovaFieldVariant)
-            }
-        },
-        keyboardOptions = options, onKeyboardAction = keyboardAction,
-        textObfuscationMode = if (revealed) TextObfuscationMode.Visible else TextObfuscationMode.Hidden,
-        shape = NovaShapes.Field,
-    ) else OutlinedTextField(
-        state = input, modifier = Modifier.fillMaxWidth(), enabled = enabled, textStyle = textStyle,
-        labelPosition = TextFieldLabelPosition.Attached(alwaysMinimize = true), label = { Text(label) },
-        placeholder = { Text(placeholder) }, isError = error != null, colors = colors,
-        supportingText = if (error != null) ({ Text(error) }) else null,
-        keyboardOptions = options, onKeyboardAction = keyboardAction, lineLimits = TextFieldLineLimits.SingleLine,
-        shape = NovaShapes.Field,
-    )
 }

@@ -426,4 +426,27 @@
     <string name="legal_registering">Registrando aceite…</string>
     <string name="legal_accept">Aceitar e continuar</string>
     <string name="legal_sign_out">Sair</string>
+
+    <!-- Vínculo automático da conta (07b e 07c) -->
+    <string name="link_title">Vincular conta</string>
+    <string name="link_intro_title">Vamos vincular sua unidade</string>
+    <string name="link_intro">Informe seus dados cadastrados no condomínio.</string>
+    <string name="link_cpf">CPF</string>
+    <string name="link_phone">Celular</string>
+    <string name="link_continue">Continuar</string>
+    <string name="link_info">Certifique-se de informar os mesmos dados cadastrados no sistema de controle de acesso.</string>
+    <string name="link_country_description">País do celular: %1$s, +%2$s</string>
+    <string name="link_country_title">País do celular</string>
+    <string name="link_country_search">Buscar país ou DDI</string>
+    <string name="link_confirm_title">Dados pessoais</string>
+    <string name="link_confirm_guidance">Confira os dados encontrados no cadastro do condomínio antes de vincular sua conta.</string>
+    <string name="link_confirm_units">Unidades</string>
+    <string name="link_confirm">Confirmar</string>
+    <string name="link_back">Voltar</string>
+    <string name="link_invalid_cpf">Informe um CPF válido.</string>
+    <string name="link_invalid_phone_br">Informe o celular com DDD.</string>
+    <string name="link_invalid_phone">Informe um número válido.</string>
+    <string name="link_not_matched">Os dados informados não conferem com o cadastro do condomínio. Confira e tente de novo; se estiverem corretos, procure a administração.</string>
+    <string name="link_person_taken">Esta pessoa já está vinculada a outra conta. Procure a administração.</string>
+    <string name="link_expired">A conferência expirou. Informe os dados novamente.</string>
 </resources>

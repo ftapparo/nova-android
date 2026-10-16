@@ -63,6 +63,10 @@ class ResidenceViewModel(
             } finally { mutableState.update { it.copy(savingPreference = false) } }
         }
     }
+    /** Vínculo automático concluído: a API já devolveu a situação atualizada, sem nova consulta. */
+    fun linked(residence: Residence) {
+        mutableState.update { it.copy(residence = residence, selectedUnit = selectResidenceUnit(residence, null), error = null, requestId = null) }
+    }
     fun select(id: Int) { if (state.value.residence?.units?.any { it.sequencia == id } == true) mutableState.update { it.copy(selectedUnit = id) } }
     fun refresh() {
         if (state.value.retrySeconds > 0) return

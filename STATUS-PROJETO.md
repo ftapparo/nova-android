@@ -99,6 +99,21 @@ Regra decidida em 15/10: só na **primeira abertura** depois de instalar o app l
 | ✅ | Primeira abertura com o Android em outro idioma validada em aparelho com instalação limpa |
 | ❌ | Ficha da Play em inglês e espanhol (opcional) |
 
+## 3.2 Vínculo automático por CPF e celular — decidido em 15/10
+
+Com 700+ moradores, o vínculo manual pelo zelador não é viável. Conta pendente de morador vai direto para a 07b (CPF + celular com DDI), confere a pessoa na 07c e se vincula sozinha. CPF e celular não são gravados nem registrados em log.
+
+| | Item |
+|---|---|
+| ✅ | Levantamento do cadastro (15/10, só leitura): 1.070 das 1.081 pessoas com unidade têm CPF e celular; celular só com dígitos, com e sem o nono dígito, alguns sem DDD, dois estrangeiros (Portugal) |
+| ✅ | **API** (`ebcfbbc`, sem push): `POST /residence/link/self/check` e `/confirm`, comparação do celular com DDI, erro genérico, 409 para pessoa já vinculada, limite de tentativas, token de uso único |
+| ✅ | **API:** registro de atividades no Postgres (`audit_event`, migração 008): toda escrita da v3, inclusive login e cadastro, e motivo das tentativas de vínculo; sem CPF, celular, senha ou localização; 365 dias |
+| ✅ | **App:** telas 07b (seletor de país com bandeira) e 07c, fluxo obrigatório para conta pendente que não é da equipe, 7 testes unitários e teste de tela (15 aprovados no J4) |
+| ❌ | Push da API, migração 008 aplicada e deploy |
+| ❌ | Validação em produção: erro genérico, vínculo, 409 e 429; conferir `audit_event` sem dados pessoais |
+| ❌ | Política de Privacidade 1.3 (CPF e celular só para conferir o cadastro; registro de atividades por 12 meses) e "Segurança dos dados" na Play (telefone e CPF com processamento efêmero) |
+| ❌ | Figma: seletor de DDI na 07b e remover da 06 o aviso "pode levar até 24h" |
+
 ## 4. Exaustor (19–24)
 
 | | Item | Data |
@@ -228,6 +243,7 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | 3 | ✅ | `CHANGELOG.md` com todas as telas na numeração do Figma de 15/10 (nota no topo explica a numeração) (15/10) | 9 (antigo) |
 | 4 | ✅ | Ícone do app: fundo roxo do splash (#2B0F44) com "NOVA" branco recortado do logo; adaptativo (com monocromático) e legados; versão 512 px da Play em `docs/play/icone-512.png` (15/10) | 8 |
 | 5 | ✅ | Versão da 1ª publicação: `versionCode` 1, `versionName` "1.0.0"; `targetSdk` e `compileSdk` 37, acima do mínimo exigido pela Play; `minSdk` 26 (Android 8.0) (15/10) | 8 |
+| 5b | ❌ | Vínculo automático (seção 3.2): deploy da API com a migração 008, validação em produção e Política 1.3 | 3.2 |
 | 6 | ❌ | Criar a chave de upload e configurar a assinatura no Gradle | 8 |
 | 7 | ❌ | Ativar o R8 e testar o build de release no J4 (login, push, central, exaustor, idiomas) | 6 / 8 |
 | 8 | ❌ | Baseline Profile (velocidade na primeira abertura de cada tela) | 6 |

@@ -71,6 +71,7 @@ fun App(app: AppViewModel) {
     val auth: AuthViewModel = viewModel { AuthViewModel(app.auth, app.legal::termsVersion) }
     val legal: LegalViewModel = viewModel { LegalViewModel(app.legal) }
     val residence: ResidenceViewModel = viewModel { ResidenceViewModel(app.residence, app.auth, app.graph.language) }
+    val residenceLink: ResidenceLinkViewModel = viewModel { ResidenceLinkViewModel(app.residence) }
     val exhaust: ExhaustViewModel = viewModel { ExhaustViewModel(app.exhaust, app.exhaustLocator::current, residence::refresh) }
     val fire: FireViewModel = viewModel { FireViewModel(app.fire) }
     val messages: MessageViewModel = viewModel { MessageViewModel(app.messages) }
@@ -104,6 +105,7 @@ fun App(app: AppViewModel) {
         if (!ready) return@LaunchedEffect
         if (user == null) {
             residence.clear()
+            residenceLink.clear()
             app.restoreError?.let(auth::showMessage)
         } else if (user?.mustChangePassword == true) {
             residence.clear()
@@ -135,6 +137,12 @@ fun App(app: AppViewModel) {
             TermsAcceptanceScreen(legalState, { legal.acceptTerms { app.auth.me() } }, auth::logout, openLegal) { legal.load(refresh = true) }
         }
         else if (residenceState.loading && residenceState.residence == null && residenceState.error == null) NovaSplash()
+        // Conta pendente de morador: vínculo automático por CPF e celular (07b/07c) antes da área logada.
+        // A equipe é vinculada pela administração e continua indo direto para a área logada.
+        else if (residenceState.residence?.status == "pendente" && user?.isStaff == false) {
+            val linkState by residenceLink.state.collectAsStateWithLifecycle()
+            ResidenceLinkScreen(linkState, user!!, residenceLink, auth::logout, residence::linked, openLegal)
+        }
         else {
             val access = residenceState.residence
             val unit = access?.units?.firstOrNull { it.sequencia == residenceState.selectedUnit }
