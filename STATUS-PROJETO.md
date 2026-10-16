@@ -84,16 +84,16 @@ As referências numéricas nas demais seções são históricas: início agora �
 
 ## 3.1 Tradução (inglês e espanhol) — concluída em 15/10
 
-Regra decidida em 15/10: só na **primeira abertura** depois de instalar o app lê o idioma do Android (português, inglês ou espanhol; qualquer outro vira inglês, decidido em 15/10) e grava. Daí em diante vale só a escolha na tela 11, mesmo que o idioma do aparelho mude. Sem opção "Idioma do aparelho" e sem mudança no Figma.
+Regra decidida em 15/10: só na **primeira abertura** depois de instalar o app lê o idioma do Android (português, inglês ou espanhol; qualquer outro vira inglês, decidido em 15/10) e grava. Daí em diante vale só a escolha na tela 14, mesmo que o idioma do aparelho mude. Sem opção "Idioma do aparelho" e sem mudança no Figma.
 
 | | Item |
 |---|---|
 | ✅ | Textos do app em `strings.xml` (pt-BR padrão, `values-en`, `values-es`; 396 textos); fora da tela, `UiText` (`core/ui`) |
-| ✅ | Idioma gravado em `AppLanguageStore` (`core/ui/AppLanguage.kt`) e aplicado antes do primeiro quadro (`attachBaseContext`); tela 11 com os três idiomas; troca recria a Activity |
+| ✅ | Idioma gravado em `AppLanguageStore` (`core/ui/AppLanguage.kt`) e aplicado antes do primeiro quadro (`attachBaseContext`); tela 14 com os três idiomas; troca recria a Activity |
 | ✅ | App Bundle sem divisão por idioma (`bundle.language.enableSplit = false`): a Play instalaria só o idioma do aparelho e a troca manual ficaria sem textos |
 | ✅ | Datas no idioma do app; canais de notificação renomeados no idioma atual; Termo e Política com aviso "documento oficial só em português" em en/es |
 | ✅ | App envia `Accept-Language` e `language` no registro do aparelho (inofensivos antes do deploy da API) |
-| ✅ | Validado no J4: português na primeira abertura (aparelho em pt-BR), troca para English e Español na tela 11, idioma mantido depois de matar o app |
+| ✅ | Validado no J4: português na primeira abertura (aparelho em pt-BR), troca para English e Español na tela 14, idioma mantido depois de matar o app |
 | ✅ | **API** (`01c0a58`): `detail`, rótulos da central e push no idioma do `Accept-Language`/aparelho; `error.title` não muda. Migração 007 aplicada e deploy feito; conferido em produção que o `detail` sai em pt-BR, en e es |
 | ✅ | Textos revisados nas três línguas em 15/10 (glossário em [docs/traducao.md](docs/traducao.md)) |
 | ✅ | Primeira abertura com o Android em outro idioma validada em aparelho com instalação limpa |
@@ -225,7 +225,7 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 |---|---|---|---|
 | 1 | ✅ | Remoto configurado (`ftapparo/nova-android`), README criado e push feito (15/10) | Situação |
 | 2 | ✅ | Testes de tela no J4 depois da tradução: 13 aprovados (15/10). Passam a ler os textos dos recursos, para não quebrar quando a redação for revisada | 3.1 / 6 |
-| 3 | ❌ | `CHANGELOG.md`: atualizar as entradas antigas que ainda citam a numeração anterior das telas | 9 (antigo) |
+| 3 | ✅ | `CHANGELOG.md` com todas as telas na numeração do Figma de 15/10 (nota no topo explica a numeração) (15/10) | 9 (antigo) |
 | 4 | ❌ | Ícone do app com a marca (hoje é o padrão do template) | 8 |
 | 5 | 🟡 | Conferir `versionCode`/`versionName` (hoje 1 / "1.0") e `targetSdk` para a 1ª publicação | 8 |
 | 6 | ❌ | Criar a chave de upload e configurar a assinatura no Gradle | 8 |

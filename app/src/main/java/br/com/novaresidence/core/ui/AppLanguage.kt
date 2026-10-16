@@ -25,7 +25,7 @@ enum class AppLanguage(val tag: String) {
 
 /**
  * Idioma do app, sempre gravado. O idioma do Android só é lido na primeira abertura depois da instalação;
- * daí em diante vale apenas a escolha do usuário na tela 11, mesmo que o idioma do aparelho mude.
+ * daí em diante vale apenas a escolha do usuário na tela 14, mesmo que o idioma do aparelho mude.
  */
 class AppLanguageStore(private val context: Context) {
     private val preferences = context.getSharedPreferences("app_language", Context.MODE_PRIVATE)
