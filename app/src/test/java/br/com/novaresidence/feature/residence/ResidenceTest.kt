@@ -49,4 +49,10 @@ class ResidenceTest {
         // Servidor anterior ao campo: a tela de dados pessoais só omite a linha do CPF.
         assertNull(NovaJson.decodeFromString<ResidencePerson>("""{"sequencia":91,"nome":"FULANO"}""").cpfMasked)
     }
+
+    @Test fun `nome mascarado como na API`() {
+        assertEquals("Fl**** Ed***** Ta*****", "FLAVIO EDUARDO TAPPARO".maskedPersonName())
+        assertEquals("Ma*** da Si*** e So***", "MARIA DA SILVA  E SOUZA".maskedPersonName())
+        assertEquals("J* L*", "JO LI".maskedPersonName())
+    }
 }

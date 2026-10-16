@@ -7,8 +7,9 @@ import java.util.Locale
 @Serializable
 data class SelfLinkCheck(val confirmation: String, val person: SelfLinkPerson, val units: List<ResidenceUnit>)
 
+/** Nome e CPF chegam mascarados ("Fl**** Ed***** Ta*****"): a conferência não revela o cadastro inteiro. */
 @Serializable
-data class SelfLinkPerson(val nome: String, val cpfMasked: String? = null)
+data class SelfLinkPerson(val nomeMasked: String, val cpfMasked: String? = null)
 
 /** Dígito verificador do CPF, conferido no app antes de enviar (a API confere de novo). */
 fun isValidCpf(digits: String): Boolean {

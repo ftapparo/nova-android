@@ -171,9 +171,10 @@ private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (Resid
     Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp)) {
         Guidance(stringResource(R.string.personal_data_guidance))
         Spacer(Modifier.height(12.dp))
-        Column(Modifier.padding(horizontal = NovaSpacing.Margin), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.padding(horizontal = NovaSpacing.Margin)) {
             val rows = listOfNotNull(
-                residence?.person?.nome?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.personal_data_name) to it.personName() },
+                // Mascarado como na conferência do vínculo (07c): a tela pode ficar aberta à vista de outras pessoas.
+                residence?.person?.nome?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.personal_data_name) to it.maskedPersonName() },
                 residence?.person?.cpfMasked?.let { stringResource(R.string.personal_data_cpf) to it },
                 user.email?.let { stringResource(R.string.personal_data_email) to it },
             )
@@ -223,13 +224,12 @@ internal fun Guidance(text: String) {
 @Composable
 private fun SettingsRow(title: String, detail: String, click: (() -> Unit)? = null) = LinkRow(title, detail, 84.dp, 12.dp, click)
 
-/** Linha dos dados pessoais (Figma 19): rótulo e valor, mais alta que a das configurações. */
+/**
+ * Linha dos dados pessoais (Figma 19) e da conferência do vínculo (07c): rótulo e valor, compacta, para os
+ * dados caberem juntos e os botões da 07c não saírem da tela.
+ */
 @Composable
-internal fun DataRow(label: String, value: String, click: (() -> Unit)? = null) = LinkRow(label, value, 112.dp, 24.dp, click)
-
-/** Mesma linha, compacta, para a conferência do vínculo (07c), que precisa caber com os botões na tela. */
-@Composable
-internal fun CompactDataRow(label: String, value: String) = LinkRow(label, value, 0.dp, 10.dp, null)
+internal fun DataRow(label: String, value: String, click: (() -> Unit)? = null) = LinkRow(label, value, 0.dp, 10.dp, click)
 
 @Composable
 private fun LinkRow(title: String, detail: String, minHeight: Dp, verticalPadding: Dp, click: (() -> Unit)?) {

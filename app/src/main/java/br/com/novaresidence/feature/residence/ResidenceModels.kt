@@ -46,6 +46,18 @@ fun String.personName(): String = trim().lowercase().split(Regex("\\s+")).filter
     if (index > 0 && word in NameParticles) word else word.replaceFirstChar { it.titlecase() }
 }.joinToString(" ")
 
+/**
+ * "FLAVIO EDUARDO DE SOUZA" → "Fl**** Ed***** de So***": duas letras de cada nome e partículas inteiras, a mesma
+ * regra da API na conferência do vínculo (07c), usada também nos dados pessoais (19).
+ */
+fun String.maskedPersonName(): String = trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ") { word ->
+    if (word in NameParticles) word
+    else {
+        val visible = if (word.length <= 2) 1 else 2
+        word.take(visible).replaceFirstChar { it.titlecase() } + "*".repeat(maxOf(1, word.length - visible))
+    }
+}
+
 /** Formato da home (Figma 08a): "Apto. 124 - Torre A". */
 fun ResidenceUnit.homeLabel(): UiText = uiText(R.string.unit_home_label, lote.trim(), quadra.trim())
 

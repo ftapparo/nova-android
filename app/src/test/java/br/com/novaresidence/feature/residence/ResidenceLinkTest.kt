@@ -32,7 +32,7 @@ class ResidenceLinkTest {
     // CPF fictício com dígitos válidos (não é de nenhuma pessoa do cadastro).
     private val cpf = "52998224725"
     private val unit = """{"sequencia":97,"quadra":"A","lote":"124","label":"A-124","morador":true,"proprietario":true,"locatario":false,"blocked":false,"blockedReason":null}"""
-    private val checked = """{"success":true,"data":{"confirmation":"token-de-teste-123","person":{"nome":"MORADOR DE TESTE","cpfMasked":"•••.982.247-••"},"units":[$unit]},"meta":{}}"""
+    private val checked = """{"success":true,"data":{"confirmation":"token-de-teste-123","person":{"nomeMasked":"Mo***** de Te***","cpfMasked":"•••.982.247-••"},"units":[$unit]},"meta":{}}"""
 
     private fun failure(type: String, status: Int, detail: String = "x") = MockResponse().setResponseCode(status)
         .setBody("""{"success":false,"error":{"type":"urn:nova-api:$type","title":"x","status":$status,"detail":"$detail","instance":"/"},"meta":{"requestId":"req-1"}}""")
@@ -55,7 +55,7 @@ class ResidenceLinkTest {
         server.enqueue(MockResponse().setBody(checked))
         withContext(main) { model.check(cpf, brazil, "17991234567") }
         val state = withTimeout(5000) { model.state.first { it.check != null } }
-        assertEquals("MORADOR DE TESTE", state.check!!.person.nome)
+        assertEquals("Mo***** de Te***", state.check!!.person.nomeMasked)
         assertEquals("A-124", state.check!!.units.single().label)
         val request = server.takeRequest()
         assertEquals("/v3/api/residence/link/self/check", request.path)

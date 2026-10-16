@@ -143,14 +143,14 @@ private fun LinkConfirmation(state: ResidenceLinkState, check: SelfLinkCheck, us
                     Column(Modifier.padding(horizontal = NovaSpacing.Margin)) {
                         val units = check.units.map { it.selectorLabel().text() }
                         val rows = listOfNotNull(
-                            stringResource(R.string.personal_data_name) to check.person.nome.personName(),
+                            stringResource(R.string.personal_data_name) to check.person.nomeMasked,
                             check.person.cpfMasked?.let { stringResource(R.string.personal_data_cpf) to it },
                             user.email?.let { stringResource(R.string.personal_data_email) to it },
                             (if (units.size > 1) stringResource(R.string.link_confirm_units) else stringResource(R.string.personal_data_active_unit)) to
                                 units.joinToString("\n"),
                         )
                         rows.forEachIndexed { index, (label, value) ->
-                            CompactDataRow(label, value)
+                            DataRow(label, value)
                             if (index < rows.lastIndex) NovaDivider()
                         }
                         state.error?.let { Box(Modifier.padding(top = 12.dp)) { NovaNotice(it.text(), state.requestId) } }

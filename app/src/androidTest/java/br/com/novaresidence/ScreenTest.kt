@@ -391,7 +391,8 @@ class ScreenTest {
         capture("14_privacy_policy")
         compose.onNodeWithContentDescription("Voltar").performClick()
         compose.onNodeWithText("Dados pessoais").performClick()
-        compose.onNodeWithText("Morador de Teste").assertIsDisplayed()
+        // Nome mascarado como na conferência do vínculo (07c).
+        compose.onNodeWithText("Mo***** de Te***").assertIsDisplayed()
         compose.onNodeWithText("Torre A · Apto. 84").assertIsDisplayed()
         compose.onNodeWithText("CPF").assertIsDisplayed()
         compose.onNodeWithText("•••.456.789-••").assertIsDisplayed()
@@ -597,7 +598,7 @@ class ScreenTest {
         val model = ResidenceLinkViewModel(ResidenceRepository(ApiClient(ApiTransport("http://127.0.0.1:1"), coordinator)))
         val user = AuthUser("test", "morador@example.com", null, false)
         val unit = ResidenceUnit(97, "A", "124", "A-124", true, true, false, false, null)
-        val found = SelfLinkCheck("token", SelfLinkPerson("MORADOR DE TESTE", "•••.982.247-••"), listOf(unit))
+        val found = SelfLinkCheck("token", SelfLinkPerson("Mo***** de Te***", "•••.982.247-••"), listOf(unit))
         var state by mutableStateOf(ResidenceLinkState())
         var left = 0
         compose.setContent { NovaResidenceTheme { ResidenceLinkScreen(state, user, model, { left++ }, {}, {}) } }
@@ -613,7 +614,7 @@ class ScreenTest {
         compose.onNodeWithContentDescription(text(R.string.common_back)).performClick()
         compose.runOnIdle { assertEquals(1, left) }
         compose.runOnIdle { state = ResidenceLinkState(check = found) }
-        compose.onNodeWithText("Morador de Teste").assertIsDisplayed()
+        compose.onNodeWithText("Mo***** de Te***").assertIsDisplayed()
         compose.onNodeWithText("•••.982.247-••").assertIsDisplayed()
         compose.onNodeWithText("morador@example.com").assertIsDisplayed()
         compose.onNodeWithText(text(R.string.link_confirm)).performScrollTo().assertIsEnabled()
