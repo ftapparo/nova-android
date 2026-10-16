@@ -227,7 +227,7 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 | ✅ | `.aab` gerado (`bundleRelease`) com divisão por densidade (12/10) — ainda sem assinatura |
 | ✅ | `versionCode` 1 / `versionName` "1.0.0", `targetSdk` 37 (15/10) |
 | ✅ | Chave de upload e assinatura no Gradle (16/10) |
-| ❌ | Clientes OAuth de release (SHA-1 da chave de upload e da Play App Signing); sem eles o login Google falha no app da loja |
+| 🟡 | Clientes OAuth de release criados (16/10); login Google conferido com a chave de upload, falta no app da Play |
 | ✅ | Ícone do app com a marca (15/10) |
 | ✅ | R8 ativado e release testado no J4 (16/10) |
 | ✅ | URLs públicas para a Play: `https://novaresidence.com.br/politica-de-privacidade` e `https://novaresidence.com.br/excluir-conta` |
@@ -251,7 +251,7 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | 7 | ✅ | R8 ativo no release (16/10): `.aab` de 13 MB para 7,7 MB, APK 4,7 MB. Release assinado testado no J4 sem falhas: login por e-mail, vínculo automático (07b, conferência, seletor de país), início, central, histórico e detalhe de evento, exaustor (ligado de verdade com autorização), comunicados, troca para inglês e volta ao português, preferências, notificação de teste recebida e o push "Exaustor desligado" ao desligar pelo painel. Login com Google depende do cliente OAuth da chave de upload (item 10) | 6 / 8 |
 | 8 | ❌ | Baseline Profile (velocidade na primeira abertura de cada tela) | 6 |
 | 9 | 🟡 | `.aab` assinado (versão 1, "1.0.0") enviado ao teste interno (16/10), notas em pt-BR, en-US e es-ES, lista "Testadores internos" vinculada; assinatura gerenciada pela Play ativa. Falta publicar a versão do teste interno | 8 |
-| 10 | 🟡 | Clientes OAuth Android para `br.com.novaresidence` no projeto do client web (`628782431663`): chave de upload SHA-1 `FF:C2:C6:7E:3C:75:3A:34:E8:E1:73:53:30:67:16:CC:B7:01:90:98` (app instalado direto) e chave de assinatura da Play SHA-1 `31:30:74:06:DF:74:2B:06:73:8F:ED:15:CE:70:E1:C5:5E:8E:AB:69` (SHA-256 `01:79:4F:0A:…:74:C9:21`, app baixado da Play). Falta criar os dois no Google Cloud | 8 |
+| 10 | 🟡 | Clientes OAuth Android criados (16/10) no projeto `nova-residence-login` para `br.com.novaresidence`: "Android - Upload" (SHA-1 `FF:C2:C6:7E:…:90:98`, app instalado direto) e "Android - Play" (SHA-1 `31:30:74:06:…:AB:69`, app da Play). Login com Google conferido no release do J4 (chave de upload). Falta conferir no app baixado pelo teste interno e se a tela de consentimento OAuth está "Em produção" (em "Teste", só os usuários de teste entram com Google) | 8 |
 | 11 | ❌ | Validar o app instalado pela Play (teste interno): login Google, push e exaustor com a conta de revisão | 8 |
 | 12 | ❌ | Cartão de permissão de notificações num Android 13+ (o J4 é 8.1), com o app do teste interno no celular de alguém da equipe | 7.1 |
 | 13 | ✅ | Ficha da loja preenchida no Play Console (16/10): textos em pt-BR, en-US e es-ES, ícone, banner e 6 capturas de `docs/play/` | 8 |
