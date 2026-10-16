@@ -1,9 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     // Lê app/google-services.json (projeto Firebase do push; o arquivo não contém segredo).
     alias(libs.plugins.google.services)
+}
+
+// Chave de upload da Play: fica fora do repositório (NOVA_KEYSTORE_PROPERTIES ou ../NovaResidence-chaves).
+// Sem o arquivo, o release é gerado sem assinatura, para o build continuar funcionando em outra máquina.
+val keystoreProperties = Properties().apply {
+    val path = System.getenv("NOVA_KEYSTORE_PROPERTIES") ?: rootProject.file("../NovaResidence-chaves/keystore.properties").path
+    val file = file(path)
+    if (file.exists()) file.inputStream().use { load(it) }
 }
 
 android {
@@ -24,8 +34,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (keystoreProperties.containsKey("storeFile")) create("release") {
+            storeFile = file(keystoreProperties.getProperty("storeFile"))
+            storePassword = keystoreProperties.getProperty("storePassword")
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             optimization {
                 enable = false
             }

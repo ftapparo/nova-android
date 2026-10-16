@@ -226,7 +226,7 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 | ✅ | Somente HTTPS |
 | ✅ | `.aab` gerado (`bundleRelease`) com divisão por densidade (12/10) — ainda sem assinatura |
 | ✅ | `versionCode` 1 / `versionName` "1.0.0", `targetSdk` 37 (15/10) |
-| ❌ | Chave de upload e assinatura no Gradle |
+| ✅ | Chave de upload e assinatura no Gradle (16/10) |
 | ❌ | Clientes OAuth de release (SHA-1 da chave de upload e da Play App Signing); sem eles o login Google falha no app da loja |
 | ✅ | Ícone do app com a marca (15/10) |
 | ❌ | R8 ativado e release testado no J4 |
@@ -247,14 +247,14 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | 4 | ✅ | Ícone do app: fundo roxo do splash (#2B0F44) com "NOVA" branco recortado do logo; adaptativo (com monocromático) e legados; versão 512 px da Play em `docs/play/icone-512.png` (15/10) | 8 |
 | 5 | ✅ | Versão da 1ª publicação: `versionCode` 1, `versionName` "1.0.0"; `targetSdk` e `compileSdk` 37, acima do mínimo exigido pela Play; `minSdk` 26 (Android 8.0) (15/10) | 8 |
 | 5b | ✅ | Vínculo automático (seção 3.2): em produção, validado no J4, Política 1.3, Figma e "Segurança dos dados" atualizados (16/10) | 3.2 |
-| 6 | ❌ | Criar a chave de upload e configurar a assinatura no Gradle | 8 |
+| 6 | ✅ | Chave de upload criada (16/10): `D:\Git\Android\NovaResidence-chaves\nova-residence-upload.jks`, alias `upload`, RSA 4096, válida até 2054, fora do repositório; senha no `keystore.properties` da mesma pasta. SHA-1 do certificado de upload: `FF:C2:C6:7E:3C:75:3A:34:E8:E1:73:53:30:67:16:CC:B7:01:90:98`. Gradle assina o release lendo esse arquivo (ou `NOVA_KEYSTORE_PROPERTIES`) | 8 |
 | 7 | ❌ | Ativar o R8 e testar o build de release no J4 (login, push, central, exaustor, idiomas) | 6 / 8 |
 | 8 | ❌ | Baseline Profile (velocidade na primeira abertura de cada tela) | 6 |
 | 9 | ❌ | Gerar o `.aab` assinado e enviar ao teste interno da Play | 8 |
 | 10 | ❌ | Criar os clientes OAuth Android de release com o SHA-1 da chave de upload e da Play App Signing (disponível no Console após o 1º envio); sem eles o login Google falha no app da loja | 8 |
 | 11 | ❌ | Validar o app instalado pela Play (teste interno): login Google, push e exaustor com a conta de revisão | 8 |
 | 12 | ❌ | Cartão de permissão de notificações num Android 13+ (o J4 é 8.1), com o app do teste interno no celular de alguém da equipe | 7.1 |
-| 13 | 🟡 | Ficha da loja: textos em pt-BR, en-US e es-ES, ícone, banner e 6 capturas prontos em `docs/play/` (16/10); falta preencher "Detalhes do app" no Play Console | 8 |
+| 13 | ✅ | Ficha da loja preenchida no Play Console (16/10): textos em pt-BR, en-US e es-ES, ícone, banner e 6 capturas de `docs/play/` | 8 |
 | 14 | 🟡 | Ficha em inglês e espanhol: textos prontos; capturas só em pt-BR (a Play usa as do idioma padrão) | 3.1 |
 | 15 | ❌ | Publicação em produção na Play | 8 |
 | 16 | ⏳ | Volta automática ao normal após um alarme real (`cie.alarm.resolved`): conferir quando houver um disparo real da central; hoje validada só pela rota de teste | 7.1 |
