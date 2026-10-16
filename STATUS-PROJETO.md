@@ -111,7 +111,7 @@ Com 700+ moradores, o vínculo manual pelo zelador não é viável. Conta penden
 | ✅ | **App:** telas 07b (seletor de país com bandeira) e 07c, fluxo obrigatório para conta pendente que não é da equipe, 7 testes unitários e teste de tela (15 aprovados no J4) |
 | ✅ | Push da API, migração 008 aplicada e deploy (16/10) |
 | ✅ | Produção (16/10), conta de teste nova: celular errado → erro genérico 404; CPF e celular certos → 409 "pessoa já vinculada" (a pessoa está na conta principal); `detail` em inglês traduzido; `audit_event` com cadastro, login (inclusive o recusado) e as tentativas com o motivo, sem CPF, celular ou senha |
-| ❌ | Vínculo concluído em produção pelo app (07b → 07c → início): depende de desfazer o vínculo da conta principal ou de outra pessoa de teste; 429 só nos testes (travaria a conta por 1 h) |
+| ✅ | Vínculo concluído em produção pelo app no J4 (16/10): conta de teste → 07b (máscaras de CPF e celular) → 07c com nome, CPF mascarado e Torre A · Apto. 124 → Confirmar → início com serviços; `audit_event` com `matched` e `linked`. O vínculo da conta principal foi removido só durante o teste e devolvido com a data e o autor originais; 429 coberto pelos testes (travaria a conta por 1 h) |
 | ❌ | Política de Privacidade 1.3 (CPF e celular só para conferir o cadastro; registro de atividades por 12 meses) e "Segurança dos dados" na Play (telefone e CPF com processamento efêmero) |
 | ❌ | Figma: seletor de DDI na 07b e remover da 06 o aviso "pode levar até 24h" |
 
