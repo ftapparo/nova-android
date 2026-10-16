@@ -254,7 +254,7 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | 10 | ❌ | Criar os clientes OAuth Android de release com o SHA-1 da chave de upload e da Play App Signing (disponível no Console após o 1º envio); sem eles o login Google falha no app da loja | 8 |
 | 11 | ❌ | Validar o app instalado pela Play (teste interno): login Google, push e exaustor com a conta de revisão | 8 |
 | 12 | ❌ | Cartão de permissão de notificações num Android 13+ (o J4 é 8.1), com o app do teste interno no celular de alguém da equipe | 7.1 |
-| 13 | ❌ | Ficha da loja em português: descrição, capturas e imagem de destaque | 8 |
-| 14 | ❌ | Ficha da loja em inglês e espanhol (opcional) | 3.1 |
+| 13 | 🟡 | Ficha da loja: textos em pt-BR, en-US e es-ES, ícone, banner e 6 capturas prontos em `docs/play/` (16/10); falta preencher "Detalhes do app" no Play Console | 8 |
+| 14 | 🟡 | Ficha em inglês e espanhol: textos prontos; capturas só em pt-BR (a Play usa as do idioma padrão) | 3.1 |
 | 15 | ❌ | Publicação em produção na Play | 8 |
 | 16 | ⏳ | Volta automática ao normal após um alarme real (`cie.alarm.resolved`): conferir quando houver um disparo real da central; hoje validada só pela rota de teste | 7.1 |

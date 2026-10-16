@@ -620,4 +620,26 @@ class ScreenTest {
         compose.onNodeWithText(text(R.string.link_confirm)).performScrollTo().assertIsEnabled()
         capture("07c_link_confirmation")
     }
+
+    @Test fun homeWithServicesAndMessages() {
+        // Início completo, com dados fictícios: central normal, exaustor disponível e comunicados (capturas da loja).
+        val now = java.time.Instant.now()
+        val pump = CondoMessage(1, "manutencao", "Manutenção programada", "Manutenção da bomba de recalque hoje à tarde",
+            "A equipe técnica realizará a troca de peças da bomba de recalque entre 14h e 16h.", now.toString())
+        val pool = CondoMessage(2, "comunicado", null, "Piscina reaberta no sábado", "A piscina volta a funcionar no horário normal.", now.toString())
+        val messages = MessageState(latest = listOf(pump, pool), unreadCount = 2, list = listOf(pump, pool))
+        val unit = ResidenceUnit(1, "A", "124", "A-124", true, false, true, false, null)
+        compose.setContent { NovaResidenceTheme {
+            ResidenceScreen(ResidenceState(Residence("ativo", false, ResidencePerson(91, "Morador de teste"), listOf(unit)), 1),
+                AuthUser("test", null, "morador", false), {}, {}, {}, false,
+                fireStatus = ServiceStatus(uiText(R.string.fire_home_normal)),
+                exhaustStatus = ServiceStatus(uiText(R.string.exhaust_home_off)),
+                unreadMessages = messages.unreadCount,
+                homeMessages = { open -> MessageCarousel(messages) { open(it.id) } })
+        } }
+        compose.onNodeWithText(text(R.string.fire_home_normal)).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.exhaust_home_off)).assertIsDisplayed()
+        compose.onNodeWithText("Manutenção programada").performScrollTo().assertIsDisplayed()
+        capture("store_home")
+    }
 }
