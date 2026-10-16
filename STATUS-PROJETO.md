@@ -4,7 +4,7 @@ Atualizado em **15/10/2026**.
 
 Legenda: ✅ feito · 🟡 parcial · ⏳ depende de terceiros ou de outra etapa · ❌ não feito · ❓ aguarda decisão
 
-> **Situação em 15/10/2026:** API em produção com push nativo (migração 006), tempo real, localização do exaustor, exaustor simulado da conta de revisão e Política 1.2. App com push, WebSocket e localização commitados e validados no J4; português, inglês e espanhol disponíveis. Nova revisão visual do Figma aplicada ao projeto (seção abaixo). Play Console: declarações de Conteúdo do app concluídas (Segurança dos dados, público 18+, classificação, acesso com conta de teste); falta o build de release e o teste interno. Repositório do app em `github.com/ftapparo/nova-android`.
+> **Situação em 16/10/2026:** API em produção com push nativo (migração 006), tempo real, localização do exaustor, exaustor simulado da conta de revisão, vínculo automático por CPF e celular, registro de atividades (migração 008) e Política 1.3. App com push, WebSocket e localização commitados e validados no J4; português, inglês e espanhol disponíveis. Nova revisão visual do Figma aplicada ao projeto (seção abaixo). Play Console: declarações de Conteúdo do app concluídas (Segurança dos dados, público 18+, classificação, acesso com conta de teste); falta o build de release e o teste interno. Repositório do app em `github.com/ftapparo/nova-android`.
 
 Referências: [AGENTS.md](AGENTS.md) (regras e contrato da API), [DESIGN_GUIDE.md](DESIGN_GUIDE.md), [CHECKLIST-PUBLICACAO.md](CHECKLIST-PUBLICACAO.md), [docs/revisao-figma-e-integracao.md](docs/revisao-figma-e-integracao.md).
 
@@ -114,7 +114,7 @@ Com 700+ moradores, o vínculo manual pelo zelador não é viável. Conta penden
 | ✅ | Vínculo concluído em produção pelo app no J4 (16/10): conta de teste → 07b (máscaras de CPF e celular) → 07c com nome, CPF mascarado e Torre A · Apto. 124 → Confirmar → início com serviços; `audit_event` com `matched` e `linked`. O vínculo da conta principal foi removido só durante o teste e devolvido com a data e o autor originais; 429 coberto pelos testes (travaria a conta por 1 h) |
 | ✅ | Nome mascarado na conferência (API `ff6db42`, deploy 16/10): produção devolveu `"Fl**** Ed***** Ta*****"` e CPF mascarado; dados pessoais das Configurações (19) com as mesmas linhas compactas e o mesmo nome mascarado |
 | ✅ | Política de Privacidade 1.3 em produção (16/10): `GET /legal` com a 1.3, página pública com as seções novas e PDF oficial com o mesmo hash do catálogo |
-| ❌ | Play Console: atualizar a "Segurança dos dados" com número de telefone e outras informações (CPF), processamento efêmero (respostas em `docs/seguranca-dos-dados.md`) |
+| ✅ | Play Console: "Segurança dos dados" atualizada com número de telefone e outras informações (CPF), processamento efêmero (16/10) |
 | ✅ | Figma (16/10): 07b com o DDI e bandeira no campo Celular e máscara de 11 dígitos; 06 sem o aviso "pode levar até 24h"; 07c e 19 com linhas compactas e nome mascarado (07c sem chevron na unidade); aviso do rodapé "concorda com os Termos de Uso" no componente e nas instâncias de 02, 06 e 07b |
 
 ## 4. Exaustor (19–24)
@@ -246,7 +246,7 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | 3 | ✅ | `CHANGELOG.md` com todas as telas na numeração do Figma de 15/10 (nota no topo explica a numeração) (15/10) | 9 (antigo) |
 | 4 | ✅ | Ícone do app: fundo roxo do splash (#2B0F44) com "NOVA" branco recortado do logo; adaptativo (com monocromático) e legados; versão 512 px da Play em `docs/play/icone-512.png` (15/10) | 8 |
 | 5 | ✅ | Versão da 1ª publicação: `versionCode` 1, `versionName` "1.0.0"; `targetSdk` e `compileSdk` 37, acima do mínimo exigido pela Play; `minSdk` 26 (Android 8.0) (15/10) | 8 |
-| 5b | 🟡 | Vínculo automático (seção 3.2): em produção, validado e com a Política 1.3; falta só atualizar a "Segurança dos dados" no Play Console | 3.2 |
+| 5b | ✅ | Vínculo automático (seção 3.2): em produção, validado no J4, Política 1.3, Figma e "Segurança dos dados" atualizados (16/10) | 3.2 |
 | 6 | ❌ | Criar a chave de upload e configurar a assinatura no Gradle | 8 |
 | 7 | ❌ | Ativar o R8 e testar o build de release no J4 (login, push, central, exaustor, idiomas) | 6 / 8 |
 | 8 | ❌ | Baseline Profile (velocidade na primeira abertura de cada tela) | 6 |

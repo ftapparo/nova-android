@@ -1,6 +1,6 @@
 # Play Console — formulário "Segurança dos dados"
 
-Respostas para o formulário da Google Play (Play Console → Política do app → Segurança dos dados), conforme o que o app coleta em 16/10/2026 e a Política de Privacidade 1.3. Revisar sempre que um recurso novo enviar dados do aparelho. A localização para ligar o exaustor (STATUS §7.2) foi implementada em 14/10/2026 e entra como **Local → Local exato**; o rascunho salvo no Play Console antes disso precisa ser atualizado. O vínculo automático por CPF e celular (STATUS §3.2, 16/10/2026) entra como **Número de telefone** e **Outras informações**, ambos com processamento efêmero: **atualizar o formulário no Play Console**.
+Respostas para o formulário da Google Play (Play Console → Política do app → Segurança dos dados), conforme o que o app coleta em 16/10/2026 e a Política de Privacidade 1.3. Revisar sempre que um recurso novo enviar dados do aparelho. A localização para ligar o exaustor (STATUS §7.2) foi implementada em 14/10/2026 e entra como **Local → Local exato**; o rascunho salvo no Play Console antes disso precisa ser atualizado. O vínculo automático por CPF e celular (STATUS §3.2, 16/10/2026) entra como **Número de telefone** e **Outras informações**, ambos com processamento efêmero; formulário atualizado no Play Console em 16/10/2026.
 
 Pela definição da Google, "coletar" é transmitir dados do aparelho para fora dele. Os dados que vêm do cadastro do condomínio e só são exibidos no app (CPF mascarado, unidades, vínculo) não contam como coleta do app.
 
