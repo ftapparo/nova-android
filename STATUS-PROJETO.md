@@ -112,6 +112,7 @@ Com 700+ moradores, o vínculo manual pelo zelador não é viável. Conta penden
 | ✅ | Push da API, migração 008 aplicada e deploy (16/10) |
 | ✅ | Produção (16/10), conta de teste nova: celular errado → erro genérico 404; CPF e celular certos → 409 "pessoa já vinculada" (a pessoa está na conta principal); `detail` em inglês traduzido; `audit_event` com cadastro, login (inclusive o recusado) e as tentativas com o motivo, sem CPF, celular ou senha |
 | ✅ | Vínculo concluído em produção pelo app no J4 (16/10): conta de teste → 07b (máscaras de CPF e celular) → 07c com nome, CPF mascarado e Torre A · Apto. 124 → Confirmar → início com serviços; `audit_event` com `matched` e `linked`. O vínculo da conta principal foi removido só durante o teste e devolvido com a data e o autor originais; 429 coberto pelos testes (travaria a conta por 1 h) |
+| ✅ | Nome mascarado na conferência (API `ff6db42`, deploy 16/10): produção devolveu `"Fl**** Ed***** Ta*****"` e CPF mascarado; dados pessoais das Configurações (19) com as mesmas linhas compactas e o mesmo nome mascarado |
 | ❌ | Política de Privacidade 1.3 (CPF e celular só para conferir o cadastro; registro de atividades por 12 meses) e "Segurança dos dados" na Play (telefone e CPF com processamento efêmero) |
 | ❌ | Figma: seletor de DDI na 07b e remover da 06 o aviso "pode levar até 24h" |
 
