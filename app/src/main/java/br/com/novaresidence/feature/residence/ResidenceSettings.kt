@@ -227,6 +227,10 @@ private fun SettingsRow(title: String, detail: String, click: (() -> Unit)? = nu
 @Composable
 internal fun DataRow(label: String, value: String, click: (() -> Unit)? = null) = LinkRow(label, value, 112.dp, 24.dp, click)
 
+/** Mesma linha, compacta, para a conferência do vínculo (07c), que precisa caber com os botões na tela. */
+@Composable
+internal fun CompactDataRow(label: String, value: String) = LinkRow(label, value, 0.dp, 10.dp, null)
+
 @Composable
 private fun LinkRow(title: String, detail: String, minHeight: Dp, verticalPadding: Dp, click: (() -> Unit)?) {
     Row(Modifier.fillMaxWidth().then(if (click != null) Modifier.clickable(role = Role.Button, onClick = click) else Modifier)

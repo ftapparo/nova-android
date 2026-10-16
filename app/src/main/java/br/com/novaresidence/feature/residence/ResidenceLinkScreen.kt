@@ -140,7 +140,7 @@ private fun LinkConfirmation(state: ResidenceLinkState, check: SelfLinkCheck, us
                 Column(Modifier.fillMaxWidth().padding(top = 24.dp)) {
                     Guidance(stringResource(R.string.link_confirm_guidance))
                     Spacer(Modifier.height(12.dp))
-                    Column(Modifier.padding(horizontal = NovaSpacing.Margin), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.padding(horizontal = NovaSpacing.Margin)) {
                         val units = check.units.map { it.selectorLabel().text() }
                         val rows = listOfNotNull(
                             stringResource(R.string.personal_data_name) to check.person.nome.personName(),
@@ -150,10 +150,10 @@ private fun LinkConfirmation(state: ResidenceLinkState, check: SelfLinkCheck, us
                                 units.joinToString("\n"),
                         )
                         rows.forEachIndexed { index, (label, value) ->
-                            DataRow(label, value)
+                            CompactDataRow(label, value)
                             if (index < rows.lastIndex) NovaDivider()
                         }
-                        state.error?.let { NovaNotice(it.text(), state.requestId) }
+                        state.error?.let { Box(Modifier.padding(top = 12.dp)) { NovaNotice(it.text(), state.requestId) } }
                     }
                 }
                 Column(Modifier.fillMaxWidth().padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 24.dp, bottom = 24.dp),
