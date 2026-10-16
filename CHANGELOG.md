@@ -33,6 +33,8 @@ Os números de tela seguem a numeração do Figma de 15/10/2026: 01–09 splash 
 
 ### Alterado
 
+- Versão do app passa a "1.0.0" (`versionCode` 1), para a 1ª publicação; `targetSdk` 37 conferido.
+
 - Interface componentizada, sem mudança visual (capturas dos testes de tela comparadas pixel a pixel): cores, estilos de texto, cantos e a margem de 28 dp passam a vir só do tema (`NovaTheme.kt`: novas cores `NovaSurface`, `NovaOnPrimary`, `NovaFieldOutline` e afins, estilos nomeados em `NovaType`, `NovaShapes` e `NovaSpacing`); trechos repetidos entre telas viraram componentes em `NovaComponents.kt` (`NovaPage`, `NovaGroupRow`, `NovaDayHeader`, `NovaRetryNotice`, `NovaStateHeadline`, `NovaSectionTitle`, `NovaRowText`, `NovaEmptyCard`, `NovaDivider`, `NovaChevron`). Os papéis da equipe ficam num só lugar (`AuthUser.isStaff`).
 - Revisão visual do Figma de 15/10/2026: oito ilustrações novas e quadradas (exaustor 250 dp, central 200 dp e uma própria para os avisos de localização); estado em 28/38 sp com apoio em 16/22 sp e alarme em 28/28 sp; selos sem ponto e centralizados; Configurações e suas telas (12–20) no fundo cinza #F5F6FA, com só a área do documento do Termo e da Política em branco. Botões padronizados em 48 dp e 14 sp Medium em todas as telas, e um único cartão informativo (`NovaInfoStrip`, mínimo de 64 dp) no exaustor, na central, em Minhas unidades, na validação de conta, em Notificações e no aviso de idioma dos documentos. Os textos continuam os do `strings.xml`. Teste de tela do exaustor, da central e de Notificações em português, inglês e espanhol com fonte de 100% e 130%.
 - `AGENTS.md`: os textos do app são os de `strings.xml`; o Figma é modelo visual e não muda a redação.

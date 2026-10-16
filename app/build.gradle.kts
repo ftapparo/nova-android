@@ -17,7 +17,7 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
         buildConfigField("String", "V3_BASE_URL", "\"https://api.novaresidence.com.br\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"628782431663-jcdpiqiph63a50kk21iin4b0dfk32gga.apps.googleusercontent.com\"")
 

@@ -207,7 +207,7 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 |---|---|
 | ✅ | Somente HTTPS |
 | ✅ | `.aab` gerado (`bundleRelease`) com divisão por densidade (12/10) — ainda sem assinatura |
-| 🟡 | `versionCode`/`versionName` (hoje 1 / "1.0") e `targetSdk` a conferir |
+| ✅ | `versionCode` 1 / `versionName` "1.0.0", `targetSdk` 37 (15/10) |
 | ❌ | Chave de upload e assinatura no Gradle |
 | ❌ | Clientes OAuth de release (SHA-1 da chave de upload e da Play App Signing); sem eles o login Google falha no app da loja |
 | ✅ | Ícone do app com a marca (15/10) |
@@ -227,7 +227,7 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | 2 | ✅ | Testes de tela no J4 depois da tradução: 13 aprovados (15/10). Passam a ler os textos dos recursos, para não quebrar quando a redação for revisada | 3.1 / 6 |
 | 3 | ✅ | `CHANGELOG.md` com todas as telas na numeração do Figma de 15/10 (nota no topo explica a numeração) (15/10) | 9 (antigo) |
 | 4 | ✅ | Ícone do app: fundo roxo do splash (#2B0F44) com "NOVA" branco recortado do logo; adaptativo (com monocromático) e legados; versão 512 px da Play em `docs/play/icone-512.png` (15/10) | 8 |
-| 5 | 🟡 | Conferir `versionCode`/`versionName` (hoje 1 / "1.0") e `targetSdk` para a 1ª publicação | 8 |
+| 5 | ✅ | Versão da 1ª publicação: `versionCode` 1, `versionName` "1.0.0"; `targetSdk` e `compileSdk` 37, acima do mínimo exigido pela Play; `minSdk` 26 (Android 8.0) (15/10) | 8 |
 | 6 | ❌ | Criar a chave de upload e configurar a assinatura no Gradle | 8 |
 | 7 | ❌ | Ativar o R8 e testar o build de release no J4 (login, push, central, exaustor, idiomas) | 6 / 8 |
 | 8 | ❌ | Baseline Profile (velocidade na primeira abertura de cada tela) | 6 |

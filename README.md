@@ -4,7 +4,7 @@
 
 **App Android de moradores e equipe: central de incêndio, exaustores, comunicados e notificações**
 
-[![Version](https://img.shields.io/badge/version-1.0-blue.svg)](https://github.com/ftapparo/nova-android)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ftapparo/nova-android)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2-purple)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-green)](https://developer.android.com/jetpack/compose)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-green)](https://developer.android.com/)
