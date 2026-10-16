@@ -3,6 +3,18 @@
 Arquivo de referência: [Nova Residence no Figma](https://www.figma.com/design/kixzSbydhXP4k7qTSKWJbK/Sem-t%C3%ADtulo?node-id=0-1).
 Estrutura, propriedades, textos, componentes e assets foram consultados pelo MCP do Figma. As capturas locais ficam em `artifacts/`, fora do Git.
 
+## Android → Figma — vínculo automático (16/10/2026)
+
+Ajustes feitos pelo MCP para o Figma acompanhar o app depois do vínculo automático por CPF e celular:
+
+| Tela | Nó | Ajuste |
+|---|---|---|
+| 06 · Criação de conta | `4:29564` | Removido o aviso "A validação do cadastro pode levar até 24h" (o vínculo agora é automático; o app nunca prometeu prazo) |
+| 07b · Vincular unidade | `381:2008` | Campo Celular com o seletor de país (🇧🇷 +55) à esquerda e máscara "(00) 00000-0000" |
+| 07c · Conferência | `381:2073` | Orientação da conferência, linhas compactas (10 dp em cima e embaixo, sem mínimo de 112 dp, divisor colado), nome mascarado "Fl\*\*\*\* Ed\*\*\*\*\* Ta\*\*\*\*\*" e unidade sem chevron |
+| 19 · Dados pessoais | `233:1011` | Mesmas linhas compactas e nome mascarado; a unidade mantém o chevron (abre a seleção) |
+| Nova / LegalLinksText | `307:825` | "concorda com os Termos de Uso", como no app, no componente e nas instâncias de 02, 06 e 07b |
+
 ## Figma → Android — nova revisão de 15/10/2026
 
 Revisão consultada pelo MCP após a tradução do app. **O Figma é referência visual; os textos do app são os de `strings.xml`** (decidido em 15/10/2026): a redação do desenho não substitui a dos recursos. O Figma continua somente em português; os recursos `values-en` e `values-es`, a seleção local de idioma e o contrato traduzido da API foram preservados. As seções anteriores deste documento são registros históricos e usam a numeração anterior.
