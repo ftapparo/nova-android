@@ -3,7 +3,6 @@ package br.com.novaresidence.feature.message
 import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,28 +11,20 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import br.com.novaresidence.R
 import br.com.novaresidence.core.ui.*
-
-private val PageIndicator = Color(0xFFC7C9D0)
 
 private data class MessageLook(val icon: Int, val color: Color, val container: Color)
 
@@ -48,10 +39,10 @@ private fun CondoMessage.look(): MessageLook = when (category) {
 @Composable
 private fun MessageBadge(message: CondoMessage, dot: Boolean) {
     val look = message.look()
-    Row(Modifier.background(look.container, CircleShape).heightIn(min = 24.dp).padding(horizontal = 9.dp, vertical = 4.dp),
+    Row(Modifier.background(look.container, NovaShapes.Pill).heightIn(min = 24.dp).padding(horizontal = 9.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (dot) Box(Modifier.size(8.dp).background(look.color, CircleShape))
-        Text(message.badgeLabel().text(), style = NovaType.NavLabel.copy(letterSpacing = 0.sp), color = look.color, maxLines = 1)
+        if (dot) Box(Modifier.size(8.dp).background(look.color, NovaShapes.Pill))
+        Text(message.badgeLabel().text(), style = NovaType.BadgeCompact, color = look.color, maxLines = 1)
     }
 }
 
@@ -63,29 +54,26 @@ private fun MessageBadge(message: CondoMessage, dot: Boolean) {
 fun MessageCarousel(state: MessageState, open: (CondoMessage) -> Unit) {
     val messages = state.latest
     if (messages.isEmpty()) {
-        Box(Modifier.fillMaxWidth().border(1.dp, NovaOutline, RoundedCornerShape(16.dp)).heightIn(min = 68.dp).padding(16.dp), contentAlignment = Alignment.CenterStart) {
-            Text(stringResource(if (state.latestError != null) R.string.message_carousel_failed else R.string.home_no_messages),
-                style = NovaType.Body, color = NovaOnSurfaceVariant)
-        }
+        NovaEmptyCard(stringResource(if (state.latestError != null) R.string.message_carousel_failed else R.string.home_no_messages))
         return
     }
     val pager = rememberPagerState { messages.size }
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             // O próximo cartão aparece até a borda da folha; o primeiro continua alinhado à margem de 28 dp.
-            HorizontalPager(pager, Modifier.wrapContentWidth(Alignment.Start, unbounded = true).width(maxWidth + 28.dp),
+            HorizontalPager(pager, Modifier.wrapContentWidth(Alignment.Start, unbounded = true).width(maxWidth + NovaSpacing.Margin),
                 pageSize = PageSize.Fixed(356.dp), pageSpacing = 12.dp, verticalAlignment = Alignment.Top) { page ->
                 val message = messages[page]
-                val shape = RoundedCornerShape(16.dp)
-                Column(Modifier.height(208.dp).fillMaxWidth().clip(shape).background(Color.White).border(1.dp, NovaOutline, shape)
-                    .clickable(role = Role.Button, onClickLabel = stringResource(R.string.message_see_more)) { open(message) }
-                    .padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    MessageBadge(message, dot = true)
-                    Text(message.title, style = NovaType.ItemTitle, color = NovaOnSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(message.body, Modifier.weight(1f), style = NovaType.Body, color = NovaOnSurface, overflow = TextOverflow.Ellipsis)
-                    Row(Modifier.fillMaxWidth().heightIn(min = 28.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.message_see_more), style = NovaType.Button, color = NovaPrimary)
-                        Icon(painterResource(R.drawable.nova_chevron_forward), null, Modifier.size(18.dp), tint = NovaPrimary)
+                NovaCard(Modifier.height(208.dp).fillMaxWidth()) {
+                    Column(Modifier.fillMaxSize().clickable(role = Role.Button, onClickLabel = stringResource(R.string.message_see_more)) { open(message) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        MessageBadge(message, dot = true)
+                        Text(message.title, style = NovaType.ItemTitle, color = NovaOnSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(message.body, Modifier.weight(1f), style = NovaType.Body, color = NovaOnSurface, overflow = TextOverflow.Ellipsis)
+                        Row(Modifier.fillMaxWidth().heightIn(min = 28.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.message_see_more), style = NovaType.Button, color = NovaPrimary)
+                            NovaChevron(NovaPrimary, 18.dp)
+                        }
                     }
                 }
             }
@@ -93,7 +81,7 @@ fun MessageCarousel(state: MessageState, open: (CondoMessage) -> Unit) {
         if (messages.size > 1) Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             repeat(messages.size) { index ->
                 val current = index == pager.currentPage
-                Box(Modifier.size(if (current) 8.dp else 6.dp).background(if (current) NovaPrimary else PageIndicator, CircleShape))
+                Box(Modifier.size(if (current) 8.dp else 6.dp).background(if (current) NovaPrimary else NovaIndicatorInactive, NovaShapes.Pill))
             }
         }
     }
@@ -122,27 +110,20 @@ private fun MessageList(state: MessageState, back: () -> Unit, loadList: (Boolea
     val groups = remember(state.list) {
         state.list.orEmpty().groupBy { it.publishedInstant?.dayLabel() ?: uiText(R.string.date_none) }.toList()
     }
-    Column(Modifier.fillMaxSize().background(NovaBackground)) {
-        NovaTopBar(stringResource(R.string.message_list_title), back)
+    NovaPage(stringResource(R.string.message_list_title), back = back) {
         NovaFilterBar(listOf(stringResource(R.string.message_filter_all), stringResource(R.string.message_filter_unread)), if (state.unreadOnly) 1 else 0, height = 36.dp) { loadList(it == 1) }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(start = 28.dp, end = 28.dp, top = 16.dp, bottom = 24.dp)) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 16.dp, bottom = 24.dp)) {
             when {
                 state.listLoading && state.list == null -> item { NovaLoading(stringResource(R.string.message_loading)) }
                 state.listError != null && state.list == null -> item {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        NovaNotice(state.listError.text())
-                        NovaButton(stringResource(R.string.message_try_again), { loadList(state.unreadOnly) }, style = NovaButtonStyle.Secondary)
-                    }
+                    NovaRetryNotice(state.listError.text(), stringResource(R.string.message_try_again), { loadList(state.unreadOnly) })
                 }
                 groups.isEmpty() -> item {
                     Text(stringResource(if (state.unreadOnly) R.string.message_empty_unread else R.string.message_empty), style = NovaType.Body, color = NovaOnSurfaceVariant)
                 }
                 // Cada mensagem é um item preguiçoso, como no histórico da central.
                 else -> groups.forEachIndexed { groupIndex, (day, messages) ->
-                    item(key = "day:$day") {
-                        Text(day.text(), Modifier.padding(top = if (groupIndex == 0) 0.dp else 32.dp, bottom = 24.dp).semantics { heading() },
-                            style = NovaType.Body, color = NovaOnSurfaceVariant)
-                    }
+                    item(key = "day:$day") { NovaDayHeader(day.text(), first = groupIndex == 0) }
                     itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
                         MessageRow(message, first = index == 0, last = index == messages.lastIndex) { open(message) }
                     }
@@ -155,26 +136,13 @@ private fun MessageList(state: MessageState, back: () -> Unit, loadList: (Boolea
 @Composable
 private fun MessageRow(message: CondoMessage, first: Boolean, last: Boolean, open: () -> Unit) {
     val look = message.look()
-    Row(Modifier.fillMaxWidth().novaCardSegment(first, last).clickable(role = Role.Button, onClick = open).heightIn(min = 88.dp)
-        .padding(start = 14.dp, end = 12.dp, top = 14.dp, bottom = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-            Icon(painterResource(look.icon), null, Modifier.size(24.dp), tint = look.color)
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(message.categoryLabel().text(), style = NovaType.Supporting, color = look.color)
-            Text(message.title, style = NovaType.ItemTitle, color = NovaOnSurface)
-            message.publishedInstant?.let { Text(it.clockTime(), style = NovaType.Caption, color = NovaOnSurfaceVariant) }
-        }
-        Icon(painterResource(R.drawable.nova_chevron_forward), null, Modifier.size(20.dp), tint = NovaOnSurfaceVariant)
-    }
+    NovaGroupRow(look.icon, look.color, message.categoryLabel().text(), look.color, message.title, message.publishedInstant?.clockTime(), first, last, open)
 }
 
 @Composable
 private fun MessageDetail(message: CondoMessage, back: () -> Unit) {
-    Column(Modifier.fillMaxSize().background(NovaBackground)) {
-        NovaTopBar(stringResource(R.string.message_detail_title), back)
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, top = 24.dp, bottom = 32.dp),
+    NovaPage(stringResource(R.string.message_detail_title), back = back) {
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 24.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(26.dp)) {
             NovaCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -183,7 +151,7 @@ private fun MessageDetail(message: CondoMessage, back: () -> Unit) {
                     message.publishedInstant?.let { Text(it.dayAndTime().text(), style = NovaType.Supporting, color = NovaOnSurfaceVariant) }
                 }
             }
-            Text(message.body, style = NovaType.Body.copy(lineHeight = 21.sp), color = NovaOnSurface)
+            Text(message.body, style = NovaType.Reading, color = NovaOnSurface)
         }
     }
 }

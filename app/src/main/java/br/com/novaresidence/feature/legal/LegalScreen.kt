@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -47,8 +46,7 @@ private fun documentTitle(document: String) = stringResource(if (document == Ter
 @Composable
 fun LegalDocumentScreen(state: LegalState, document: String, back: () -> Unit, retry: () -> Unit) {
     val doc = state.find(document)
-    Column(Modifier.fillMaxSize().background(Color.White)) {
-        NovaTopBar(documentTitle(document), back)
+    NovaPage(documentTitle(document), back = back, background = NovaSurface) {
         PortugueseOnlyNotice()
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
@@ -62,17 +60,14 @@ fun LegalDocumentScreen(state: LegalState, document: String, back: () -> Unit, r
 
 @Composable
 private fun LegalError(message: String, retry: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        NovaNotice(message)
-        NovaButton(stringResource(R.string.legal_try_again), retry, style = NovaButtonStyle.Secondary)
-    }
+    NovaRetryNotice(message, stringResource(R.string.legal_try_again), retry, Modifier.fillMaxWidth().padding(NovaSpacing.Margin))
 }
 
 /** Fora do português, avisa que o texto exibido é o oficial, em português (o documento jurídico não é traduzido). */
 @Composable
 private fun PortugueseOnlyNotice() {
     if (LocalConfiguration.current.locales[0].language == "pt") return
-    Box(Modifier.padding(start = 28.dp, end = 28.dp, bottom = 12.dp)) { NovaInfoStrip(stringResource(R.string.legal_portuguese_only)) }
+    Box(Modifier.padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, bottom = 12.dp)) { NovaInfoStrip(stringResource(R.string.legal_portuguese_only)) }
 }
 
 /**
@@ -115,7 +110,7 @@ private fun LegalWebView(url: String, modifier: Modifier) {
                 }
             }, modifier = Modifier.fillMaxSize())
         }
-        if (loading && !failed) Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.TopCenter) {
+        if (loading && !failed) Box(Modifier.fillMaxSize().background(NovaSurface), contentAlignment = Alignment.TopCenter) {
             NovaLoading(stringResource(R.string.legal_loading))
         }
     }
@@ -155,23 +150,22 @@ fun LegalLinksText(@StringRes template: Int, openLegal: (String) -> Unit, modifi
 @Composable
 fun TermsAcceptanceScreen(state: LegalState, accept: () -> Unit, logout: () -> Unit, openLegal: (String) -> Unit, retry: () -> Unit) {
     val terms = state.find(TermsDocument)
-    Column(Modifier.fillMaxSize().background(NovaBackground).systemBarsPadding()) {
-        NovaTopBar(stringResource(R.string.legal_terms))
-        Column(Modifier.padding(horizontal = 28.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    NovaPage(stringResource(R.string.legal_terms), modifier = Modifier.systemBarsPadding()) {
+        Column(Modifier.padding(horizontal = NovaSpacing.Margin).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // O app não sabe se a conta já aceitou uma versão anterior: o título serve à conta antiga e à versão nova.
             Text(stringResource(R.string.legal_acceptance_title), style = NovaType.ScreenTitle, color = NovaOnSurface)
             Text(terms?.let { stringResource(R.string.legal_acceptance_body_version, it.version) } ?: stringResource(R.string.legal_acceptance_body),
                 style = NovaType.Body, color = NovaOnSurfaceVariant)
         }
         PortugueseOnlyNotice()
-        Box(Modifier.weight(1f).fillMaxWidth().background(Color.White)) {
+        Box(Modifier.weight(1f).fillMaxWidth().background(NovaSurface)) {
             when {
                 terms != null -> LegalWebView(terms.htmlUrl, Modifier.fillMaxSize())
                 state.loading -> NovaLoading(stringResource(R.string.legal_loading))
                 else -> LegalError(state.error?.text() ?: stringResource(R.string.legal_terms_load_failed), retry)
             }
         }
-        Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = NovaSpacing.Margin, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             LegalLinksText(R.string.legal_accept_agreement, openLegal)
             state.acceptError?.let { NovaNotice(it.text()) }
             NovaButton(stringResource(if (state.accepting) R.string.legal_registering else R.string.legal_accept), accept, enabled = terms != null && !state.accepting)

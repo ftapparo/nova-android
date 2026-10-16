@@ -143,7 +143,7 @@ fun App(app: AppViewModel) {
             // A home mostra o estado do exaustor e da central (Figma 08a–08c): as consultas valem para toda a
             // área logada visível, e não só para a tela de cada serviço. Param em onStop.
             // A equipe é isenta da verificação de localização na API: o app nem pede a permissão.
-            val staff = user?.role in StaffRoles
+            val staff = user?.isStaff == true
             LifecycleStartEffect(user?.id, unit?.sequencia, allowed, staff) {
                 exhaust.start(unit?.quadra, unit?.lote, allowed, staff)
                 onStopOrDispose { exhaust.stop() }
@@ -214,7 +214,7 @@ fun App(app: AppViewModel) {
                 } else null,
                 notificationsContent = { back ->
                     val notificationState by notifications.state.collectAsStateWithLifecycle()
-                    NotificationScreen(notificationState, pushStatus, user?.role in StaffRoles, notifications::load, notifications::set,
+                    NotificationScreen(notificationState, pushStatus, staff, notifications::load, notifications::set,
                         notifications::sendTest, enableNotifications, { app.registerPush(force = true) }, back)
                 },
                 pendingOpen = pendingOpen, consumeOpen = { app.pendingOpen.value = null },
@@ -240,4 +240,3 @@ fun App(app: AppViewModel) {
     } }
 }
 
-private val StaffRoles = setOf("porteiro", "sindico", "admin")

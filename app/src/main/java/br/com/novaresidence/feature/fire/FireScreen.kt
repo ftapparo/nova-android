@@ -2,39 +2,30 @@ package br.com.novaresidence.feature.fire
 
 import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import br.com.novaresidence.R
 import br.com.novaresidence.core.ui.*
 import kotlinx.coroutines.delay
@@ -77,12 +68,11 @@ private fun FireStatusScreen(
     openEvent: (CieLog) -> Unit,
 ) {
     val status = state.status
-    Column(Modifier.fillMaxSize().background(NovaServiceBackground)) {
-        NovaTopBar(stringResource(R.string.fire_title), background = NovaServiceBackground, color = NovaInk)
+    NovaPage(stringResource(R.string.fire_title), background = NovaServiceBackground, barBackground = NovaServiceBackground, titleColor = NovaInk) {
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             // Em telas mais baixas que o frame, a ilustração encolhe antes de empurrar orientações e ações para fora da tela.
             val available = maxHeight
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, top = 16.dp, bottom = 18.dp),
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 16.dp, bottom = 18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Column(Modifier.widthIn(max = 480.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     if (status == FireStatus.Alarm) AlarmContent(state, (available - 504.dp).coerceIn(120.dp, 200.dp), openEvent)
@@ -119,10 +109,7 @@ private fun StatusContent(
         NovaIllustration(look.image, Modifier.size(illustration), contentScale = ContentScale.Crop,
             colorFilter = if (look.grayscale) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null)
         NovaStatusBadge(look.badge.text(), look.color, look.container, Modifier.widthIn(min = if (status == FireStatus.Attention) 132.dp else 122.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(look.title.text(), Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.EquipmentState, color = NovaInk, textAlign = TextAlign.Center)
-            Text(look.text.text(), Modifier.fillMaxWidth(), style = NovaType.EquipmentSupporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center)
-        }
+        NovaStateHeadline(look.title.text(), look.text.text())
         if (status == FireStatus.Attention) state.activeEvents.firstNotNullOfOrNull { it.placeLine() }?.let { place ->
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.fire_warning_place), style = NovaType.Caption, color = NovaOnSurfaceVariant)
@@ -166,18 +153,18 @@ private fun AlarmContent(state: FireState, illustration: Dp, openEvent: (CieLog)
             NovaIllustration(R.drawable.nova_fire_alarm, Modifier.size(illustration), contentScale = ContentScale.Crop)
             NovaStatusBadge(stringResource(R.string.fire_badge_alarm), NovaAlarm, NovaAlarmContainer, Modifier.widthIn(min = 112.dp))
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.fire_alarm_title), Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.AlarmTitle.copy(fontWeight = FontWeight.Bold),
+                Text(stringResource(R.string.fire_alarm_title), Modifier.fillMaxWidth().semantics { heading() }, style = NovaType.AlarmTitle,
                     color = NovaAlarm, textAlign = TextAlign.Center)
-                log?.placeLine(" - ")?.let { Text(it, Modifier.fillMaxWidth(), style = NovaType.AlarmTitle, color = NovaInk, textAlign = TextAlign.Center) }
+                log?.placeLine(" - ")?.let { Text(it, Modifier.fillMaxWidth(), style = NovaType.AlarmPlace, color = NovaInk, textAlign = TextAlign.Center) }
                 log?.instant()?.let { Text(stringResource(R.string.fire_alarm_started_at, it.clockTime()), style = NovaType.Supporting, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
             }
         }
-        HorizontalDivider(color = NovaOutline)
+        NovaDivider()
         Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.fire_safety_title), Modifier.semantics { heading() }, style = NovaType.Highlight, color = NovaInk)
             SafetyGuidance.forEach { (text, emphasis) ->
                 Row(Modifier.fillMaxWidth().heightIn(min = 38.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(8.dp).background(NovaAlarm, CircleShape))
+                    Box(Modifier.size(8.dp).background(NovaAlarm, NovaShapes.Pill))
                     Text(stringResource(text), style = if (emphasis) NovaType.BodyEmphasis else NovaType.Body, color = NovaInk)
                 }
             }
@@ -213,17 +200,13 @@ private fun FireHistoryScreen(state: FireState, back: () -> Unit, reload: () -> 
     val groups = remember(state.history, filter) {
         state.history.orEmpty().filter { types == null || it.category() in types }.groupBy { it.instant()?.dayLabel() ?: uiText(R.string.date_none) }.toList()
     }
-    Column(Modifier.fillMaxSize().background(NovaBackground)) {
-        NovaTopBar(stringResource(R.string.fire_history_title), back)
+    NovaPage(stringResource(R.string.fire_history_title), back = back) {
         NovaFilterBar(HistoryFilters.map { stringResource(it.first) }, filter) { filter = it }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(start = 28.dp, end = 28.dp, top = 16.dp, bottom = 24.dp)) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 16.dp, bottom = 24.dp)) {
             when {
                 state.historyLoading && state.history == null -> item { NovaLoading(stringResource(R.string.fire_history_loading)) }
                 state.historyError != null && state.history == null -> item {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        NovaNotice(state.historyError.text())
-                        NovaButton(stringResource(R.string.fire_try_again), reload, style = NovaButtonStyle.Secondary)
-                    }
+                    NovaRetryNotice(state.historyError.text(), stringResource(R.string.fire_try_again), reload)
                 }
                 groups.isEmpty() -> item {
                     Text(stringResource(if (filter == 0) R.string.fire_history_empty else R.string.fire_history_empty_filter),
@@ -231,10 +214,7 @@ private fun FireHistoryScreen(state: FireState, back: () -> Unit, reload: () -> 
                 }
                 // Cada evento é um item preguiçoso: um dia pode ter dezenas de eventos, e montá-los de uma vez travava a tela.
                 else -> groups.forEachIndexed { groupIndex, (day, logs) ->
-                    item(key = "day:$day") {
-                        Text(day.text(), Modifier.padding(top = if (groupIndex == 0) 0.dp else 32.dp, bottom = 24.dp).semantics { heading() },
-                            style = NovaType.Body, color = NovaOnSurfaceVariant)
-                    }
+                    item(key = "day:$day") { NovaDayHeader(day.text(), first = groupIndex == 0) }
                     itemsIndexed(logs, key = { _, log -> log.key }) { index, log ->
                         HistoryRow(log, first = index == 0, last = index == logs.lastIndex) { open(log) }
                     }
@@ -247,18 +227,7 @@ private fun FireHistoryScreen(state: FireState, back: () -> Unit, reload: () -> 
 @Composable
 private fun HistoryRow(log: CieLog, first: Boolean, last: Boolean, open: () -> Unit) {
     val look = log.look()
-    Row(Modifier.fillMaxWidth().novaCardSegment(first, last).clickable(role = Role.Button, onClick = open).heightIn(min = 88.dp).padding(start = 14.dp, end = 12.dp, top = 14.dp, bottom = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-            Icon(painterResource(look.icon), null, Modifier.size(24.dp), tint = look.iconColor)
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(log.categoryLabel().text(), style = NovaType.Supporting, color = look.color)
-            Text(log.historyTitle().text(), style = NovaType.ItemTitle, color = NovaOnSurface)
-            log.instant()?.let { Text(it.clockTime(), style = NovaType.Caption, color = NovaOnSurfaceVariant) }
-        }
-        Icon(painterResource(R.drawable.nova_chevron_forward), null, Modifier.size(20.dp), tint = NovaOnSurfaceVariant)
-    }
+    NovaGroupRow(look.icon, look.iconColor, log.categoryLabel().text(), look.color, log.historyTitle().text(), log.instant()?.clockTime(), first, last, open)
 }
 
 /** Detalhes do evento (Figma 30a–30c): somente os campos retornados pela API. */
@@ -267,13 +236,12 @@ private fun FireEventScreen(log: CieLog, back: () -> Unit) {
     val look = log.look()
     val instant = log.instant()
     var technical by rememberSaveable(log.key) { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().background(NovaBackground)) {
-        NovaTopBar(stringResource(R.string.fire_event_title), back)
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 20.dp),
+    NovaPage(stringResource(R.string.fire_event_title), back = back) {
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = NovaSpacing.Margin, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             NovaCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NovaStatusBadge(log.categoryLabel().text(), look.color, look.container, height = 24.dp, textStyle = NovaType.NavLabel.copy(letterSpacing = 0.sp))
+                    NovaStatusBadge(log.categoryLabel().text(), look.color, look.container, height = 24.dp, textStyle = NovaType.BadgeCompact)
                     Text(log.detailTitle().text(), Modifier.semantics { heading() }, style = NovaType.ScreenTitle, color = NovaOnSurface)
                     listOfNotNull(log.loopAddress(), log.zoneNameRaw()).joinToString(" - ").ifEmpty { null }?.let {
                         Text(it, style = NovaType.ScreenTitle, color = NovaOnSurface)
@@ -289,13 +257,12 @@ private fun FireEventScreen(log: CieLog, back: () -> Unit) {
                 Row(Modifier.fillMaxWidth().clickable(role = Role.Button) { technical = !technical }.heightIn(min = 52.dp).padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(stringResource(R.string.fire_technical_data), style = NovaType.BodyEmphasis.copy(lineHeight = 18.sp), color = NovaInk)
+                        Text(stringResource(R.string.fire_technical_data), style = NovaType.DisclosureTitle, color = NovaInk)
                         Text(stringResource(if (technical) R.string.fire_hide_raw else R.string.fire_show_raw), style = NovaType.Caption, color = NovaOnSurfaceVariant)
                     }
-                    Text(if (technical) "⌄" else "›", fontSize = 20.sp, lineHeight = 20.sp, color = NovaOnSurfaceVariant)
+                    Text(if (technical) "⌄" else "›", style = NovaType.Glyph, color = NovaOnSurfaceVariant)
                 }
-                if (technical) Text(raw, Modifier.fillMaxWidth().background(Color.White).padding(12.dp),
-                    fontFamily = FontFamily.Monospace, fontSize = 11.sp, lineHeight = 15.sp, color = NovaOnSurface)
+                if (technical) Text(raw, Modifier.fillMaxWidth().background(NovaSurface).padding(12.dp), style = NovaType.Code, color = NovaOnSurface)
             }
         }
     }
@@ -310,7 +277,7 @@ private fun DetailSection(title: String, rows: List<Pair<String, String?>>) {
         visible.forEach { (label, value) ->
             Row(Modifier.fillMaxWidth().heightIn(min = 28.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(label, Modifier.width(128.dp), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
-                Text(value!!, Modifier.weight(1f), style = NovaType.Supporting.copy(fontWeight = FontWeight.Medium), color = NovaInk)
+                Text(value!!, Modifier.weight(1f), style = NovaType.SupportingEmphasis, color = NovaInk)
             }
         }
     }

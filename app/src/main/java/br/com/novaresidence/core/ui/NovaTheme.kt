@@ -4,6 +4,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
@@ -13,6 +15,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 // Variáveis "color/…" do Figma (12/10/2026).
@@ -31,6 +34,20 @@ val NovaInk = Color(0xFF151B34)
 val NovaOnSurfaceVariant = Color(0xFF6B7280)
 val NovaOutline = Color(0xFFE3E6ED)
 val NovaNeutralOutline = Color(0xFFE2E2E7)
+/** Superfície de cartões, menu inferior e área de leitura dos documentos. */
+val NovaSurface = Color.White
+/** Texto e ícones sobre o roxo, o cabeçalho da home e o vermelho de alarme. */
+val NovaOnPrimary = Color.White
+/** Ícone de maior contraste (chevron dos cartões de serviço da home). */
+val NovaIconStrong = Color(0xFF1D1B20)
+/** Indicador de página inativo do carrossel de comunicados. */
+val NovaIndicatorInactive = Color(0xFFC7C9D0)
+/** Sombra projetada para cima pelo menu inferior (rgba(64,52,80,.1) do Figma). */
+val NovaNavShadow = Color(0x1A403450)
+
+// Campos de texto (Material 3 do Figma): contorno e rótulo/placeholder fora de foco.
+val NovaFieldOutline = Color(0xFF79747E)
+val NovaFieldVariant = Color(0xFF49454F)
 
 // Cores de estado. O verde, o cinza e o amarelo do Figma (#248E4E, #667080, #BD9700) ficam abaixo de
 // 4,5:1 nos selos e textos; usamos tons mais escuros da mesma família (DESIGN_GUIDE §4).
@@ -54,13 +71,13 @@ val NovaDisabledContent = Color(0xFFA7ADB6)
 const val FigmaFrameWidth = 412f
 
 private val Colors = lightColorScheme(
-    primary = NovaPrimary, onPrimary = Color.White,
+    primary = NovaPrimary, onPrimary = NovaOnPrimary,
     primaryContainer = NovaPrimarySoft, onPrimaryContainer = NovaPrimary,
     secondaryContainer = NovaSecondaryContainer, onSecondaryContainer = NovaOnSurface,
     background = NovaBackground, onBackground = NovaOnSurface,
-    surface = Color.White, onSurface = NovaOnSurface,
+    surface = NovaSurface, onSurface = NovaOnSurface,
     onSurfaceVariant = NovaOnSurfaceVariant, surfaceVariant = NovaSecondaryContainer,
-    outline = Color(0xFF79747E), outlineVariant = NovaOutline,
+    outline = NovaFieldOutline, outlineVariant = NovaOutline,
     error = NovaError,
 )
 
@@ -73,23 +90,70 @@ private fun style(size: Int, height: Int, weight: FontWeight = FontWeight.Normal
 object NovaType {
     val EquipmentState = style(28, 38, FontWeight.SemiBold)
     val EquipmentSupporting = style(16, 22)
-    val AlarmTitle = style(28, 28, FontWeight.SemiBold)
+    /** "ALARME DE INCÊNDIO" (Figma 21d). */
+    val AlarmTitle = style(28, 28, FontWeight.Bold)
+    /** Local do alarme, logo abaixo do título. */
+    val AlarmPlace = style(28, 28, FontWeight.SemiBold)
     val HeadlineHome = style(22, 28, FontWeight.SemiBold)
     val ScreenTitle = style(20, 26, FontWeight.Medium)
+    /** Título de página com mais peso (Excluir sua conta, Figma 20a). */
+    val PageTitle = style(20, 26, FontWeight.SemiBold)
     val TopBar = style(18, 24)
     val Section = style(18, 24, FontWeight.SemiBold)
-    val HeroSupporting = style(18, 22)
+    /** Unidade no cartão do exaustor ("Apto. 124 · Torre A"). */
+    val UnitLabel = style(18, 22, FontWeight.Bold)
     val Highlight = style(16, 22, FontWeight.SemiBold)
+    /** Destaque dos cartões de serviço da home, na altura da linha do título. */
+    val ServiceHighlight = style(16, 20, FontWeight.SemiBold)
     val Field = style(16, 24)
     val SectionTitle = style(15, 20, FontWeight.SemiBold)
     val ItemTitle = style(15, 20, FontWeight.Medium)
     val Body = style(14, 20)
+    /** Texto corrido de leitura (corpo do comunicado e da exclusão de conta). */
+    val Reading = style(14, 21)
     val BodyEmphasis = style(14, 20, FontWeight.Medium)
+    /** Título de linha expansível ("Dados técnicos"). */
+    val DisclosureTitle = style(14, 18, FontWeight.Medium)
     val Button = style(14, 20, FontWeight.Medium)
     val Supporting = style(13, 18)
+    val SupportingEmphasis = style(13, 18, FontWeight.Medium)
+    /** Letra do "i" informativo de 22 dp. */
+    val InfoMark = style(13, 18, FontWeight.SemiBold)
     val Caption = style(12, 16)
     val Badge = style(12, 16, FontWeight.Medium)
+    /** Selo compacto de 24 dp (categoria do comunicado e do evento). */
+    val BadgeCompact = style(11, 16, FontWeight.Medium)
     val NavLabel = style(11, 16, FontWeight.Medium, 0.5f)
+    /** Dados técnicos do evento, como vieram da API. */
+    val Code = style(11, 15).copy(fontFamily = FontFamily.Monospace)
+    /** Contador de não lidas sobre o sino. */
+    val Counter = style(10, 10, FontWeight.SemiBold)
+    /** Seta de texto (› ⌄) da linha expansível. */
+    val Glyph = style(20, 20)
+}
+
+/** Medidas de layout repetidas entre telas. */
+object NovaSpacing {
+    /** Margem lateral do conteúdo em todas as telas (DESIGN_GUIDE §5). */
+    val Margin = 28.dp
+}
+
+/** Cantos do Figma, pelo papel de cada superfície. */
+object NovaShapes {
+    /** Botões, filtros, selos e controles circulares. */
+    val Pill = CircleShape
+    /** Cartões (home, histórico, mensagens, detalhes). */
+    val Card = RoundedCornerShape(16.dp)
+    /** Cartão "Unidade ativa · Equipamento" do exaustor. */
+    val ContextCard = RoundedCornerShape(18.dp)
+    /** Cartão informativo, aviso de exclusão, selos de estado e ícone em quadrado do exaustor. */
+    val Strip = RoundedCornerShape(14.dp)
+    /** Caixas do código, ícone do cartão de serviço e aviso de preparo da recuperação. */
+    val Control = RoundedCornerShape(12.dp)
+    /** Campos de texto (Material 3). */
+    val Field = RoundedCornerShape(4.dp)
+    /** Folha da home, que sobe sobre o cabeçalho roxo. */
+    val Sheet = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 }
 
 // Os componentes Material (campos, botões, menus) leem estes papéis.

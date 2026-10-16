@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.KeyboardActionHandler
@@ -20,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -37,7 +35,6 @@ import br.com.novaresidence.feature.legal.LegalLinksText
 // O OutlinedTextField reserva 8 dp acima da borda para a legenda; os espaços abaixo
 // descontam esse valor para que a distância visível seja a mesma do Figma.
 private val FieldLabelInset = 8.dp
-private val FieldVariant = Color(0xFF49454F)
 
 /** [openLegal] abre o Termo de Uso ou a Política de Privacidade (identificador do documento na API). */
 @Composable
@@ -73,7 +70,7 @@ private fun AuthContent(content: @Composable ColumnScope.() -> Unit) {
         Column(
             Modifier.align(Alignment.TopCenter).widthIn(max = 480.dp).fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 28.dp, end = 28.dp, top = 43.dp, bottom = 24.dp),
+                .padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 43.dp, bottom = 24.dp),
             content = content,
         )
     }
@@ -84,7 +81,7 @@ private fun WelcomeContent(state: AuthState, viewModel: AuthViewModel, openLegal
     BoxWithConstraints(Modifier.fillMaxSize()) {
         Column(
             Modifier.align(Alignment.TopCenter).widthIn(max = 480.dp).fillMaxWidth()
-                .verticalScroll(rememberScrollState()).heightIn(min = maxHeight).padding(horizontal = 28.dp, vertical = 20.dp),
+                .verticalScroll(rememberScrollState()).heightIn(min = maxHeight).padding(horizontal = NovaSpacing.Margin, vertical = 20.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(Modifier.fillMaxWidth().padding(top = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -98,9 +95,9 @@ private fun WelcomeContent(state: AuthState, viewModel: AuthViewModel, openLegal
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     NovaButton(stringResource(R.string.auth_enter), { viewModel.navigate(AuthPage.Login) }, enabled = !state.busy)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        HorizontalDivider(Modifier.weight(1f), color = NovaOutline)
+                        NovaDivider(Modifier.weight(1f))
                         Text(stringResource(R.string.auth_or_continue_with), style = NovaType.Caption, color = NovaOnSurfaceVariant)
-                        HorizontalDivider(Modifier.weight(1f), color = NovaOutline)
+                        NovaDivider(Modifier.weight(1f))
                     }
                     GoogleButton(state, viewModel)
                     // O login com Google pode criar a conta: o aviso fica junto da ação (sem tela no Figma).
@@ -117,9 +114,9 @@ private fun WelcomeContent(state: AuthState, viewModel: AuthViewModel, openLegal
 private fun GoogleButton(state: AuthState, viewModel: AuthViewModel) {
     val context = LocalContext.current
     Button({ viewModel.google { googleIdToken(context) } }, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = !state.busy && state.retrySeconds == 0L,
-        shape = RoundedCornerShape(999.dp), elevation = null,
-        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = NovaOnSurfaceVariant,
-            disabledContainerColor = Color.White, disabledContentColor = NovaDisabledContent),
+        shape = NovaShapes.Pill, elevation = null,
+        colors = ButtonDefaults.buttonColors(containerColor = NovaSurface, contentColor = NovaOnSurfaceVariant,
+            disabledContainerColor = NovaSurface, disabledContentColor = NovaDisabledContent),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
         Image(painterResource(R.drawable.nova_google_account), null, Modifier.size(32.dp))
         Spacer(Modifier.width(8.dp))
@@ -259,8 +256,8 @@ private fun RecoveryCodeInput(code: String, change: (String) -> Unit, error: Str
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     repeat(6) { index ->
                         val active = focused && index == code.length.coerceAtMost(5)
-                        Box(Modifier.weight(1f).height(56.dp).background(Color.White, RoundedCornerShape(12.dp))
-                            .border(if (active) 2.dp else 1.dp, if (error != null) NovaError else if (active) NovaPrimary else NovaOutline, RoundedCornerShape(12.dp)),
+                        Box(Modifier.weight(1f).height(56.dp).background(NovaSurface, NovaShapes.Control)
+                            .border(if (active) 2.dp else 1.dp, if (error != null) NovaError else if (active) NovaPrimary else NovaOutline, NovaShapes.Control),
                             contentAlignment = Alignment.Center) {
                             Text(code.getOrNull(index)?.toString() ?: "•", style = NovaType.ScreenTitle)
                         }
@@ -278,7 +275,7 @@ private fun AuthFeedback(state: AuthState) {
         state.error?.let { NovaNotice(it.text(), state.requestId) }
         if (state.retrySeconds > 0) Text(stringResource(R.string.auth_retry_in, state.retrySeconds), style = NovaType.Body)
         if (state.busy) {
-            if (state.page == AuthPage.Recovery) Row(Modifier.fillMaxWidth().background(NovaPrimarySoft, RoundedCornerShape(12.dp)).padding(12.dp),
+            if (state.page == AuthPage.Recovery) Row(Modifier.fillMaxWidth().background(NovaPrimarySoft, NovaShapes.Control).padding(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(Modifier.size(32.dp), color = NovaPrimary, strokeWidth = 3.dp)
                 Text(stringResource(R.string.auth_preparing_recovery), style = NovaType.Body, color = NovaHeader)
@@ -299,9 +296,9 @@ private fun AuthField(
     val options = KeyboardOptions(keyboardType = if (secret) KeyboardType.Password else keyboard, imeAction = if (submit != null) ImeAction.Done else ImeAction.Next)
     val keyboardAction = KeyboardActionHandler { performDefaultAction -> if (submit != null) submit() else performDefaultAction() }
     val colors = OutlinedTextFieldDefaults.colors(
-        unfocusedBorderColor = Color(0xFF79747E), focusedBorderColor = NovaPrimary,
-        unfocusedLabelColor = FieldVariant, focusedLabelColor = NovaPrimary,
-        unfocusedPlaceholderColor = FieldVariant, focusedPlaceholderColor = FieldVariant,
+        unfocusedBorderColor = NovaFieldOutline, focusedBorderColor = NovaPrimary,
+        unfocusedLabelColor = NovaFieldVariant, focusedLabelColor = NovaPrimary,
+        unfocusedPlaceholderColor = NovaFieldVariant, focusedPlaceholderColor = NovaFieldVariant,
     )
     val textStyle = NovaType.Field
     val supporting = error ?: hint
@@ -314,18 +311,18 @@ private fun AuthField(
         trailingIcon = {
             IconButton({ revealed = !revealed }) {
                 Icon(painterResource(if (revealed) R.drawable.nova_visibility_off else R.drawable.nova_visibility),
-                    stringResource(if (revealed) R.string.auth_hide_password else R.string.auth_show_password), Modifier.size(24.dp), tint = FieldVariant)
+                    stringResource(if (revealed) R.string.auth_hide_password else R.string.auth_show_password), Modifier.size(24.dp), tint = NovaFieldVariant)
             }
         },
         keyboardOptions = options, onKeyboardAction = keyboardAction,
         textObfuscationMode = if (revealed) TextObfuscationMode.Visible else TextObfuscationMode.Hidden,
-        shape = RoundedCornerShape(4.dp),
+        shape = NovaShapes.Field,
     ) else OutlinedTextField(
         state = input, modifier = Modifier.fillMaxWidth(), enabled = enabled, textStyle = textStyle,
         labelPosition = TextFieldLabelPosition.Attached(alwaysMinimize = true), label = { Text(label) },
         placeholder = { Text(placeholder) }, isError = error != null, colors = colors,
         supportingText = if (error != null) ({ Text(error) }) else null,
         keyboardOptions = options, onKeyboardAction = keyboardAction, lineLimits = TextFieldLineLimits.SingleLine,
-        shape = RoundedCornerShape(4.dp),
+        shape = NovaShapes.Field,
     )
 }

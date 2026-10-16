@@ -11,7 +11,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -64,7 +63,7 @@ fun openAlarmChannelSettings(context: Context) {
 /** Cartão da home que pede para ativar as notificações (uma ação principal e uma para dispensar). */
 @Composable
 fun NotificationPrompt(enable: () -> Unit, dismiss: () -> Unit) {
-    Column(Modifier.fillMaxWidth().background(NovaPrimarySoft, RoundedCornerShape(16.dp)).padding(16.dp),
+    Column(Modifier.fillMaxWidth().background(NovaPrimarySoft, NovaShapes.Card).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.push_prompt_title), Modifier.semantics { heading() }, style = NovaType.ItemTitle, color = NovaOnSurface)

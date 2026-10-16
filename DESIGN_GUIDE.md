@@ -9,7 +9,7 @@ Guia de produto para o app Android. Objetivo: interface profissional, minimalist
 3. Reduzir espaços, superfícies e ornamentos desnecessários antes de diminuir texto essencial ou alvo de toque.
 4. Usar dp para layout e sp para texto, com os valores do Figma. Em telas mais estreitas que o frame de 412 dp, a interface recebe densidade proporcional (decisão de 01/10/2026, ver seção 6); a escala de fonte do sistema continua valendo.
 5. Respeitar fontScale, texto longo, teclado, insets, rotação e janelas redimensionáveis.
-6. Cores, tipografia e formas são tokens compartilhados; telas não inventam estilos locais sem justificativa.
+6. Cores, tipografia e formas são tokens compartilhados; telas não inventam estilos locais sem justificativa. No código: cores `Nova*`, `NovaType` (texto), `NovaShapes` (cantos) e `NovaSpacing` (margem de 28 dp) em `core/ui/NovaTheme.kt`; componentes em `core/ui/NovaComponents.kt` (`NovaPage`, `NovaButton`, `NovaInfoStrip`, `NovaNotice`, `NovaRetryNotice`, `NovaCard`, `NovaEmptyCard`, `NovaGroupRow`, `NovaDayHeader`, `NovaRowText`, `NovaSectionTitle`, `NovaStateHeadline`, `NovaStatusBadge`, `NovaDivider`, `NovaChevron`…). Telas não usam `Color(0x…)`, `Color.White`, `fontSize`, `.copy(...)` de estilo nem `RoundedCornerShape(n.dp)` soltos: falta de token ou componente se resolve no tema (refatoração de 15/10/2026, sem mudança visual).
 
 ## 2. Tipografia
 

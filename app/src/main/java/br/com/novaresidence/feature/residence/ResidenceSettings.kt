@@ -9,35 +9,23 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import br.com.novaresidence.BuildConfig
 import br.com.novaresidence.R
 import br.com.novaresidence.core.session.AuthUser
 import br.com.novaresidence.core.ui.*
-
-// Margem lateral das telas 09–16 no Figma.
-private val Margin = 28.dp
-private val RadioOutline = Color(0xFF6B7280)
 
 @Composable
 internal fun ResidenceSettings(
@@ -63,8 +51,7 @@ internal fun ResidenceSettings(
         ResidencePage.DeleteAccount -> stringResource(R.string.settings_title_delete_account)
         else -> stringResource(R.string.settings_title)
     }
-    Column(Modifier.fillMaxSize().background(NovaBackground)) {
-        NovaTopBar(title, back)
+    NovaPage(title, back = back) {
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxWidth()
                 .verticalScroll(rememberScrollState()).heightIn(min = maxHeight), verticalArrangement = Arrangement.SpaceBetween) {
@@ -88,9 +75,9 @@ private fun ColumnScope.Settings(
 ) {
     val units = state.residence?.units.orEmpty()
     val person = state.residence?.person
-    Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp), verticalArrangement = Arrangement.spacedBy(28.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 24.dp), verticalArrangement = Arrangement.spacedBy(28.dp)) {
         Column {
-            SectionTitle(stringResource(R.string.settings_account))
+            NovaSectionTitle(stringResource(R.string.settings_account))
             Column(Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(person?.nome?.takeIf { it.isNotBlank() }?.personName() ?: stringResource(R.string.settings_account_fallback), style = NovaType.ItemTitle, color = NovaOnSurface)
                 user.email?.let { Text(it, style = NovaType.Body, color = NovaOnSurfaceVariant) }
@@ -98,20 +85,20 @@ private fun ColumnScope.Settings(
             }
         }
         Column {
-            SectionTitle(stringResource(R.string.settings_title))
+            NovaSectionTitle(stringResource(R.string.settings_title))
             SettingsRow(stringResource(R.string.settings_my_units), pluralStringResource(R.plurals.settings_units_linked, units.size, units.size),
                 click = if (units.isEmpty()) null else ({ navigate(ResidencePage.SelectUnit) }))
-            HorizontalDivider(color = NovaOutline)
+            NovaDivider()
             SettingsRow(stringResource(R.string.settings_language), state.language.displayName()) { navigate(ResidencePage.SelectLanguage) }
-            HorizontalDivider(color = NovaOutline)
+            NovaDivider()
             if (notifications) {
                 SettingsRow(stringResource(R.string.settings_notifications), stringResource(R.string.settings_notifications_detail)) { navigate(ResidencePage.Notifications) }
-                HorizontalDivider(color = NovaOutline)
+                NovaDivider()
             }
             SettingsRow(stringResource(R.string.settings_privacy), stringResource(R.string.settings_privacy_detail)) { navigate(ResidencePage.Privacy) }
         }
     }
-    Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         NovaTextLink(stringResource(R.string.settings_sign_out), logout, Modifier.width(160.dp), enabled = !busy, color = NovaError,
             style = NovaType.ItemTitle, alignment = Alignment.CenterStart, underline = true)
         if (busy) NovaLoading()
@@ -128,15 +115,15 @@ private fun SelectUnit(state: ResidenceState, select: (Int) -> Unit) {
         Spacer(Modifier.height(28.dp))
         Column(Modifier.selectableGroup()) {
             units.forEachIndexed { index, entry ->
-                if (index > 0) HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
+                if (index > 0) NovaDivider(Modifier.padding(horizontal = NovaSpacing.Margin))
                 val selected = entry.sequencia == state.selectedUnit
                 Choice(entry.selectorLabel().text(), entry.blockedMessage()?.text() ?: stringResource(if (selected) R.string.settings_unit_selected else R.string.settings_unit_linked), selected, minHeight = 76.dp) {
                     select(entry.sequencia)
                 }
             }
         }
-        if (units.isEmpty()) Text(state.residence?.notice()?.text() ?: stringResource(R.string.settings_no_linked_unit), Modifier.padding(horizontal = Margin), style = NovaType.Body)
-        NovaInfoStrip(stringResource(R.string.settings_links_info), Modifier.padding(start = Margin, end = Margin, top = 28.dp))
+        if (units.isEmpty()) Text(state.residence?.notice()?.text() ?: stringResource(R.string.settings_no_linked_unit), Modifier.padding(horizontal = NovaSpacing.Margin), style = NovaType.Body)
+        NovaInfoStrip(stringResource(R.string.settings_links_info), Modifier.padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 28.dp))
     }
 }
 
@@ -149,26 +136,26 @@ private fun ColumnScope.SelectLanguage(state: ResidenceState, saveLanguage: (App
         Spacer(Modifier.height(28.dp))
         Column(Modifier.selectableGroup()) {
             AppLanguage.entries.forEachIndexed { index, language ->
-                if (index > 0) HorizontalDivider(Modifier.padding(horizontal = Margin), color = NovaOutline)
+                if (index > 0) NovaDivider(Modifier.padding(horizontal = NovaSpacing.Margin))
                 Choice(language.displayName(), null, choice == language) { choice = language }
             }
         }
-        state.preferenceError?.let { Box(Modifier.padding(horizontal = Margin, vertical = 16.dp)) { NovaNotice(it.text()) } }
+        state.preferenceError?.let { Box(Modifier.padding(horizontal = NovaSpacing.Margin, vertical = 16.dp)) { NovaNotice(it.text()) } }
         if (state.savingPreference) NovaLoading()
     }
-    NovaButton(stringResource(R.string.settings_save_language), { saveLanguage(choice) }, Modifier.padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), enabled = !state.savingPreference)
+    NovaButton(stringResource(R.string.settings_save_language), { saveLanguage(choice) }, Modifier.padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 24.dp, bottom = 24.dp), enabled = !state.savingPreference)
 }
 
 /** Privacidade (Figma 12). */
 @Composable
 private fun Privacy(navigate: (ResidencePage) -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 24.dp, bottom = 24.dp)) {
         SettingsRow(stringResource(R.string.privacy_terms), stringResource(R.string.privacy_terms_detail)) { navigate(ResidencePage.Terms) }
-        HorizontalDivider(color = NovaOutline)
+        NovaDivider()
         SettingsRow(stringResource(R.string.privacy_policy), stringResource(R.string.privacy_policy_detail)) { navigate(ResidencePage.PrivacyPolicy) }
-        HorizontalDivider(color = NovaOutline)
+        NovaDivider()
         SettingsRow(stringResource(R.string.privacy_personal_data), stringResource(R.string.privacy_personal_data_detail)) { navigate(ResidencePage.PersonalData) }
-        HorizontalDivider(color = NovaOutline)
+        NovaDivider()
         SettingsRow(stringResource(R.string.privacy_delete_account), stringResource(R.string.privacy_delete_account_detail)) { navigate(ResidencePage.DeleteAccount) }
     }
 }
@@ -184,7 +171,7 @@ private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (Resid
     Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp)) {
         Guidance(stringResource(R.string.personal_data_guidance))
         Spacer(Modifier.height(12.dp))
-        Column(Modifier.padding(horizontal = Margin), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.padding(horizontal = NovaSpacing.Margin), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val rows = listOfNotNull(
                 residence?.person?.nome?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.personal_data_name) to it.personName() },
                 residence?.person?.cpfMasked?.let { stringResource(R.string.personal_data_cpf) to it },
@@ -192,7 +179,7 @@ private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (Resid
             )
             rows.forEach { (label, value) ->
                 DataRow(label, value)
-                HorizontalDivider(color = NovaOutline)
+                NovaDivider()
             }
             DataRow(stringResource(R.string.personal_data_active_unit), unit?.selectorLabel()?.text() ?: stringResource(R.string.home_no_unit),
                 click = if (residence?.units.isNullOrEmpty()) null else ({ navigate(ResidencePage.SelectUnit) }))
@@ -207,11 +194,11 @@ private fun PersonalData(state: ResidenceState, user: AuthUser, navigate: (Resid
 @Composable
 private fun ColumnScope.DeleteAccount(user: AuthUser, back: () -> Unit, delete: () -> Unit, busy: Boolean, error: UiText?) {
     val staff = user.role in setOf("porteiro", "sindico", "admin")
-    Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 28.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        Text(stringResource(R.string.delete_title), Modifier.semantics { heading() }, style = NovaType.ScreenTitle.copy(fontWeight = FontWeight.SemiBold), color = NovaOnSurface)
+    Column(Modifier.fillMaxWidth().padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 28.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Text(stringResource(R.string.delete_title), Modifier.semantics { heading() }, style = NovaType.PageTitle, color = NovaOnSurface)
         Text(stringResource(R.string.delete_body),
-            style = NovaType.Body.copy(lineHeight = 21.sp), color = NovaOnSurface)
-        Column(Modifier.fillMaxWidth().background(NovaErrorContainer, RoundedCornerShape(14.dp)).padding(horizontal = 16.dp, vertical = 14.dp),
+            style = NovaType.Reading, color = NovaOnSurface)
+        Column(Modifier.fillMaxWidth().background(NovaErrorContainer, NovaShapes.Strip).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(R.string.delete_warning_title), style = NovaType.BodyEmphasis, color = NovaError)
             Text(stringResource(R.string.delete_warning),
@@ -219,7 +206,7 @@ private fun ColumnScope.DeleteAccount(user: AuthUser, back: () -> Unit, delete: 
         }
         error?.let { NovaNotice(it.text()) }
     }
-    Column(Modifier.fillMaxWidth().padding(start = Margin, end = Margin, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         NovaButton(stringResource(R.string.delete_cancel), back, enabled = !busy, style = NovaButtonStyle.Neutral)
         NovaButton(stringResource(if (busy) R.string.delete_in_progress else R.string.delete_confirm), delete, enabled = !busy && !staff, style = NovaButtonStyle.Danger)
         if (staff) Text(stringResource(R.string.auth_delete_staff),
@@ -229,36 +216,22 @@ private fun ColumnScope.DeleteAccount(user: AuthUser, back: () -> Unit, delete: 
 
 @Composable
 private fun Guidance(text: String) {
-    Text(text, Modifier.fillMaxWidth().padding(horizontal = Margin).heightIn(min = 40.dp), style = NovaType.Body, color = NovaOnSurfaceVariant)
+    Text(text, Modifier.fillMaxWidth().padding(horizontal = NovaSpacing.Margin).heightIn(min = 40.dp), style = NovaType.Body, color = NovaOnSurfaceVariant)
 }
 
+/** Linha das configurações (Figma 12 e 16): título, apoio e círculo com chevron quando abre outra tela. */
 @Composable
-private fun SectionTitle(title: String) {
-    Text(title, Modifier.semantics { heading() }, style = NovaType.Section, color = NovaOnSurface)
-}
+private fun SettingsRow(title: String, detail: String, click: (() -> Unit)? = null) = LinkRow(title, detail, 84.dp, 12.dp, click)
 
-/** Linha das configurações (Figma 09 e 12): título, apoio e círculo com chevron. */
+/** Linha dos dados pessoais (Figma 19): rótulo e valor, mais alta que a das configurações. */
 @Composable
-private fun SettingsRow(title: String, detail: String, click: (() -> Unit)? = null) {
+private fun DataRow(label: String, value: String, click: (() -> Unit)? = null) = LinkRow(label, value, 112.dp, 24.dp, click)
+
+@Composable
+private fun LinkRow(title: String, detail: String, minHeight: Dp, verticalPadding: Dp, click: (() -> Unit)?) {
     Row(Modifier.fillMaxWidth().then(if (click != null) Modifier.clickable(role = Role.Button, onClick = click) else Modifier)
-        .heightIn(min = 84.dp).padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = NovaType.ItemTitle, color = NovaOnSurface)
-            Text(detail, style = NovaType.Body, color = NovaOnSurfaceVariant)
-        }
-        if (click != null) NovaChevronAction()
-    }
-}
-
-/** Linha dos dados pessoais (Figma 15): rótulo e valor, com chevron quando abre outra tela. */
-@Composable
-private fun DataRow(label: String, value: String, click: (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().then(if (click != null) Modifier.clickable(role = Role.Button, onClick = click) else Modifier)
-        .heightIn(min = 112.dp).padding(vertical = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(label, style = NovaType.ItemTitle, color = NovaOnSurface)
-            Text(value, style = NovaType.Body, color = NovaOnSurfaceVariant)
-        }
+        .heightIn(min = minHeight).padding(vertical = verticalPadding), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        NovaRowText(title, detail, Modifier.weight(1f))
         if (click != null) NovaChevronAction()
     }
 }
@@ -267,14 +240,11 @@ private fun DataRow(label: String, value: String, click: (() -> Unit)? = null) {
 @Composable
 private fun Choice(title: String, subtitle: String?, selected: Boolean, enabled: Boolean = true, minHeight: Dp = 68.dp, click: () -> Unit) {
     Row(Modifier.fillMaxWidth().selectable(selected, enabled = enabled, role = Role.RadioButton, onClick = click)
-        .heightIn(min = minHeight).padding(horizontal = Margin, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = NovaType.ItemTitle, color = if (enabled) NovaOnSurface else NovaDisabledContent)
-            subtitle?.let { Text(it, style = NovaType.Body, color = NovaOnSurfaceVariant) }
-        }
-        val ring = when { !enabled -> NovaDisabledContent; selected -> NovaPrimary; else -> RadioOutline }
-        Box(Modifier.size(20.dp).border(2.dp, ring, CircleShape), contentAlignment = Alignment.Center) {
-            if (selected) Box(Modifier.size(8.dp).background(ring, CircleShape))
+        .heightIn(min = minHeight).padding(horizontal = NovaSpacing.Margin, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        NovaRowText(title, subtitle, Modifier.weight(1f), enabled)
+        val ring = when { !enabled -> NovaDisabledContent; selected -> NovaPrimary; else -> NovaOnSurfaceVariant }
+        Box(Modifier.size(20.dp).border(2.dp, ring, NovaShapes.Pill), contentAlignment = Alignment.Center) {
+            if (selected) Box(Modifier.size(8.dp).background(ring, NovaShapes.Pill))
         }
     }
 }

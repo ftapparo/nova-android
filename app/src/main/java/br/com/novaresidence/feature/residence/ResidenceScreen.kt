@@ -8,8 +8,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -33,9 +31,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.LifecycleStartEffect
 import br.com.novaresidence.R
@@ -155,7 +151,7 @@ fun ResidenceScreen(
             NavItem(page == ResidencePage.Fire, stringResource(R.string.nav_alarm), R.drawable.nova_alarm_nav, R.drawable.nova_alarm_selected, enabled = canOpenFire) { navigate(ResidencePage.Fire) }
             NavItem(page == ResidencePage.Exhaust, stringResource(R.string.nav_exhaust), R.drawable.nova_exhaust_nav, R.drawable.nova_exhaust_selected, enabled = canOpenExhaust) { navigate(ResidencePage.Exhaust) }
         }
-        Spacer(Modifier.fillMaxWidth().background(if (navVisible || page in WhitePages) Color.White else NovaBackground)
+        Spacer(Modifier.fillMaxWidth().background(if (navVisible || page in WhitePages) NovaSurface else NovaBackground)
             .windowInsetsBottomHeight(WindowInsets.navigationBars))
     }
 }
@@ -169,10 +165,10 @@ private fun NavigationBarFigma(content: @Composable RowScope.() -> Unit) {
     Row(Modifier.fillMaxWidth()
         .drawBehind {
             val shadow = 8.dp.toPx()
-            drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color(0x1A403450)), startY = -shadow, endY = 0f),
+            drawRect(Brush.verticalGradient(listOf(Color.Transparent, NovaNavShadow), startY = -shadow, endY = 0f),
                 topLeft = Offset(0f, -shadow), size = Size(size.width, shadow))
         }
-        .background(Color.White)
+        .background(NovaSurface)
         .drawBehind { drawRect(NovaOutline, size = Size(size.width, 1.dp.toPx())) }
         .height(80.dp).padding(bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically, content = content)
@@ -207,14 +203,14 @@ private fun Home(
     Column(Modifier.fillMaxSize().background(NovaHeader)) {
         // Figma 08a (revisão do cabeçalho): pílula a 24 dp do topo, "Olá" 16 dp abaixo dela e folha a 132 dp.
         // Os botões redondos têm alvo de 48 dp; os espaços descontam essa diferença para manter as posições.
-        Column(Modifier.fillMaxWidth().padding(start = 28.dp, end = 28.dp, top = 20.dp, bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.fillMaxWidth().padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 20.dp, bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(Modifier.weight(1f, fill = false).padding(end = 16.dp).widthIn(min = 194.dp).height(40.dp)
-                    .clip(CircleShape).background(NovaHeaderControl)
+                    .clip(NovaShapes.Pill).background(NovaHeaderControl)
                     .clickable(enabled = !residence?.units.isNullOrEmpty(), role = Role.Button, onClickLabel = stringResource(R.string.home_select_unit)) { navigate(ResidencePage.SelectUnit) }
                     .padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painterResource(R.drawable.nova_units), null, Modifier.size(24.dp), tint = Color.White)
-                    Text(unit?.homeLabel()?.text() ?: stringResource(R.string.home_no_unit), style = NovaType.BodyEmphasis, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Icon(painterResource(R.drawable.nova_units), null, Modifier.size(24.dp), tint = NovaOnPrimary)
+                    Text(unit?.homeLabel()?.text() ?: stringResource(R.string.home_no_unit), style = NovaType.BodyEmphasis, color = NovaOnPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Row(Modifier.offset(x = 4.dp), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
                     HeaderButton(R.drawable.nova_bell, if (unreadMessages > 0) pluralStringResource(R.plurals.home_messages_unread, unreadMessages, unreadMessages) else stringResource(R.string.home_messages), 42,
@@ -223,10 +219,10 @@ private fun Home(
                 }
             }
             val firstName = residence?.person?.nome?.takeIf { it.isNotBlank() }?.personName()?.substringBefore(' ')
-            Text(if (firstName != null) stringResource(R.string.home_hello_name, firstName) else stringResource(R.string.home_hello), Modifier.semantics { heading() }, style = NovaType.HeadlineHome, color = Color.White)
+            Text(if (firstName != null) stringResource(R.string.home_hello_name, firstName) else stringResource(R.string.home_hello), Modifier.semantics { heading() }, style = NovaType.HeadlineHome, color = NovaOnPrimary)
         }
-        Column(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(NovaBackground)
-            .verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, top = 16.dp, bottom = 16.dp)) {
+        Column(Modifier.weight(1f).fillMaxWidth().clip(NovaShapes.Sheet).background(NovaBackground)
+            .verticalScroll(rememberScrollState()).padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 16.dp, bottom = 16.dp)) {
             val notices = listOfNotNull(state.error, residence?.notice(), unit?.blockedMessage())
             if (notices.isNotEmpty() || residence?.status != "ativo") Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 state.error?.let { NovaNotice(it.text(), state.requestId) }
@@ -251,9 +247,7 @@ private fun Home(
             if (services) Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(stringResource(R.string.home_news), Modifier.semantics { heading() }, style = NovaType.SectionTitle, color = NovaOnSurface)
                 if (messages != null) messages()
-                else Box(Modifier.fillMaxWidth().border(1.dp, NovaOutline, RoundedCornerShape(16.dp)).heightIn(min = 68.dp).padding(16.dp), contentAlignment = Alignment.CenterStart) {
-                    Text(stringResource(R.string.home_no_messages), style = NovaType.Body, color = NovaOnSurfaceVariant)
-                }
+                else NovaEmptyCard(stringResource(R.string.home_no_messages))
             }
         }
     }
@@ -264,36 +258,36 @@ private fun HeaderButton(icon: Int, description: String, size: Int, badge: Int =
     // O círculo visível tem 40–42 dp (Figma); o alvo de toque chega a 48 dp.
     Box(Modifier.size(48.dp).clickable(role = Role.Button, onClickLabel = description, onClick = click)
         .semantics(mergeDescendants = true) { contentDescription = description }, contentAlignment = Alignment.Center) {
-        Box(Modifier.size(size.dp).background(NovaHeaderControl, CircleShape), contentAlignment = Alignment.Center) {
-            Icon(painterResource(icon), null, Modifier.size(22.dp), tint = Color.White)
+        Box(Modifier.size(size.dp).background(NovaHeaderControl, NovaShapes.Pill), contentAlignment = Alignment.Center) {
+            Icon(painterResource(icon), null, Modifier.size(22.dp), tint = NovaOnPrimary)
         }
         // Contador de não lidas (Figma 08d): círculo vermelho de 13 dp sobre o sino.
         if (badge > 0) Box(Modifier.align(Alignment.TopStart).offset(x = (48 - size).dp / 2 + 23.dp, y = (48 - size).dp / 2 + 8.dp)
-            .defaultMinSize(13.dp, 13.dp).background(NovaError, CircleShape).padding(horizontal = 2.dp), contentAlignment = Alignment.Center) {
-            Text(if (badge > 9) "9+" else badge.toString(), fontSize = 10.sp, lineHeight = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+            .defaultMinSize(13.dp, 13.dp).background(NovaError, NovaShapes.Pill).padding(horizontal = 2.dp), contentAlignment = Alignment.Center) {
+            Text(if (badge > 9) "9+" else badge.toString(), style = NovaType.Counter, color = NovaOnPrimary)
         }
     }
 }
 
 @Composable
 private fun ServiceCard(title: String, icon: Int, status: ServiceStatus, enabled: Boolean, open: () -> Unit) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = NovaShapes.Card
     val (container, tint) = when (status.tone) {
-        ServiceTone.Alarm -> NovaError to Color.White
+        ServiceTone.Alarm -> NovaError to NovaOnPrimary
         ServiceTone.Running -> Color.Transparent to NovaSuccess
         ServiceTone.Neutral -> Color.Transparent to NovaPrimary
     }
     Row(Modifier.fillMaxWidth().clip(shape).border(1.dp, NovaOutline, shape).clickable(enabled = enabled, role = Role.Button, onClick = open)
         .heightIn(min = 76.dp).padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(40.dp).background(container, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(40.dp).background(container, NovaShapes.Control), contentAlignment = Alignment.Center) {
             Icon(painterResource(icon), null, Modifier.size(24.dp), tint = tint)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = NovaType.ItemTitle, color = NovaOnSurface)
-            status.highlight?.let { Text(it.text(), style = NovaType.Highlight.copy(lineHeight = NovaType.ItemTitle.lineHeight), color = if (status.tone == ServiceTone.Running) NovaSuccess else NovaOnSurface) }
+            status.highlight?.let { Text(it.text(), style = NovaType.ServiceHighlight, color = if (status.tone == ServiceTone.Running) NovaSuccess else NovaOnSurface) }
             Text(status.text.text(), style = if (status.highlight != null) NovaType.Body else NovaType.Supporting, color = NovaOnSurfaceVariant)
         }
-        if (enabled) Icon(painterResource(R.drawable.nova_chevron_forward), null, Modifier.size(20.dp), tint = Color(0xFF1D1B20))
+        if (enabled) NovaChevron(NovaIconStrong)
     }
 }

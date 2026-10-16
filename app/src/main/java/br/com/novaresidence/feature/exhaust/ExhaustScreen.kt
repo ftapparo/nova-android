@@ -1,13 +1,10 @@
 package br.com.novaresidence.feature.exhaust
 
 import androidx.compose.ui.res.stringResource
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -15,20 +12,11 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import br.com.novaresidence.R
 import br.com.novaresidence.core.ui.*
 
@@ -90,23 +78,18 @@ fun ExhaustScreen(
             uiText(R.string.exhaust_unavailable_info))
     }
     val copy = location?.second?.let { StateCopy(R.drawable.nova_exhaust_location, it.title, it.description, it.info) } ?: phaseCopy
-    Column(Modifier.fillMaxSize().background(NovaServiceBackground)) {
-        NovaTopBar(stringResource(R.string.exhaust_title))
+    NovaPage(stringResource(R.string.exhaust_title), background = NovaServiceBackground) {
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             // Em telas mais baixas que o frame (ex.: J4 com botões), a ilustração encolhe antes de esconder ação e aviso (DESIGN_GUIDE §6).
             val illustration = (maxHeight - 454.dp).coerceIn(150.dp, 250.dp)
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, top = 16.dp, bottom = 20.dp),
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = NovaSpacing.Margin, end = NovaSpacing.Margin, top = 16.dp, bottom = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Column(Modifier.widthIn(max = 560.dp).fillMaxWidth()) {
                     ContextCard(unitLabel, state, selectUnit)
                     Column(Modifier.fillMaxWidth().padding(vertical = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         NovaIllustration(copy.image, Modifier.size(illustration), contentScale = ContentScale.Crop)
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(copy.title.text(), Modifier.fillMaxWidth().semantics { heading(); liveRegion = LiveRegionMode.Polite }, style = NovaType.EquipmentState, color = NovaInk, textAlign = TextAlign.Center)
-                            Text(copy.description.text(), Modifier.fillMaxWidth(), color = NovaOnSurfaceVariant, textAlign = TextAlign.Center,
-                                style = NovaType.EquipmentSupporting)
-                        }
+                        NovaStateHeadline(copy.title.text(), copy.description.text(), announce = true)
                         if (phase == ExhaustPhase.Error) state.error?.let { Text(it.text(), Modifier.fillMaxWidth(), style = NovaType.Body, color = NovaOnSurfaceVariant, textAlign = TextAlign.Center) }
                         if (state.retrySeconds > 0) Text(stringResource(R.string.auth_retry_in, state.retrySeconds), style = NovaType.Body, color = NovaOnSurfaceVariant)
                         Column(Modifier.fillMaxWidth().padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -160,7 +143,6 @@ private fun PhaseAction(
 /** Cartão "Unidade ativa · Equipamento" (Figma 23a); o toque abre a seleção de unidade. */
 @Composable
 private fun ContextCard(unitLabel: UiText?, state: ExhaustState, selectUnit: () -> Unit) {
-    val shape = RoundedCornerShape(18.dp)
     val exhaust = state.exhaust
     val (label, color, container) = when {
         exhaust == null -> if (state.loading) Triple(R.string.exhaust_badge_loading, NovaPrimary, NovaPrimarySoft)
@@ -169,20 +151,22 @@ private fun ContextCard(unitLabel: UiText?, state: ExhaustState, selectUnit: () 
         exhaust.maintenance -> Triple(R.string.exhaust_badge_maintenance, NovaWarning, NovaWarningContainer)
         else -> Triple(R.string.exhaust_badge_available, NovaSuccess, NovaSuccessContainer)
     }
-    Row(Modifier.fillMaxWidth().clip(shape).background(Color.White).border(1.dp, NovaOutline, shape)
-        .clickable(role = Role.Button, onClickLabel = stringResource(R.string.home_select_unit), onClick = selectUnit).heightIn(min = 116.dp).padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(48.dp).background(NovaPrimaryTint, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
-            Icon(painterResource(R.drawable.nova_units), null, Modifier.size(28.dp), tint = NovaPrimary)
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.exhaust_active_unit), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
-            Text(unitLabel?.text() ?: stringResource(R.string.home_no_unit), style = NovaType.HeroSupporting.copy(fontWeight = FontWeight.Bold), color = NovaInk)
-        }
-        VerticalDivider(Modifier.height(60.dp), color = NovaOutline)
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.exhaust_equipment), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
-            NovaStatusBadge(stringResource(label), color, container, Modifier.widthIn(min = 76.dp), height = 22.dp)
+    NovaCard(Modifier.fillMaxWidth(), NovaShapes.ContextCard) {
+        Row(Modifier.fillMaxWidth()
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.home_select_unit), onClick = selectUnit).heightIn(min = 116.dp).padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(48.dp).background(NovaPrimaryTint, NovaShapes.Strip), contentAlignment = Alignment.Center) {
+                Icon(painterResource(R.drawable.nova_units), null, Modifier.size(28.dp), tint = NovaPrimary)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.exhaust_active_unit), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
+                Text(unitLabel?.text() ?: stringResource(R.string.home_no_unit), style = NovaType.UnitLabel, color = NovaInk)
+            }
+            VerticalDivider(Modifier.height(60.dp), color = NovaOutline)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.exhaust_equipment), style = NovaType.Supporting, color = NovaOnSurfaceVariant)
+                NovaStatusBadge(stringResource(label), color, container, Modifier.widthIn(min = 76.dp), height = 22.dp)
+            }
         }
     }
 }

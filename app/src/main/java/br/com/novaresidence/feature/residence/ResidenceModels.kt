@@ -1,5 +1,6 @@
 package br.com.novaresidence.feature.residence
 
+import br.com.novaresidence.core.session.isStaffRole
 import br.com.novaresidence.core.ui.uiText
 import br.com.novaresidence.core.ui.UiText
 import br.com.novaresidence.R
@@ -27,7 +28,7 @@ data class Residence(val status: String, val blocked: Boolean, val person: Resid
         "ativo" -> if (blocked) uiText(R.string.residence_blocked) else null
         else -> uiText(R.string.residence_unknown)
     }
-    fun canSeeServices(role: String?): Boolean = role in setOf("porteiro", "sindico", "admin") ||
+    fun canSeeServices(role: String?): Boolean = isStaffRole(role) ||
         (status == "ativo" && !blocked && units.any { !it.blocked })
 }
 
