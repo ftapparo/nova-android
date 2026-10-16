@@ -229,7 +229,7 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 | ✅ | Chave de upload e assinatura no Gradle (16/10) |
 | ❌ | Clientes OAuth de release (SHA-1 da chave de upload e da Play App Signing); sem eles o login Google falha no app da loja |
 | ✅ | Ícone do app com a marca (15/10) |
-| 🟡 | R8 ativado; release testado no J4 até a 07b (16/10) |
+| ✅ | R8 ativado e release testado no J4 (16/10) |
 | ✅ | URLs públicas para a Play: `https://novaresidence.com.br/politica-de-privacidade` e `https://novaresidence.com.br/excluir-conta` |
 | ✅ | Play Console — Conteúdo do app (14/10): Segurança dos dados (com local exato), público-alvo 18+, classificação de conteúdo, sem anúncios e acesso ao app com a conta de teste (instruções em inglês, credenciais fora dos testes automáticos) |
 | ✅ | Conta de revisão `app.test@novaresidence.com.br` (14/10): pessoa fictícia 23002 do ERP, unidade XYZ-100, Termo aceito, exaustor **simulado** na API (`EXHAUST_DEMO_UNITS`, commit `9b9de89`, sem relé e sem verificação de área); validada no J4 (ligar, contador, reiniciar, avisos "faltam" e "desligado") |
@@ -248,7 +248,7 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | 5 | ✅ | Versão da 1ª publicação: `versionCode` 1, `versionName` "1.0.0"; `targetSdk` e `compileSdk` 37, acima do mínimo exigido pela Play; `minSdk` 26 (Android 8.0) (15/10) | 8 |
 | 5b | ✅ | Vínculo automático (seção 3.2): em produção, validado no J4, Política 1.3, Figma e "Segurança dos dados" atualizados (16/10) | 3.2 |
 | 6 | ✅ | Chave de upload criada (16/10): `D:\Git\Android\NovaResidence-chaves\nova-residence-upload.jks`, alias `upload`, RSA 4096, válida até 2054, fora do repositório; senha no `keystore.properties` da mesma pasta. SHA-1 do certificado de upload: `FF:C2:C6:7E:3C:75:3A:34:E8:E1:73:53:30:67:16:CC:B7:01:90:98`. Gradle assina o release lendo esse arquivo (ou `NOVA_KEYSTORE_PROPERTIES`) | 8 |
-| 7 | 🟡 | R8 ativo no release (16/10): `.aab` de 13 MB para 7,7 MB, APK 4,7 MB. No J4, o release abriu, entrou com e-mail, mostrou a 07b, a conferência respondeu e o seletor de país abriu, sem falhas no log. Falta conferir com uma conta vinculada: início, central, exaustor, comunicados, idiomas e push | 6 / 8 |
+| 7 | ✅ | R8 ativo no release (16/10): `.aab` de 13 MB para 7,7 MB, APK 4,7 MB. Release assinado testado no J4 sem falhas: login por e-mail, vínculo automático (07b, conferência, seletor de país), início, central, histórico e detalhe de evento, exaustor (ligado de verdade com autorização), comunicados, troca para inglês e volta ao português, preferências e notificação de teste recebida. Login com Google depende do cliente OAuth da chave de upload (item 10) | 6 / 8 |
 | 8 | ❌ | Baseline Profile (velocidade na primeira abertura de cada tela) | 6 |
 | 9 | ❌ | Gerar o `.aab` assinado e enviar ao teste interno da Play | 8 |
 | 10 | ❌ | Criar os clientes OAuth Android de release com o SHA-1 da chave de upload e da Play App Signing (disponível no Console após o 1º envio); sem eles o login Google falha no app da loja | 8 |
