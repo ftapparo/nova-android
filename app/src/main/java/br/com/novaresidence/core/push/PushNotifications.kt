@@ -107,7 +107,11 @@ object PushNotifier {
             }
             .build()
         try {
-            NotificationManagerCompat.from(context).notify(push.tag, 0, notification)
+            val manager = NotificationManagerCompat.from(context)
+            // Substituir o alarme não cala o som que o sistema ainda toca (visto na Samsung com o aparelho bloqueado:
+            // tocou até desbloquear, depois do aviso de normalização). Só cancelar a notificação para o som.
+            if (push.type == "cie.alarm.resolved") manager.cancel(push.tag, 0)
+            manager.notify(push.tag, 0, notification)
         } catch (_: SecurityException) {
             // Permissão revogada entre a checagem e o envio: o aviso não é exibido, como com notificações desligadas.
         }

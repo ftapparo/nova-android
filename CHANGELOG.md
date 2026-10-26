@@ -60,6 +60,8 @@ Os números de tela seguem a numeração do Figma de 15/10/2026: 01–09 splash 
 
 ### Corrigido
 
+- Som do alarme de incêndio continuava tocando depois do aviso de normalização quando o aparelho estava bloqueado (visto num alarme real em 26/10/2026, até desbloquear). Ao chegar `cie.alarm.resolved`, o app cancela a notificação do alarme antes de exibir a de normalização, o que faz o sistema calar o som.
+
 - Versão do Termo de Uso consultada na hora do cadastro, do login com Google e da tela de aceite: o catálogo em memória podia estar desatualizado quando uma versão nova é publicada com o app aberto, e o cadastro mandaria a anterior (recusada pela API).
 - Termo de Uso e Política de Privacidade abertos sem cache: o endereço da página não muda entre versões, e a tela de aceite podia mostrar por até 1 h o texto anterior enquanto registrava a versão vigente.
 - Tela de aceite com o título "Aceite do Termo de Uso", que vale para quem nunca aceitou e para versão nova (antes "Termo de Uso atualizado").

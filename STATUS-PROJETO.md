@@ -263,4 +263,4 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | 13 | ✅ | Ficha da loja preenchida no Play Console (16/10): textos em pt-BR, en-US e es-ES, ícone, banner e 6 capturas de `docs/play/` | 8 |
 | 14 | ✅ | Ficha em inglês e espanhol publicada; capturas só em pt-BR (a Play usa as do idioma padrão) | 3.1 |
 | 15 | ✅ | Publicação em produção: versão 1.0.0 enviada para revisão em 20/10 (Brasil, 12 mudanças, sem erros), aprovada e publicada com "Publicar alterações" em 26/10 | 8 |
-| 16 | ⏳ | Volta automática ao normal após um alarme real (`cie.alarm.resolved`): conferir quando houver um disparo real da central; hoje validada só pela rota de teste | 7.1 |
+| 16 | 🟡 | Alarme real testado em 26/10: alarme, som, tela e volta ao normal (`cie.alarm.resolved`) corretos. Falha: com o aparelho bloqueado, o som do alarme continuou tocando depois da normalização, até desbloquear. Correção no código (cancela a notificação do alarme antes de exibir a de normalização); falta validar num novo alarme e publicar em versão nova | 7.1 |
