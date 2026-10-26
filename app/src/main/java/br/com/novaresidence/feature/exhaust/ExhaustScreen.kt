@@ -59,21 +59,22 @@ fun ExhaustScreen(
         ?.let { it to locationCopy(it, permissionBlocked) }
     val phaseCopy = when (phase) {
         ExhaustPhase.Off -> StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_off_title), uiText(R.string.exhaust_off), AutoOff)
-        ExhaustPhase.Starting -> StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_starting_title), uiText(R.string.exhaust_starting), AutoOff)
+        ExhaustPhase.Starting -> StateCopy(R.drawable.nova_exhaust_spinning, uiText(R.string.exhaust_starting_title), uiText(R.string.exhaust_starting), AutoOff)
         ExhaustPhase.Running -> StateCopy(R.drawable.nova_exhaust_on, uiText(R.string.exhaust_running_title),
             state.remainingClock()?.let { uiText(R.string.exhaust_remaining_clock, it) } ?: uiText(R.string.exhaust_no_auto_off), AutoOff)
-        ExhaustPhase.Finishing -> StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_finishing_title), uiText(R.string.exhaust_finishing), AutoOff)
+        ExhaustPhase.Finishing -> StateCopy(R.drawable.nova_exhaust_spinning, uiText(R.string.exhaust_finishing_title), uiText(R.string.exhaust_finishing), AutoOff)
         ExhaustPhase.Offline -> StateCopy(R.drawable.nova_exhaust_offline, uiText(R.string.exhaust_offline_title), uiText(R.string.exhaust_offline),
             uiText(R.string.exhaust_offline_info))
         ExhaustPhase.Maintenance -> StateCopy(R.drawable.nova_exhaust_maintenance, uiText(R.string.exhaust_maintenance_title), uiText(R.string.exhaust_maintenance),
             uiText(R.string.exhaust_maintenance_info))
         // Resultado inconclusivo (falha de rede ou resposta de erro) mantém os textos aprovados: não afirmamos que falhou.
-        ExhaustPhase.Error -> if (state.error != null) StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_uncertain_title),
+        ExhaustPhase.Error -> if (state.error != null) StateCopy(R.drawable.nova_exhaust_inconclusive, uiText(R.string.exhaust_uncertain_title),
             uiText(R.string.exhaust_uncertain), uiText(R.string.exhaust_error_info))
-            else StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_failed_title), uiText(R.string.exhaust_failed),
+            else StateCopy(R.drawable.nova_exhaust_inconclusive, uiText(R.string.exhaust_failed_title), uiText(R.string.exhaust_failed),
             uiText(R.string.exhaust_error_info))
         ExhaustPhase.Loading -> StateCopy(R.drawable.nova_exhaust_off, uiText(R.string.exhaust_loading_title), uiText(R.string.exhaust_loading), null)
-        ExhaustPhase.Unavailable -> StateCopy(R.drawable.nova_exhaust_offline, uiText(R.string.exhaust_unavailable_title),
+        // Sem equipamento para a unidade (Figma 23h, fundo rosado): o selo de "sem Wi-Fi" diria que há um exaustor fora do ar.
+        ExhaustPhase.Unavailable -> StateCopy(R.drawable.nova_exhaust_unavailable, uiText(R.string.exhaust_unavailable_title),
             blockedMessage ?: uiText(if (unitLabel == null) R.string.exhaust_select_unit else R.string.exhaust_none_for_unit),
             uiText(R.string.exhaust_unavailable_info))
     }
