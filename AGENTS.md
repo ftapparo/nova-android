@@ -383,7 +383,7 @@ Right after login (and on app resume), call `GET /residence/me` (Bearer). It dec
 - `blocked: true` at the top level → the whole app is read-only/disabled for resident features. **Login still works.**
 - Per unit, `blocked: true` → show the unit but disable every action on it. Messages by `blockedReason`:
   - `nao-morador` — "Você não consta como morador desta unidade."
-  - `unidade-com-inquilino` — "Esta unidade possui inquilino cadastrado; o acesso é do inquilino."
+  - `unidade-com-inquilino` — "Existem inquilinos cadastrados nesta unidade."
   - `cadastro-inconsistente` — "Seu cadastro precisa ser regularizado na administração."
 - The server caches this for up to 2 minutes; a change made by staff may take that long to appear.
 

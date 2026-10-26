@@ -108,7 +108,7 @@
     <string name="residence_blocked">Your access has been blocked. Contact building management.</string>
     <string name="residence_unknown">We couldn’t verify your building registration. Contact building management.</string>
     <string name="unit_blocked_not_resident">You’re not listed as a resident of this unit.</string>
-    <string name="unit_blocked_tenant">A tenant is registered for this unit. Access is reserved for the tenant.</string>
+    <string name="unit_blocked_tenant">There are tenants registered for this unit.</string>
     <string name="unit_blocked_inconsistent">Please update your registration with building management.</string>
     <string name="unit_blocked_other">Access to this unit is blocked. Contact building management.</string>
     <string name="unit_home_label">Apt. %1$s - Tower %2$s</string>

@@ -108,7 +108,7 @@
     <string name="residence_blocked">Tu acceso está bloqueado. Contacta a la administración.</string>
     <string name="residence_unknown">No pudimos verificar tu vínculo con el condominio. Contacta a la administración.</string>
     <string name="unit_blocked_not_resident">No figuras como residente de esta unidad.</string>
-    <string name="unit_blocked_tenant">Esta unidad tiene un inquilino registrado. El acceso está reservado para él.</string>
+    <string name="unit_blocked_tenant">Hay inquilinos registrados en esta unidad.</string>
     <string name="unit_blocked_inconsistent">Actualiza tu registro con la administración.</string>
     <string name="unit_blocked_other">El acceso a esta unidad está bloqueado. Contacta a la administración.</string>
     <string name="unit_home_label">Depto. %1$s - Torre %2$s</string>

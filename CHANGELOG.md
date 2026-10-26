@@ -34,6 +34,8 @@ Os números de tela seguem a numeração do Figma de 15/10/2026: 01–09 splash 
 
 ### Alterado
 
+- Aviso de unidade com inquilino mais curto e impessoal: "Existem inquilinos cadastrados nesta unidade." (antes a frase quebrava deixando a letra "O" sozinha no fim da linha). Nos três idiomas.
+
 - Versão do app passa a "1.0.0" (`versionCode` 1), para a 1ª publicação; `targetSdk` 37 conferido.
 
 - Interface componentizada, sem mudança visual (capturas dos testes de tela comparadas pixel a pixel): cores, estilos de texto, cantos e a margem de 28 dp passam a vir só do tema (`NovaTheme.kt`: novas cores `NovaSurface`, `NovaOnPrimary`, `NovaFieldOutline` e afins, estilos nomeados em `NovaType`, `NovaShapes` e `NovaSpacing`); trechos repetidos entre telas viraram componentes em `NovaComponents.kt` (`NovaPage`, `NovaGroupRow`, `NovaDayHeader`, `NovaRetryNotice`, `NovaStateHeadline`, `NovaSectionTitle`, `NovaRowText`, `NovaEmptyCard`, `NovaDivider`, `NovaChevron`). Os papéis da equipe ficam num só lugar (`AuthUser.isStaff`).

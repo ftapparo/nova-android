@@ -109,7 +109,7 @@
     <string name="residence_blocked">Seu acesso está bloqueado. Fale com a administração.</string>
     <string name="residence_unknown">Não foi possível verificar seu vínculo. Fale com a administração.</string>
     <string name="unit_blocked_not_resident">Você não consta como morador desta unidade.</string>
-    <string name="unit_blocked_tenant">Há um inquilino cadastrado nesta unidade. O acesso é destinado a ele.</string>
+    <string name="unit_blocked_tenant">Existem inquilinos cadastrados nesta unidade.</string>
     <string name="unit_blocked_inconsistent">Atualize seu cadastro com a administração.</string>
     <string name="unit_blocked_other">O acesso a esta unidade está bloqueado. Fale com a administração.</string>
     <string name="unit_home_label">Apto. %1$s - Torre %2$s</string>
