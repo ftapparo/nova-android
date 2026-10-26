@@ -2,7 +2,7 @@
 
 Atualizado em **26/10/2026**.
 
-Legenda: ✅ feito · 🟡 parcial · ⏳ depende de terceiros ou de outra etapa · ❌ não feito · ❓ aguarda decisão
+Legenda: ✅ feito · 🟡 parcial · ⏳ depende de terceiros ou de outra etapa · ❌ não feito · ➖ decidido não fazer · ❓ aguarda decisão
 
 > **Situação em 26/10/2026:** a versão 1 ("1.0.0") passou na revisão do Google e foi **publicada na Google Play** em 26/10, por volta do meio-dia (Brasil). O app está disponível na loja para os moradores.
 
@@ -159,7 +159,7 @@ Com 700+ moradores, o vínculo manual pelo zelador não é viável. Conta penden
 | ✅ | Ilustrações em WebP por densidade (~3,6 MB → ~1 MB; ~170 KB no J4) | 12/10 |
 | ✅ | 46 testes unitários e 9 testes de tela aprovados no J4 | 13/10 |
 | ✅ | Contraste: amarelo, verde e cinzas escurecidos no Figma conforme os tokens do app e o DESIGN_GUIDE | 13/10 |
-| ❌ | Otimização R8 e Baseline Profile (velocidade na primeira abertura de cada tela) | — |
+| ✅ | Otimização R8 ativa (16/10). Baseline Profile do app: decidido não fazer (26/10), ver item 8 da seção 9 | 16/10 · 26/10 |
 | ✅ | Push nativo (FCM): central, exaustor e comunicados — implementado e validado no J4 (teste, comunicado, exaustor desligado e alarme de incêndio pela rota de teste) (seção 7.1) | 13/10 · 14/10 · 15/10 |
 | ✅ | WebSocket `/v3/ws` em tempo real com o app aberto: eventos da central e do exaustor disparam a reconsulta na hora; consulta periódica vira rede de segurança (60 s / 30 s). Reconexão com ticket novo, 4001 e backoff; 8 testes unitários. Validado no J4 (14/10): com a tela do exaustor aberta, o desligamento pelo painel v2 apareceu como "Desligando" e depois "Desligado" sem esperar a consulta de 30 s; ligar pelo app passou de "Ligando" a "Ligado" em menos de 1 s. Volume medido em 14/10: 15 `cie.status.updated` por minuto (um a cada 4 s), ~1 KB cada, ~16 KB/min ≈ 0,9 MB por hora de app aberto — baixo, sem filtro na API | 14/10 |
 
@@ -255,7 +255,7 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | 5b | ✅ | Vínculo automático (seção 3.2): em produção, validado no J4, Política 1.3, Figma e "Segurança dos dados" atualizados (16/10) | 3.2 |
 | 6 | ✅ | Chave de upload criada (16/10): `D:\Git\Android\NovaResidence-chaves\nova-residence-upload.jks`, alias `upload`, RSA 4096, válida até 2054, fora do repositório; senha no `keystore.properties` da mesma pasta. SHA-1 do certificado de upload: `FF:C2:C6:7E:3C:75:3A:34:E8:E1:73:53:30:67:16:CC:B7:01:90:98`. Gradle assina o release lendo esse arquivo (ou `NOVA_KEYSTORE_PROPERTIES`) | 8 |
 | 7 | ✅ | R8 ativo no release (16/10): `.aab` de 13 MB para 7,7 MB, APK 4,7 MB. Release assinado testado no J4 sem falhas: login por e-mail, vínculo automático (07b, conferência, seletor de país), início, central, histórico e detalhe de evento, exaustor (ligado de verdade com autorização), comunicados, troca para inglês e volta ao português, preferências, notificação de teste recebida e o push "Exaustor desligado" ao desligar pelo painel. Login com Google depende do cliente OAuth da chave de upload (item 10) | 6 / 8 |
-| 8 | ❌ | Baseline Profile (velocidade na primeira abertura de cada tela) | 6 |
+| 8 | ➖ | Baseline Profile: **decidido não fazer** (26/10/2026). O release já leva o perfil das bibliotecas (Compose/AndroidX, `baseline.prof` de 9 KB) e o R8 está ativo; a lentidão da primeira abertura das telas era a decodificação das ilustrações, já resolvida. Um perfil do código do app exigiria um módulo de benchmark no Gradle e um aparelho com Android recente, e o Google Play gera perfis na nuvem com o uso real. Rever só se o Android vitals mostrar abertura lenta em aparelhos reais | 6 |
 | 9 | ✅ | `.aab` assinado (versão 1, "1.0.0") enviado ao teste interno e publicado em 16/10 ("Disponível para testadores internos"), notas em pt-BR, en-US e es-ES, lista "Testadores internos" vinculada; assinatura gerenciada pela Play ativa | 8 |
 | 10 | ✅ | Clientes OAuth Android criados (16/10) no projeto `nova-residence-login` para `br.com.novaresidence`: "Android - Upload" (SHA-1 `FF:C2:C6:7E:…:90:98`, app instalado direto) e "Android - Play" (SHA-1 `31:30:74:06:…:AB:69`, app da Play). Login com Google conferido no release do J4 (chave de upload). Tela de consentimento OAuth publicada "Em produção" (16/10), sem logotipo e só com escopos básicos, sem verificação de marca (a raiz de novaresidence.com.br é o portal da BRCondos; verificar a marca exige página própria e o domínio no Search Console, opcional). Login conferido no app baixado pelo teste interno (20/10) | 8 |
 | 11 | ✅ | App instalado pela Play (teste interno) validado no celular sem falhas (20/10) | 8 |
