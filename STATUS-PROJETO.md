@@ -1,8 +1,12 @@
 # Status do projeto — Nova Residence (app Android)
 
-Atualizado em **15/10/2026**.
+Atualizado em **26/10/2026**.
 
 Legenda: ✅ feito · 🟡 parcial · ⏳ depende de terceiros ou de outra etapa · ❌ não feito · ❓ aguarda decisão
+
+> **Situação em 26/10/2026:** a versão 1 ("1.0.0") passou na revisão do Google e foi **publicada na Google Play** em 26/10, por volta do meio-dia (Brasil). O app está disponível na loja para os moradores.
+
+> **Situação em 20/10/2026:** versão 1 ("1.0.0") publicada no **teste interno** da Play em 16/10 (disponível para testadores internos, ainda não revisada; até a revisão a loja mostra o nome temporário "br.com.novaresidence (unreviewed)"). App instalado pela Play no celular e validado sem falhas, incluindo o login com Google com a chave da Play. No mesmo dia, a versão foi promovida para produção (Brasil) e enviada para revisão, com publicação gerenciada ativada: aprovada, fica aguardando o clique em "Publicar alterações".
 
 > **Situação em 16/10/2026:** API em produção com push nativo (migração 006), tempo real, localização do exaustor, exaustor simulado da conta de revisão, vínculo automático por CPF e celular, registro de atividades (migração 008) e Política 1.3. App com push, WebSocket e localização commitados e validados no J4; português, inglês e espanhol disponíveis. Nova revisão visual do Figma aplicada ao projeto (seção abaixo). Play Console: declarações de Conteúdo do app concluídas (Segurança dos dados, público 18+, classificação, acesso com conta de teste); falta o build de release e o teste interno. Repositório do app em `github.com/ftapparo/nova-android`.
 
@@ -97,7 +101,7 @@ Regra decidida em 15/10: só na **primeira abertura** depois de instalar o app l
 | ✅ | **API** (`01c0a58`): `detail`, rótulos da central e push no idioma do `Accept-Language`/aparelho; `error.title` não muda. Migração 007 aplicada e deploy feito; conferido em produção que o `detail` sai em pt-BR, en e es |
 | ✅ | Textos revisados nas três línguas em 15/10 (glossário em [docs/traducao.md](docs/traducao.md)) |
 | ✅ | Primeira abertura com o Android em outro idioma validada em aparelho com instalação limpa |
-| ❌ | Ficha da Play em inglês e espanhol (opcional) |
+| ✅ | Ficha da Play em inglês e espanhol (16/10) |
 
 ## 3.2 Vínculo automático por CPF e celular — decidido em 15/10
 
@@ -227,13 +231,15 @@ Detalhe completo no [AGENTS.md](AGENTS.md), seção do exaustor.
 | ✅ | `.aab` gerado (`bundleRelease`) com divisão por densidade (12/10) — ainda sem assinatura |
 | ✅ | `versionCode` 1 / `versionName` "1.0.0", `targetSdk` 37 (15/10) |
 | ✅ | Chave de upload e assinatura no Gradle (16/10) |
-| 🟡 | Clientes OAuth de release criados (16/10); login Google conferido com a chave de upload, falta no app da Play |
+| ✅ | Clientes OAuth de release criados (16/10); login Google conferido com a chave de upload e no app da Play (20/10) |
 | ✅ | Ícone do app com a marca (15/10) |
 | ✅ | R8 ativado e release testado no J4 (16/10) |
 | ✅ | URLs públicas para a Play: `https://novaresidence.com.br/politica-de-privacidade` e `https://novaresidence.com.br/excluir-conta` |
 | ✅ | Play Console — Conteúdo do app (14/10): Segurança dos dados (com local exato), público-alvo 18+, classificação de conteúdo, sem anúncios e acesso ao app com a conta de teste (instruções em inglês, credenciais fora dos testes automáticos) |
 | ✅ | Conta de revisão `app.test@novaresidence.com.br` (14/10): pessoa fictícia 23002 do ERP, unidade XYZ-100, Termo aceito, exaustor **simulado** na API (`EXHAUST_DEMO_UNITS`, commit `9b9de89`, sem relé e sem verificação de área); validada no J4 (ligar, contador, reiniciar, avisos "faltam" e "desligado") |
-| ❌ | Ficha da loja (descrição, capturas, imagem de destaque), teste interno e produção |
+| ✅ | Ficha da loja (descrição, capturas, imagem de destaque) (16/10) |
+| ✅ | Teste interno: versão 1 (1.0.0) publicada em 16/10 e validada no celular pelo app da Play (20/10) |
+| ✅ | Publicação em produção: enviada para revisão em 20/10 e publicada na Play em 26/10 (Brasil) |
 
 ## 9. Pendências — em ordem de execução
 
@@ -250,11 +256,11 @@ Tudo o que ainda falta nas seções acima, na sequência em que deve ser feito. 
 | 6 | ✅ | Chave de upload criada (16/10): `D:\Git\Android\NovaResidence-chaves\nova-residence-upload.jks`, alias `upload`, RSA 4096, válida até 2054, fora do repositório; senha no `keystore.properties` da mesma pasta. SHA-1 do certificado de upload: `FF:C2:C6:7E:3C:75:3A:34:E8:E1:73:53:30:67:16:CC:B7:01:90:98`. Gradle assina o release lendo esse arquivo (ou `NOVA_KEYSTORE_PROPERTIES`) | 8 |
 | 7 | ✅ | R8 ativo no release (16/10): `.aab` de 13 MB para 7,7 MB, APK 4,7 MB. Release assinado testado no J4 sem falhas: login por e-mail, vínculo automático (07b, conferência, seletor de país), início, central, histórico e detalhe de evento, exaustor (ligado de verdade com autorização), comunicados, troca para inglês e volta ao português, preferências, notificação de teste recebida e o push "Exaustor desligado" ao desligar pelo painel. Login com Google depende do cliente OAuth da chave de upload (item 10) | 6 / 8 |
 | 8 | ❌ | Baseline Profile (velocidade na primeira abertura de cada tela) | 6 |
-| 9 | 🟡 | `.aab` assinado (versão 1, "1.0.0") enviado ao teste interno (16/10), notas em pt-BR, en-US e es-ES, lista "Testadores internos" vinculada; assinatura gerenciada pela Play ativa. Falta publicar a versão do teste interno | 8 |
-| 10 | 🟡 | Clientes OAuth Android criados (16/10) no projeto `nova-residence-login` para `br.com.novaresidence`: "Android - Upload" (SHA-1 `FF:C2:C6:7E:…:90:98`, app instalado direto) e "Android - Play" (SHA-1 `31:30:74:06:…:AB:69`, app da Play). Login com Google conferido no release do J4 (chave de upload). Tela de consentimento OAuth publicada "Em produção" (16/10), sem logotipo e só com escopos básicos, sem verificação de marca (a raiz de novaresidence.com.br é o portal da BRCondos; verificar a marca exige página própria e o domínio no Search Console, opcional). Falta conferir o login no app baixado pelo teste interno | 8 |
-| 11 | ❌ | Validar o app instalado pela Play (teste interno): login Google, push e exaustor com a conta de revisão | 8 |
+| 9 | ✅ | `.aab` assinado (versão 1, "1.0.0") enviado ao teste interno e publicado em 16/10 ("Disponível para testadores internos"), notas em pt-BR, en-US e es-ES, lista "Testadores internos" vinculada; assinatura gerenciada pela Play ativa | 8 |
+| 10 | ✅ | Clientes OAuth Android criados (16/10) no projeto `nova-residence-login` para `br.com.novaresidence`: "Android - Upload" (SHA-1 `FF:C2:C6:7E:…:90:98`, app instalado direto) e "Android - Play" (SHA-1 `31:30:74:06:…:AB:69`, app da Play). Login com Google conferido no release do J4 (chave de upload). Tela de consentimento OAuth publicada "Em produção" (16/10), sem logotipo e só com escopos básicos, sem verificação de marca (a raiz de novaresidence.com.br é o portal da BRCondos; verificar a marca exige página própria e o domínio no Search Console, opcional). Login conferido no app baixado pelo teste interno (20/10) | 8 |
+| 11 | ✅ | App instalado pela Play (teste interno) validado no celular sem falhas (20/10) | 8 |
 | 12 | ❌ | Cartão de permissão de notificações num Android 13+ (o J4 é 8.1), com o app do teste interno no celular de alguém da equipe | 7.1 |
 | 13 | ✅ | Ficha da loja preenchida no Play Console (16/10): textos em pt-BR, en-US e es-ES, ícone, banner e 6 capturas de `docs/play/` | 8 |
-| 14 | 🟡 | Ficha em inglês e espanhol: textos prontos; capturas só em pt-BR (a Play usa as do idioma padrão) | 3.1 |
-| 15 | ❌ | Publicação em produção na Play | 8 |
+| 14 | ✅ | Ficha em inglês e espanhol publicada; capturas só em pt-BR (a Play usa as do idioma padrão) | 3.1 |
+| 15 | ✅ | Publicação em produção: versão 1.0.0 enviada para revisão em 20/10 (Brasil, 12 mudanças, sem erros), aprovada e publicada com "Publicar alterações" em 26/10 | 8 |
 | 16 | ⏳ | Volta automática ao normal após um alarme real (`cie.alarm.resolved`): conferir quando houver um disparo real da central; hoje validada só pela rota de teste | 7.1 |
