@@ -41,6 +41,7 @@ class ResidenceViewModel(
     private val repository: ResidenceRepository,
     private val auth: AuthRepository,
     private val languages: AppLanguageStore? = null,
+    private val selectedUnits: SelectedUnitStore? = null,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(ResidenceState(language = languages?.current() ?: AppLanguage.Portuguese))
     val state = mutableState.asStateFlow()
@@ -49,7 +50,11 @@ class ResidenceViewModel(
     private var waitingRetry = false
 
     fun stop() { load?.cancel() }
-    fun clear() { load?.cancel(); save?.cancel(); mutableState.value = ResidenceState(language = state.value.language) }
+    // Sem sessão a escolha não vale mais: outra conta neste aparelho começa pela regra inicial.
+    fun clear() {
+        load?.cancel(); save?.cancel(); selectedUnits?.save(null)
+        mutableState.value = ResidenceState(language = state.value.language)
+    }
     fun saveLanguage(language: AppLanguage) {
         val store = languages ?: return
         if (state.value.savingPreference) return
@@ -67,7 +72,11 @@ class ResidenceViewModel(
     fun linked(residence: Residence) {
         mutableState.update { it.copy(residence = residence, selectedUnit = selectResidenceUnit(residence, null), error = null, requestId = null) }
     }
-    fun select(id: Int) { if (state.value.residence?.units?.any { it.sequencia == id } == true) mutableState.update { it.copy(selectedUnit = id) } }
+    fun select(id: Int) {
+        if (state.value.residence?.units?.any { it.sequencia == id } != true) return
+        mutableState.update { it.copy(selectedUnit = id) }
+        selectedUnits?.save(id)
+    }
     fun refresh() {
         if (state.value.retrySeconds > 0) return
         if (load?.isActive == true) { if (!waitingRetry) return; load?.cancel() }
@@ -92,7 +101,7 @@ class ResidenceViewModel(
             val user = auth.me()
             if (user.mustChangePassword) { mutableState.value = ResidenceState(); return true }
             val residence = repository.me()
-            mutableState.update { it.copy(residence = residence, selectedUnit = selectResidenceUnit(residence, it.selectedUnit)) }
+            mutableState.update { it.copy(residence = residence, selectedUnit = selectResidenceUnit(residence, it.selectedUnit ?: selectedUnits?.read())) }
             return true
         } catch (error: ApiException) {
             if (error.kind == ApiErrorKind.Forbidden) {

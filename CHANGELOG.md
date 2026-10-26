@@ -64,6 +64,8 @@ Os números de tela seguem a numeração do Figma de 15/10/2026: 01–09 splash 
 
 ### Corrigido
 
+- A unidade escolhida na tela "Selecionar unidade" não era mantida ao fechar e abrir o app: voltava para a primeira. Agora a escolha fica guardada no aparelho (só o número da unidade) e vale nas aberturas seguintes enquanto a unidade continuar vinculada à conta; sair da conta apaga a escolha. Se a unidade sumir da lista, vale a regra inicial (primeira unidade liberada).
+
 - Ilustrações do exaustor que faltavam (Figma 23b, 23d, 23g e 23h): "Ligando" e "Desligando" usam o exaustor com a hélice em movimento; "Não foi possível confirmar a ativação" e "Falha na ativação" usam o selo vermelho com fundo roxo; "Indisponível" (unidade sem exaustor, como a ZZ99) usa o selo vermelho com fundo rosado, no lugar do selo de "sem Wi-Fi", que indicava um equipamento fora do ar.
 
 - Som do alarme de incêndio continuava tocando depois do aviso de normalização quando o aparelho estava bloqueado (visto num alarme real em 26/10/2026, até desbloquear). Ao chegar `cie.alarm.resolved`, o app cancela a notificação do alarme antes de exibir a de normalização, o que faz o sistema calar o som.

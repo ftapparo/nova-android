@@ -12,6 +12,7 @@ import br.com.novaresidence.core.push.PushMessage
 import br.com.novaresidence.core.push.PushRegistration
 import br.com.novaresidence.core.push.PushTarget
 import br.com.novaresidence.core.push.SharedPreferencesPushStore
+import br.com.novaresidence.feature.residence.SelectedUnitStore
 import br.com.novaresidence.core.push.firebaseToken
 import br.com.novaresidence.core.session.EncryptedSessionStore
 import br.com.novaresidence.core.session.SessionCoordinator
@@ -47,6 +48,7 @@ class NovaApplication : Application() {
 class AppGraph(context: Context) {
     private val appContext = context.applicationContext
     val language = AppLanguageStore(appContext)
+    val selectedUnits = SelectedUnitStore(appContext)
     val transport = ApiTransport(BuildConfig.V3_BASE_URL, language = { language.current().tag })
     val session = SessionCoordinator(EncryptedSessionStore(appContext)) { token ->
         transport.post<SessionData>("auth/refresh", buildJsonObject { put("refreshToken", token) })

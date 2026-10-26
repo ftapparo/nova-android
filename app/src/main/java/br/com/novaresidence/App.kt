@@ -70,7 +70,7 @@ class AppViewModel(application: NovaApplication) : ViewModel() {
 fun App(app: AppViewModel) {
     val auth: AuthViewModel = viewModel { AuthViewModel(app.auth, app.legal::termsVersion) }
     val legal: LegalViewModel = viewModel { LegalViewModel(app.legal) }
-    val residence: ResidenceViewModel = viewModel { ResidenceViewModel(app.residence, app.auth, app.graph.language) }
+    val residence: ResidenceViewModel = viewModel { ResidenceViewModel(app.residence, app.auth, app.graph.language, app.graph.selectedUnits) }
     val residenceLink: ResidenceLinkViewModel = viewModel { ResidenceLinkViewModel(app.residence) }
     val exhaust: ExhaustViewModel = viewModel { ExhaustViewModel(app.exhaust, app.exhaustLocator::current, residence::refresh) }
     val fire: FireViewModel = viewModel { FireViewModel(app.fire) }
