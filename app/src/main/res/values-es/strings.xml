@@ -16,7 +16,7 @@
     <string name="session_restore_failed">No pudimos restaurar tu sesión. Vuelve a iniciar sesión.</string>
     <string name="session_save_failed">No pudimos guardar tu sesión de forma segura. Inténtalo de nuevo.</string>
     <string name="push_prompt_title">Activa las notificaciones</string>
-    <string name="push_prompt_body">Recibe alertas de incendio, avisos antes de que se apague el extractor y comunicados del condominio.</string>
+    <string name="push_prompt_body">Alertas de incendio, avisos antes de que se apague el extractor y comunicados del condominio.</string>
     <string name="push_enable">Activar notificaciones</string>
     <string name="push_not_now">Ahora no</string>
     <string name="channel_fire_alarm">Alarma de incendio</string>
@@ -50,9 +50,9 @@
     <string name="auth_or_continue_with">o continúa con</string>
     <string name="auth_no_account">¿Aún no tienes una cuenta?</string>
     <string name="auth_create_account">Crear cuenta</string>
-    <string name="auth_error_title">No pudimos verificar tus datos</string>
+    <string name="auth_error_title">Los datos no coinciden</string>
     <string name="auth_error_body">Revisa tu correo y contraseña, o recupera el acceso a tu cuenta.</string>
-    <string name="auth_error_notice">No hicimos cambios en tu cuenta.</string>
+    <string name="auth_error_notice">No se hicieron cambios en la cuenta.</string>
     <string name="auth_error_notice_title">No se pudo iniciar sesión</string>
     <string name="auth_try_again">Volver a intentar</string>
     <string name="auth_recover_access">Recuperar cuenta</string>
@@ -84,7 +84,7 @@
     <string name="auth_validate_continue">Verificar y continuar</string>
     <string name="auth_save_password">Guardar nueva contraseña</string>
     <string name="auth_forgot_password">Olvidé mi contraseña</string>
-    <string name="auth_sign_out">Salir</string>
+    <string name="auth_sign_out">Cerrar sesión</string>
     <string name="auth_resend_code_in">Reenviar código en %1$02d:%2$02d</string>
     <string name="auth_resend_code">Reenviar código</string>
     <string name="auth_check_spam">Revisa también tu carpeta de spam.</string>
@@ -119,11 +119,11 @@
     <string name="nav_exhaust">Extractor</string>
     <string name="home_select_unit">Seleccionar unidad</string>
     <string name="home_no_unit">Ninguna unidad</string>
-    <string name="home_messages">Mensajes</string>
+    <string name="home_messages">Notificaciones</string>
     <plurals name="home_messages_unread">
-        <item quantity="one">%1$d mensaje sin leer</item>
-        <item quantity="many">%1$d mensajes sin leer</item>
-        <item quantity="other">%1$d mensajes sin leer</item>
+        <item quantity="one">%1$d notificación sin leer</item>
+        <item quantity="many">%1$d notificaciones sin leer</item>
+        <item quantity="other">%1$d notificaciones sin leer</item>
     </plurals>
     <string name="home_settings">Configuración</string>
     <string name="home_hello_name">¡Hola, %1$s!</string>
@@ -135,8 +135,8 @@
     <string name="home_exhaust">Extractor</string>
     <string name="home_fire_loading">Consultando la central…</string>
     <string name="home_exhaust_loading">Consultando el equipo…</string>
-    <string name="home_news">Comunicados del condominio</string>
-    <string name="home_no_messages">Ningún mensaje nuevo</string>
+    <string name="home_news">Notificaciones del condominio</string>
+    <string name="home_no_messages">Ninguna notificación nueva</string>
     <string name="home_exhaust_unavailable">No disponible para esta unidad.</string>
     <string name="home_exhaust_running">En funcionamiento</string>
     <string name="settings_title_select_unit">Seleccionar unidad</string>
@@ -160,7 +160,7 @@
     <string name="settings_privacy">Privacidad</string>
     <string name="settings_privacy_detail">Política, términos y datos personales</string>
     <string name="settings_sign_out">Cerrar sesión</string>
-    <string name="settings_app_version">Versión de la app %1$s</string>
+    <string name="settings_app_version">Versión de la aplicación %1$s</string>
     <string name="settings_select_unit_guidance">Selecciona la unidad que deseas usar en la aplicación.</string>
     <string name="settings_unit_selected">Unidad seleccionada</string>
     <string name="settings_unit_linked">Unidad vinculada</string>
@@ -169,14 +169,14 @@
     <string name="settings_language_guidance">La aplicación se mostrará en el idioma que elijas.</string>
     <string name="settings_save_language">Guardar idioma</string>
     <string name="settings_language_save_failed">No pudimos guardar el idioma. Inténtalo de nuevo.</string>
-    <string name="privacy_terms">Términos de uso</string>
+    <string name="privacy_terms">Términos de Uso</string>
     <string name="privacy_terms_detail">Reglas y condiciones de uso de la aplicación</string>
     <string name="privacy_policy">Política de privacidad</string>
     <string name="privacy_policy_detail">Cómo se usan y protegen tus datos</string>
     <string name="privacy_personal_data">Datos personales</string>
     <string name="privacy_personal_data_detail">Consulta los datos vinculados a tu cuenta</string>
     <string name="privacy_delete_account">Eliminar cuenta</string>
-    <string name="privacy_delete_account_detail">Elimina el acceso a la app y solicita borrar los datos relacionados</string>
+    <string name="privacy_delete_account_detail">Elimina el acceso a la aplicación y solicita borrar los datos relacionados</string>
     <string name="personal_data_guidance">Información vinculada a tu cuenta y a los registros del condominio.</string>
     <string name="personal_data_name">Nombre</string>
     <string name="personal_data_cpf">CPF</string>
@@ -185,7 +185,7 @@
     <string name="delete_title">Eliminar tu cuenta</string>
     <string name="delete_body">Si eliminas tu cuenta, perderás el acceso a la aplicación. El condominio podrá conservar algunos datos para cumplir obligaciones legales, administrativas o de seguridad.</string>
     <string name="delete_warning_title">Antes de continuar</string>
-    <string name="delete_warning">La eliminación es inmediata y no se puede deshacer. Si deseas volver a usar la app, tendrás que crear otra cuenta y pedir a la administración que la vincule a tu unidad.</string>
+    <string name="delete_warning">La eliminación es inmediata y no se puede deshacer. Si deseas volver a usar la aplicación, tendrás que crear otra cuenta y pedir a la administración que la vincule a tu unidad.</string>
     <string name="delete_cancel">Cancelar</string>
     <string name="delete_in_progress">Eliminando cuenta…</string>
     <string name="delete_confirm">Eliminar cuenta</string>
@@ -198,7 +198,7 @@
     <string name="exhaust_location_denied">Permite el acceso a la ubicación desde la configuración del dispositivo.</string>
     <string name="exhaust_open_settings">Abrir configuración</string>
     <string name="exhaust_location_needed_title">Ubicación necesaria</string>
-    <string name="exhaust_location_needed">Para encender el extractor, necesitamos confirmar que estás en el condominio.</string>
+    <string name="exhaust_location_needed">Para encender el extractor, es necesario confirmar la presencia en el condominio.</string>
     <string name="exhaust_allow_location">Permitir ubicación</string>
     <string name="exhaust_location_precise_title">Ubicación precisa necesaria</string>
     <string name="exhaust_location_precise">La ubicación aproximada no es suficiente para confirmar que estás en el condominio.</string>
@@ -225,7 +225,7 @@
     <string name="exhaust_finishing_title">Apagando</string>
     <string name="exhaust_finishing">Espera unos instantes.</string>
     <string name="exhaust_offline_title">Sin conexión</string>
-    <string name="exhaust_offline">No pudimos comunicarnos con el extractor.</string>
+    <string name="exhaust_offline">Sin comunicación con el extractor.</string>
     <string name="exhaust_offline_info">El equipo no puede usarse mientras esté sin conexión.</string>
     <string name="exhaust_maintenance_title">En mantenimiento</string>
     <string name="exhaust_maintenance">El extractor no está disponible temporalmente.</string>
@@ -236,7 +236,7 @@
     <string name="exhaust_failed_title">No se pudo encender el extractor</string>
     <string name="exhaust_failed">No pudimos encender el extractor. Inténtalo de nuevo.</string>
     <string name="exhaust_loading_title">Consultando</string>
-    <string name="exhaust_loading">Estamos consultando el estado del extractor…</string>
+    <string name="exhaust_loading">Consultando el estado del extractor…</string>
     <string name="exhaust_unavailable_title">No disponible</string>
     <string name="exhaust_select_unit">Selecciona una unidad vinculada para consultar el extractor correspondiente.</string>
     <string name="exhaust_none_for_unit">Ningún extractor disponible para esta unidad.</string>
@@ -264,7 +264,7 @@
     <string name="exhaust_home_finishing">Apagando…</string>
     <string name="exhaust_home_unavailable">No disponible en este momento.</string>
     <string name="exhaust_home_maintenance">En mantenimiento.</string>
-    <string name="exhaust_home_error">Verifique el estado del equipo.</string>
+    <string name="exhaust_home_error">Verifica el estado del equipo.</string>
 
     <!-- Central de incêndio -->
     <string name="fire_home_loading">Consultando la central…</string>
@@ -306,7 +306,7 @@
     <string name="fire_offline_info">El personal del condominio recibe una alerta en el panel de control.</string>
     <string name="fire_badge_loading">Consultando</string>
     <string name="fire_loading_title">Consultando el sistema contra incendios</string>
-    <string name="fire_loading">Estamos obteniendo el estado actual…</string>
+    <string name="fire_loading">Obteniendo el estado actual del sistema…</string>
     <string name="fire_badge_unavailable">No disponible</string>
     <string name="fire_unavailable_title">Estado no disponible</string>
     <string name="fire_unavailable">No pudimos consultar el sistema contra incendios.</string>
@@ -361,16 +361,16 @@
     <string name="message_category_warning">Aviso</string>
     <string name="message_category_urgent">Urgente</string>
     <string name="message_category_info">Informativo</string>
-    <string name="message_carousel_failed">No pudimos cargar los comunicados.</string>
+    <string name="message_carousel_failed">No pudimos cargar las notificaciones.</string>
     <string name="message_see_more">Ver más</string>
-    <string name="message_list_title">Mensajes</string>
+    <string name="message_list_title">Notificaciones</string>
     <string name="message_filter_all">Todos</string>
     <string name="message_filter_unread">No leídos</string>
-    <string name="message_loading">Cargando mensajes…</string>
+    <string name="message_loading">Cargando notificaciones…</string>
     <string name="message_try_again">Intentar de nuevo</string>
-    <string name="message_empty_unread">No tienes mensajes sin leer.</string>
-    <string name="message_empty">Ningún mensaje por el momento.</string>
-    <string name="message_detail_title">Mensaje</string>
+    <string name="message_empty_unread">No tienes notificaciones sin leer.</string>
+    <string name="message_empty">Ninguna notificación por el momento.</string>
+    <string name="message_detail_title">Notificación</string>
 
     <!-- Preferências de notificação -->
     <string name="notification_title">Notificaciones</string>
@@ -417,14 +417,14 @@
     <string name="legal_try_again">Intentar de nuevo</string>
     <string name="legal_load_failed_connection">No pudimos cargar el documento. Revisa tu conexión.</string>
     <string name="legal_portuguese_only">El documento oficial está disponible solo en portugués.</string>
-    <string name="legal_acceptance_title">Aceptación de los términos de uso</string>
-    <string name="legal_acceptance_body">Para continuar usando la aplicación, lee y acepta los términos de uso.</string>
-    <string name="legal_acceptance_body_version">Para continuar usando la aplicación, lee y acepta los términos de uso (versión %1$s).</string>
+    <string name="legal_acceptance_title">Aceptación de los Términos de Uso</string>
+    <string name="legal_acceptance_body">Para continuar usando la aplicación, lee y acepta los Términos de Uso.</string>
+    <string name="legal_acceptance_body_version">Para continuar usando la aplicación, lee y acepta los Términos de Uso (versión %1$s).</string>
     <string name="legal_terms_load_failed">No pudimos cargar los Términos de Uso.</string>
-    <string name="legal_terms_updated">Actualizamos los términos de uso. Lee la versión vigente antes de aceptar.</string>
+    <string name="legal_terms_updated">Actualizamos los Términos de Uso. Lee la versión vigente antes de aceptar.</string>
     <string name="legal_registering">Guardando tu aceptación…</string>
     <string name="legal_accept">Aceptar y continuar</string>
-    <string name="legal_sign_out">Salir</string>
+    <string name="legal_sign_out">Cerrar sesión</string>
 
     <!-- Vínculo automático da conta (07b e 07c) -->
     <string name="link_title">Vincular cuenta</string>
@@ -445,7 +445,7 @@
     <string name="link_invalid_cpf">Ingrese un CPF válido.</string>
     <string name="link_invalid_phone_br">Ingrese el celular con el código de área.</string>
     <string name="link_invalid_phone">Ingrese un número válido.</string>
-    <string name="link_not_matched">Los datos ingresados no coinciden con el registro del condominio. Revíselos e inténtelo de nuevo; si son correctos, comuníquese con la administración.</string>
-    <string name="link_person_taken">Esta persona ya está vinculada a otra cuenta. Comuníquese con la administración.</string>
+    <string name="link_not_matched">Los datos ingresados no coinciden con el registro del condominio. Revísalos e inténtalo de nuevo; si son correctos, contacta a la administración.</string>
+    <string name="link_person_taken">Esta persona ya está vinculada a otra cuenta. Contacta a la administración.</string>
     <string name="link_expired">La verificación venció. Ingrese los datos nuevamente.</string>
 </resources>

@@ -34,6 +34,8 @@ Os números de tela seguem a numeração do Figma de 15/10/2026: 01–09 splash 
 
 ### Alterado
 
+- Revisão dos textos do app (pt-BR, inglês e espanhol), em linguagem mais curta e impessoal: avisos de dados que não conferem, localização do exaustor, falta de comunicação e carregamentos. Padronização: "Procure a administração" para falar com a administração; "Sair" para encerrar a sessão; "estado" em vez de "status"; "Termos de Uso"; "aplicativo" e "aparelho" (o "dispositivo" fica para os equipamentos da central). A lista, o sino e a seção da home passam a se chamar "Notificações"; "Comunicado" continua sendo a categoria do que o síndico publica, a opção em Configurações → Notificações e o canal do Android.
+
 - Aviso de unidade com inquilino mais curto e impessoal: "Existem inquilinos cadastrados nesta unidade." (antes a frase quebrava deixando a letra "O" sozinha no fim da linha). Nos três idiomas.
 
 - Versão do app passa a "1.0.0" (`versionCode` 1), para a 1ª publicação; `targetSdk` 37 conferido.
